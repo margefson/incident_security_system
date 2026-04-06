@@ -1,0 +1,21 @@
+{
+  "method": "TF-IDF + Naive Bayes (MultinomialNB)",
+  "dataset_size": 100,
+  "categories": [
+    "phishing",
+    "malware",
+    "brute_force",
+    "ddos",
+    "vazamento_de_dados"
+  ],
+  "cv_accuracy_mean": 0.97,
+  "cv_accuracy_std": 0.06000000000000001,
+  "train_accuracy": 1.0,
+  "category_distribution": {
+    "phishing": 20,
+    "malware": 20,
+    "brute_force": 20,
+    "ddos": 20,
+    "vazamento_de_dados": 20
+  }
+}

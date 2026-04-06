@@ -1,0 +1,66 @@
+# Incident Security System - TODO
+
+## Schema & Database
+- [x] Tabela `users` com campos: id, openId, name, email, passwordHash, loginMethod, role, createdAt, updatedAt, lastSignedIn, isActive
+- [x] Tabela `incidents` com campos: id, userId, title, description, category, riskLevel, confidence, createdAt, updatedAt
+- [x] Executar `pnpm db:push` para migrar o schema
+
+## Backend - Autenticação (bcryptjs)
+- [x] Endpoint `auth.register` com validação Joi (nome, email, senha mínimo 8 chars)
+- [x] Endpoint `auth.login` com bcrypt.compare e geração de cookie JWT
+- [x] Endpoint `auth.me` retornando usuário autenticado
+- [x] Endpoint `auth.logout` limpando cookie de sessão
+- [x] Hash de senha com bcryptjs (saltRounds=12)
+
+## Backend - Incidentes
+- [x] Endpoint `incidents.create` (protectedProcedure) com validação Joi
+- [x] Endpoint `incidents.list` retornando apenas incidentes do usuário autenticado
+- [x] Endpoint `incidents.getById` com verificação de ownership
+- [x] Endpoint `incidents.delete` com verificação de ownership
+- [x] Endpoint `incidents.stats` com contagem por categoria
+
+## Backend - Classificação ML
+- [x] Script Python para treinar modelo TF-IDF + Naive Bayes com dataset de 100 incidentes
+- [x] Salvar modelo treinado (vectorizer + classifier) em arquivo .pkl
+- [x] Servidor Flask interno na porta 5001 para servir predições
+- [x] Integração do backend Node.js com API Flask via HTTP interno
+- [x] Cálculo de nível de risco baseado na categoria classificada
+- [x] Importação do dataset incidentes_cybersecurity_100.xlsx
+
+## Backend - Análise de Risco
+- [x] Mapeamento de categorias para níveis de risco (critical, high, medium, low)
+- [x] Endpoint `incidents.riskAnalysis` com estatísticas de risco por usuário
+
+## Frontend - Tema Cyberpunk
+- [x] Configurar CSS variables com paleta neon (rosa #FF006E, ciano #00F5FF, preto #0A0A0A)
+- [x] Fonte geométrica sans-serif (Space Grotesk + JetBrains Mono via Google Fonts)
+- [x] Efeitos de glow/neon nos elementos principais
+- [x] Componente HUD com linhas técnicas e corner brackets
+- [x] Animações neon-pulse
+
+## Frontend - Páginas
+- [x] Página de Login com estética cyberpunk
+- [x] Página de Registro de usuário
+- [x] Dashboard principal com estatísticas e gráficos
+- [x] Página de listagem de incidentes com filtros por categoria
+- [x] Formulário de novo incidente com preview da classificação
+- [x] Página de detalhe do incidente com análise de risco
+- [x] Página de análise de risco geral
+
+## Frontend - Componentes
+- [x] CyberLayout com sidebar cyberpunk
+- [x] Componente de card de incidente com badge de categoria colorido
+- [x] Componente de gráfico de barras (recharts) com cores neon
+- [x] Componente de badge de risco com cores semânticas
+- [x] Componente de loading com animação cyberpunk
+
+## Testes
+- [x] Teste de autenticação (register + login)
+- [x] Teste de criação de incidente
+- [x] Teste de controle de acesso (usuário não vê incidentes de outros)
+- [x] Teste de classificação automática
+- [x] 18 testes passando (2 arquivos de teste)
+
+## Deploy
+- [x] Checkpoint final salvo
+- [x] Código publicado no GitHub
