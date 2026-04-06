@@ -64,3 +64,11 @@
 ## Deploy
 - [x] Checkpoint final salvo
 - [x] Código publicado no GitHub
+
+## Remoção de Referências "Manus"
+- [x] Remover todas as referências a "Manus" no código-fonte, testes e configurações
+- [x] Reexecutar 18 testes e garantir 100% de aprovação
+- [x] Atualizar Manual do Usuário (PDF)
+- [x] Atualizar Manual de Implantação (PDF)
+- [x] Atualizar README.md
+- [x] Commitar no GitHub

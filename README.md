@@ -259,29 +259,24 @@ FLUSH PRIVILEGES;
 
 ### Passo 3 — Configurar as Variáveis de Ambiente
 
-Crie o arquivo `.env` na raiz do projeto:
-
-```bash
-cp .env.example .env   # se disponível, ou crie manualmente
-```
-
-Edite o `.env` com os seguintes valores obrigatórios:
+Crie o arquivo `.env` na raiz do projeto com os seguintes valores:
 
 ```env
 # Banco de dados (obrigatório)
 DATABASE_URL=mysql://incident_user:SuaSenhaForte123!@localhost:3306/incident_security
 
-# Chave secreta JWT (obrigatório — gere com: node -e "console.log(require('crypto').randomBytes(32).toString('hex'))")
+# Chave secreta JWT (obrigatório)
+# Gere com: node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 JWT_SECRET=sua_chave_secreta_aleatoria_de_pelo_menos_32_caracteres
 
-# OAuth Manus (opcional para uso local com bcryptjs)
+# Configurações de autenticação OAuth (necessário para deploy em produção)
 VITE_APP_ID=local-dev
-OAUTH_SERVER_URL=https://api.manus.im
-VITE_OAUTH_PORTAL_URL=https://manus.im
+OAUTH_SERVER_URL=https://oauth.seudominio.com
+VITE_OAUTH_PORTAL_URL=https://auth.seudominio.com
 OWNER_OPEN_ID=local-owner
 OWNER_NAME=Admin Local
 
-# APIs internas (opcional para uso local básico)
+# APIs externas (opcional para uso local básico)
 BUILT_IN_FORGE_API_URL=
 BUILT_IN_FORGE_API_KEY=
 VITE_FRONTEND_FORGE_API_KEY=
@@ -318,7 +313,7 @@ pip install scikit-learn flask openpyxl joblib pandas
 
 ### Passo 7 — Treinar o Modelo ML (opcional)
 
-O arquivo `model.pkl` já está incluído no repositório. Execute este passo apenas se quiser retreinar com dados atualizados:
+O arquivo `model.pkl` já está incluído no repositório. Execute este passo apenas se quiser retreinar:
 
 ```bash
 # No diretório ml/ com o ambiente virtual ativado
@@ -368,7 +363,6 @@ pnpm dev
 Saída esperada:
 
 ```
-[OAuth] Initialized with baseURL: https://api.manus.im
 Server running on http://localhost:3000/
 ```
 
