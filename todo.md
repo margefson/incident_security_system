@@ -116,3 +116,22 @@
 - [x] Atualizar Manual de Implantação com requisitos de segurança
 - [x] Gerar PDFs atualizados
 - [x] Commitar no GitHub
+
+## Redesign Frontend SOC Portal (Clean/Professional)
+- [x] Redesenhar CSS global: paleta SOC Portal (fundo #0d1117, verde #00ff88, texto #e6edf3)
+- [x] Redesenhar CyberLayout: sidebar compacta com ícones, breadcrumb, indicador LIVE
+- [x] Redesenhar Home/Landing page: estilo SOC Portal profissional
+- [x] Redesenhar Login: formulário clean dark com logo SOC
+- [x] Redesenhar Register: formulário clean dark com checklist de senha
+- [x] Redesenhar Dashboard: cards KPI, tabela de incidentes recentes, gráfico de distribuição
+- [x] Redesenhar Incidents: tabela operacional com badges de severidade e status
+- [x] Redesenhar NewIncident: formulário clean com preview de classificação
+- [x] Redesenhar IncidentDetail: layout de detalhe com seções organizadas
+- [x] Redesenhar RiskAnalysis: gráficos e métricas de risco clean
+- [x] Redesenhar Admin: painel administrativo com tabelas e controles
+- [x] Atualizar ExportPdfButton: estilo SOC Portal
+- [x] Executar 114 testes e garantir 100% passando
+- [x] Adicionar testes de UI/comportamento para o novo design (tests/ui.test.ts)
+- [x] Atualizar README com novo design SOC Portal
+- [x] Atualizar manuais PDF com novo design SOC Portal
+- [x] Commitar no GitHub

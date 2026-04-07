@@ -1,29 +1,46 @@
 import { useState, useMemo } from "react";
 import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
-import { List, PlusCircle, Search, Trash2, Eye, Filter } from "lucide-react";
+import { Plus, Search, Filter, Eye, Trash2, ChevronRight } from "lucide-react";
 import ExportPdfButton from "@/components/ExportPdfButton";
 import { toast } from "sonner";
-import CyberLayout from "@/components/CyberLayout";
 
 const CATEGORY_LABELS: Record<string, string> = {
-  phishing: "Phishing",
-  malware: "Malware",
-  brute_force: "Força Bruta",
-  ddos: "DDoS",
-  vazamento_de_dados: "Vazamento",
-  unknown: "Desconhecido",
+  phishing: "Phishing", malware: "Malware", brute_force: "Brute Force",
+  ddos: "DDoS", vazamento_de_dados: "Vazamento de Dados", unknown: "Desconhecido",
+};
+const CAT_COLORS: Record<string, string> = {
+  phishing: "#3b82f6", malware: "#ef4444", brute_force: "#f97316",
+  ddos: "#a855f7", vazamento_de_dados: "#ec4899", unknown: "#64748b",
+};
+const RISK_CONFIG: Record<string, { label: string; color: string }> = {
+  critical: { label: "Crítico", color: "#ef4444" },
+  high:     { label: "Alto",    color: "#f97316" },
+  medium:   { label: "Médio",   color: "#eab308" },
+  low:      { label: "Baixo",   color: "#22c55e" },
 };
 
-const RISK_LABELS: Record<string, string> = {
-  critical: "Crítico",
-  high: "Alto",
-  medium: "Médio",
-  low: "Baixo",
-};
+function RiskBadge({ risk }: { risk: string }) {
+  const cfg = RISK_CONFIG[risk] ?? { label: risk, color: "#94a3b8" };
+  return (
+    <span style={{
+      display: "inline-flex", alignItems: "center", padding: "2px 8px",
+      borderRadius: 4, fontSize: "0.72rem", fontWeight: 600,
+      color: cfg.color, background: `${cfg.color}1a`, border: `1px solid ${cfg.color}40`,
+    }}>{cfg.label}</span>
+  );
+}
 
-const ALL_CATEGORIES = ["", "phishing", "malware", "brute_force", "ddos", "vazamento_de_dados"];
-const ALL_RISKS = ["", "critical", "high", "medium", "low"];
+function CategoryBadge({ cat }: { cat: string }) {
+  const color = CAT_COLORS[cat] ?? "#64748b";
+  return (
+    <span style={{
+      display: "inline-flex", alignItems: "center", padding: "2px 8px",
+      borderRadius: 4, fontSize: "0.72rem", fontWeight: 500,
+      color, background: `${color}18`, border: `1px solid ${color}30`,
+    }}>{CATEGORY_LABELS[cat] ?? cat}</span>
+  );
+}
 
 export default function Incidents() {
   const [, navigate] = useLocation();
@@ -32,191 +49,139 @@ export default function Incidents() {
   const [filterRisk, setFilterRisk] = useState("");
   const utils = trpc.useUtils();
 
-  const { data: incidents, isLoading } = trpc.incidents.list.useQuery();
+  const { data: incidents = [], isLoading } = trpc.incidents.list.useQuery();
 
   const deleteMutation = trpc.incidents.delete.useMutation({
     onSuccess: () => {
-      toast.success("Incidente removido.");
+      toast.success("Incidente removido com sucesso.");
       utils.incidents.list.invalidate();
       utils.incidents.stats.invalidate();
     },
     onError: (e) => toast.error(e.message),
   });
 
-  const filtered = useMemo(() => {
-    if (!incidents) return [];
-    return incidents.filter((inc) => {
-      const matchSearch = !search || inc.title.toLowerCase().includes(search.toLowerCase()) || inc.description.toLowerCase().includes(search.toLowerCase());
-      const matchCategory = !filterCategory || inc.category === filterCategory;
-      const matchRisk = !filterRisk || inc.riskLevel === filterRisk;
-      return matchSearch && matchCategory && matchRisk;
-    });
-  }, [incidents, search, filterCategory, filterRisk]);
-
-  const selectStyle: React.CSSProperties = {
-    background: "oklch(0.10 0.015 240)",
-    border: "1px solid oklch(0.22 0.03 240)",
-    borderRadius: "0.25rem",
-    padding: "0.5rem 0.75rem",
-    color: "oklch(0.75 0.01 240)",
-    fontFamily: "'JetBrains Mono', monospace",
-    fontSize: "0.75rem",
-    outline: "none",
-    cursor: "pointer",
-  };
+  const filtered = useMemo(() => incidents.filter((inc) => {
+    const matchSearch = !search ||
+      inc.title.toLowerCase().includes(search.toLowerCase()) ||
+      inc.description.toLowerCase().includes(search.toLowerCase());
+    const matchCat = !filterCategory || inc.category === filterCategory;
+    const matchRisk = !filterRisk || inc.riskLevel === filterRisk;
+    return matchSearch && matchCat && matchRisk;
+  }), [incidents, search, filterCategory, filterRisk]);
 
   return (
-    <CyberLayout>
+    <div className="soc-page">
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-3">
-          <div className="p-2 rounded" style={{ background: "oklch(0.85 0.2 195 / 0.1)", border: "1px solid oklch(0.85 0.2 195 / 0.3)" }}>
-            <List className="w-5 h-5 neon-text-cyan" />
-          </div>
-          <div>
-            <h1 className="text-lg font-bold neon-text-cyan tracking-wider" style={{ fontFamily: "Orbitron, JetBrains Mono, monospace", letterSpacing: "0.06em" }}>MEUS INCIDENTES</h1>
-            <p className="font-mono text-xs" style={{ color: "oklch(0.45 0.02 240)" }}>
-              {filtered.length} de {incidents?.length ?? 0} registros
-            </p>
-          </div>
+      <div className="soc-page-header">
+        <div>
+          <h1 className="soc-page-title">Incidentes</h1>
+          <p className="soc-page-sub">
+            {isLoading ? "Carregando..." : `${incidents.length} incidente${incidents.length !== 1 ? "s" : ""} registrado${incidents.length !== 1 ? "s" : ""}`}
+          </p>
         </div>
-        <div className="flex items-center gap-2">
-          <ExportPdfButton
-            category={filterCategory || undefined}
-            riskLevel={filterRisk || undefined}
-            label="PDF"
-          />
-          <button
-          onClick={() => navigate("/incidents/new")}
-          className="flex items-center gap-2 px-4 py-2 rounded font-mono text-sm font-bold tracking-wider uppercase transition-all duration-200"
-          style={{ background: "oklch(0.85 0.2 195 / 0.12)", border: "1px solid oklch(0.85 0.2 195 / 0.5)", color: "oklch(0.85 0.2 195)" }}
-          onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "oklch(0.85 0.2 195 / 0.2)"; (e.currentTarget as HTMLElement).style.boxShadow = "0 0 20px oklch(0.85 0.2 195 / 0.3)"; }}
-          onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "oklch(0.85 0.2 195 / 0.12)"; (e.currentTarget as HTMLElement).style.boxShadow = "none"; }}
-        >
-          <PlusCircle className="w-4 h-4" />
-          NOVO
-        </button>
+        <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
+          <ExportPdfButton category={filterCategory || undefined} riskLevel={filterRisk || undefined} label="Exportar PDF" />
+          <button className="soc-btn soc-btn-primary" onClick={() => navigate("/incidents/new")}>
+            <Plus size={14} />Novo Incidente
+          </button>
         </div>
       </div>
 
       {/* Filters */}
-      <div className="flex flex-wrap gap-3 mb-4 p-3 rounded" style={{ background: "oklch(0.09 0.012 240)", border: "1px solid oklch(0.22 0.03 240)" }}>
-        <div className="flex items-center gap-2 flex-1 min-w-48">
-          <Search className="w-3.5 h-3.5 flex-shrink-0" style={{ color: "oklch(0.45 0.02 240)" }} />
-          <input
-            type="text"
-            placeholder="BUSCAR INCIDENTES..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            style={{ ...selectStyle, flex: 1, padding: "0.5rem 0.5rem" }}
-          />
-        </div>
-        <div className="flex items-center gap-2">
-          <Filter className="w-3.5 h-3.5" style={{ color: "oklch(0.45 0.02 240)" }} />
-          <select value={filterCategory} onChange={(e) => setFilterCategory(e.target.value)} style={selectStyle}>
-            <option value="">CATEGORIA</option>
-            {ALL_CATEGORIES.filter(Boolean).map((c) => (
-              <option key={c} value={c}>{CATEGORY_LABELS[c]}</option>
-            ))}
+      <div className="soc-card" style={{ marginBottom: "1rem" }}>
+        <div style={{ padding: "0.75rem 1rem", display: "flex", gap: "0.75rem", flexWrap: "wrap", alignItems: "center" }}>
+          <div style={{ position: "relative", flex: "1 1 200px", minWidth: 180 }}>
+            <Search size={13} style={{ position: "absolute", left: "0.625rem", top: "50%", transform: "translateY(-50%)", color: "oklch(0.45 0.010 240)" }} />
+            <input
+              type="text" className="soc-input" placeholder="Buscar por título ou descrição..."
+              value={search} onChange={(e) => setSearch(e.target.value)}
+              style={{ paddingLeft: "2rem", width: "100%" }}
+            />
+          </div>
+          <div style={{ position: "relative" }}>
+            <Filter size={12} style={{ position: "absolute", left: "0.625rem", top: "50%", transform: "translateY(-50%)", color: "oklch(0.45 0.010 240)", pointerEvents: "none" }} />
+            <select className="soc-input soc-select" value={filterCategory} onChange={(e) => setFilterCategory(e.target.value)} style={{ paddingLeft: "2rem", minWidth: 160 }}>
+              <option value="">Todas as categorias</option>
+              {Object.entries(CATEGORY_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+            </select>
+          </div>
+          <select className="soc-input soc-select" value={filterRisk} onChange={(e) => setFilterRisk(e.target.value)} style={{ minWidth: 140 }}>
+            <option value="">Todos os riscos</option>
+            {Object.entries(RISK_CONFIG).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
           </select>
-          <select value={filterRisk} onChange={(e) => setFilterRisk(e.target.value)} style={selectStyle}>
-            <option value="">RISCO</option>
-            {ALL_RISKS.filter(Boolean).map((r) => (
-              <option key={r} value={r}>{RISK_LABELS[r]}</option>
-            ))}
-          </select>
+          {(search || filterCategory || filterRisk) && (
+            <button className="soc-btn" onClick={() => { setSearch(""); setFilterCategory(""); setFilterRisk(""); }} style={{ fontSize: "0.78rem" }}>
+              Limpar filtros
+            </button>
+          )}
         </div>
       </div>
 
       {/* Table */}
-      <div className="rounded overflow-hidden" style={{ border: "1px solid oklch(0.22 0.03 240)" }}>
-        {/* Header */}
-        <div className="grid grid-cols-12 gap-2 px-4 py-2.5" style={{ background: "oklch(0.08 0.012 240)", borderBottom: "1px solid oklch(0.22 0.03 240)" }}>
-          {["#ID", "TÍTULO", "CATEGORIA", "RISCO", "CONFIANÇA", "DATA", "AÇÕES"].map((h, i) => (
-            <div key={h} className={`font-mono text-xs font-bold ${i === 1 ? "col-span-4" : i === 5 ? "col-span-2" : "col-span-1"}`} style={{ color: "oklch(0.45 0.02 240)" }}>
-              {h}
+      <div className="soc-card">
+        <div style={{ overflowX: "auto" }}>
+          {isLoading ? (
+            <div className="soc-empty" style={{ padding: "3rem" }}>Carregando incidentes...</div>
+          ) : filtered.length === 0 ? (
+            <div className="soc-empty" style={{ padding: "3rem" }}>
+              {incidents.length === 0 ? (
+                <>Nenhum incidente registrado. <button className="soc-link" onClick={() => navigate("/incidents/new")}>Registrar primeiro incidente</button></>
+              ) : "Nenhum incidente corresponde aos filtros aplicados."}
             </div>
-          ))}
+          ) : (
+            <table className="soc-table">
+              <thead>
+                <tr>
+                  <th style={{ width: 90 }}>ID</th>
+                  <th>Título</th>
+                  <th style={{ width: 160 }}>Categoria</th>
+                  <th style={{ width: 100 }}>Risco</th>
+                  <th style={{ width: 80 }}>Conf.</th>
+                  <th style={{ width: 100 }}>Data</th>
+                  <th style={{ width: 80 }}>Ações</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filtered.map((inc) => (
+                  <tr key={inc.id}>
+                    <td><span className="soc-id">INC-{String(inc.id).padStart(3, "0")}</span></td>
+                    <td style={{ cursor: "pointer" }} onClick={() => navigate(`/incidents/${inc.id}`)}>
+                      <div style={{ fontWeight: 500, color: "oklch(0.88 0.008 240)", marginBottom: "0.1rem" }}>{inc.title}</div>
+                      <div style={{ fontSize: "0.72rem", color: "oklch(0.45 0.010 240)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: 280 }}>
+                        {inc.description}
+                      </div>
+                    </td>
+                    <td>{inc.category ? <CategoryBadge cat={inc.category} /> : <span style={{ color: "oklch(0.38 0.008 240)" }}>—</span>}</td>
+                    <td>{inc.riskLevel ? <RiskBadge risk={inc.riskLevel} /> : <span style={{ color: "oklch(0.38 0.008 240)" }}>—</span>}</td>
+                    <td style={{ fontSize: "0.75rem", color: "oklch(0.55 0.010 240)" }}>
+                      {inc.confidence ? `${Math.round(inc.confidence * 100)}%` : "—"}
+                    </td>
+                    <td style={{ fontSize: "0.75rem", color: "oklch(0.48 0.010 240)" }}>
+                      {new Date(inc.createdAt).toLocaleDateString("pt-BR")}
+                    </td>
+                    <td>
+                      <div style={{ display: "flex", gap: "0.25rem" }}>
+                        <button className="soc-icon-btn" title="Ver detalhes" onClick={() => navigate(`/incidents/${inc.id}`)}>
+                          <Eye size={13} />
+                        </button>
+                        <button className="soc-icon-btn soc-icon-btn-danger" title="Excluir"
+                          onClick={() => { if (confirm("Remover este incidente?")) deleteMutation.mutate({ id: inc.id }); }}>
+                          <Trash2 size={13} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
         </div>
-
-        {isLoading ? (
-          <div className="py-12 text-center" style={{ background: "oklch(0.09 0.012 240)" }}>
-            <p className="font-mono text-xs" style={{ color: "oklch(0.35 0.02 240)" }}>CARREGANDO...</p>
-          </div>
-        ) : filtered.length === 0 ? (
-          <div className="py-12 text-center" style={{ background: "oklch(0.09 0.012 240)" }}>
-            <List className="w-8 h-8 mx-auto mb-2" style={{ color: "oklch(0.25 0.02 240)" }} />
-            <p className="font-mono text-sm" style={{ color: "oklch(0.35 0.02 240)" }}>
-              {incidents?.length === 0 ? "Nenhum incidente registrado" : "Nenhum resultado para os filtros"}
-            </p>
-            {incidents?.length === 0 && (
-              <button onClick={() => navigate("/incidents/new")} className="mt-3 font-mono text-xs neon-text-cyan">
-                + Registrar primeiro incidente
-              </button>
-            )}
-          </div>
-        ) : (
-          <div style={{ background: "oklch(0.09 0.012 240)" }}>
-            {filtered.map((incident, idx) => (
-              <div
-                key={incident.id}
-                className="grid grid-cols-12 gap-2 px-4 py-3 items-center transition-all duration-150"
-                style={{
-                  borderBottom: idx < filtered.length - 1 ? "1px solid oklch(0.15 0.02 240)" : "none",
-                }}
-                onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "oklch(0.12 0.015 240)"; }}
-                onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "transparent"; }}
-              >
-                <div className="col-span-1 font-mono text-xs" style={{ color: "oklch(0.45 0.02 240)" }}>#{incident.id}</div>
-                <div className="col-span-4 min-w-0">
-                  <p className="text-sm font-medium truncate" style={{ color: "oklch(0.85 0.01 240)" }}>{incident.title}</p>
-                  <p className="font-mono text-xs truncate mt-0.5" style={{ color: "oklch(0.4 0.02 240)" }}>
-                    {incident.description.slice(0, 60)}...
-                  </p>
-                </div>
-                <div className="col-span-1">
-                  <span className={`badge-${incident.category} px-1.5 py-0.5 rounded font-mono text-xs whitespace-nowrap`}>
-                    {CATEGORY_LABELS[incident.category] ?? incident.category}
-                  </span>
-                </div>
-                <div className="col-span-1">
-                  <span className={`risk-${incident.riskLevel} px-1.5 py-0.5 rounded font-mono text-xs`}>
-                    {RISK_LABELS[incident.riskLevel] ?? incident.riskLevel}
-                  </span>
-                </div>
-                <div className="col-span-1 font-mono text-xs" style={{ color: "oklch(0.55 0.02 240)" }}>
-                  {incident.confidence ? `${Math.round((incident.confidence ?? 0) * 100)}%` : "—"}
-                </div>
-                <div className="col-span-2 font-mono text-xs" style={{ color: "oklch(0.45 0.02 240)" }}>
-                  {new Date(incident.createdAt).toLocaleDateString("pt-BR")}
-                </div>
-                <div className="col-span-1 flex items-center gap-2">
-                  <button
-                    onClick={() => navigate(`/incidents/${incident.id}`)}
-                    className="p-1.5 rounded transition-colors"
-                    style={{ color: "oklch(0.45 0.02 240)" }}
-                    title="Ver detalhes"
-                    onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = "oklch(0.85 0.2 195)"; }}
-                    onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = "oklch(0.45 0.02 240)"; }}
-                  >
-                    <Eye className="w-3.5 h-3.5" />
-                  </button>
-                  <button
-                    onClick={() => { if (confirm("Remover este incidente?")) deleteMutation.mutate({ id: incident.id }); }}
-                    className="p-1.5 rounded transition-colors"
-                    style={{ color: "oklch(0.45 0.02 240)" }}
-                    title="Excluir"
-                    onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = "oklch(0.65 0.32 0)"; }}
-                    onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = "oklch(0.45 0.02 240)"; }}
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-              </div>
-            ))}
+        {filtered.length > 0 && (
+          <div style={{ padding: "0.625rem 1rem", borderTop: "1px solid oklch(0.16 0.008 240)", fontSize: "0.75rem", color: "oklch(0.45 0.010 240)" }}>
+            Exibindo {filtered.length} de {incidents.length} incidente{incidents.length !== 1 ? "s" : ""}
           </div>
         )}
       </div>
-    </CyberLayout>
+    </div>
   );
 }

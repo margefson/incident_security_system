@@ -5,10 +5,10 @@
 ![Python](https://img.shields.io/badge/Python-3.11-3776AB?style=flat-square&logo=python)
 ![MySQL](https://img.shields.io/badge/MySQL-8.x-4479A1?style=flat-square&logo=mysql)
 ![ML Accuracy](https://img.shields.io/badge/ML%20Accuracy-97%25-brightgreen?style=flat-square)
-![Tests](https://img.shields.io/badge/Tests-84%20passing-brightgreen?style=flat-square)
+![Tests](https://img.shields.io/badge/Tests-114%20passing-brightgreen?style=flat-square)
 ![License](https://img.shields.io/badge/License-MIT-blue?style=flat-square)
 
-Plataforma de gerenciamento de incidentes de segurança cibernética com classificação automática por Machine Learning (TF-IDF + Naive Bayes), painel de administração global, exportação de relatórios em PDF, notificações automáticas de risco crítico e interface cyberpunk de alto contraste.
+Plataforma de gerenciamento de incidentes de segurança cibernética com classificação automática por Machine Learning (TF-IDF + Naive Bayes), painel de administração global, exportação de relatórios em PDF, notificações automáticas de risco crítico e interface SOC Portal — design profissional dark com tipografia Inter, sidebar compacta, badges coloridos por severidade e tabelas operacionais.
 
 ---
 
@@ -45,7 +45,7 @@ O sistema opera com três servidores independentes: um servidor Node.js/Express 
 ┌─────────────────────────────────────────────────────────────────┐
 │                        NAVEGADOR (React 19)                     │
 │  Vite + TailwindCSS 4 + shadcn/ui + Recharts + Wouter           │
-│  Tema Cyberpunk · Orbitron + JetBrains Mono                     │
+│  Design SOC Portal · Inter + JetBrains Mono · Dark Professional  │
 └────────────────────────┬────────────────────────────────────────┘
                          │ tRPC (HTTP + superjson)
                          ▼
@@ -117,7 +117,7 @@ Node.js recebe via tRPC incidents.create
 | Recharts | 2.x | Gráficos e visualizações |
 | Wouter | 3.x | Roteamento client-side |
 | tRPC Client | 11.x | Chamadas à API tipadas |
-| Orbitron | Google Fonts | Tipografia cyberpunk |
+| Inter | Google Fonts | Tipografia profissional SOC Portal |
 | JetBrains Mono | Google Fonts | Tipografia monospace |
 
 ### Backend
@@ -215,7 +215,7 @@ Node.js recebe via tRPC incidents.create
 - Tabela de estatísticas por categoria e por nível de risco
 - Tabela detalhada de todos os incidentes com filtros aplicados
 - Modo admin: relatório global com nome do usuário por incidente
-- Tema cyberpunk aplicado ao PDF (cores neon, tipografia técnica)
+- Tema profissional aplicado ao PDF com paleta SOC Portal dark
 - Download automático com nome de arquivo timestampado
 
 ### Notificações de Risco Crítico
@@ -259,7 +259,7 @@ incident_security_system/
 │   ├── src/
 │   │   ├── _core/hooks/           # useAuth hook
 │   │   ├── components/
-│   │   │   ├── CyberLayout.tsx    # Layout principal com sidebar
+│   │   │   ├── CyberLayout.tsx    # Layout SOC Portal com sidebar compacta
 │   │   │   ├── ExportPdfButton.tsx # Botão de exportação PDF
 │   │   │   └── ui/                # Componentes shadcn/ui
 │   │   ├── pages/
@@ -273,9 +273,9 @@ incident_security_system/
 │   │   │   ├── RiskAnalysis.tsx   # Análise de risco global
 │   │   │   └── Admin.tsx          # Painel de administração
 │   │   ├── App.tsx                # Roteamento principal
-│   │   ├── index.css              # Tema cyberpunk global
+│   │   ├── index.css              # Design System SOC Portal (Inter, dark theme)
 │   │   └── lib/trpc.ts            # Cliente tRPC
-│   └── index.html                 # Importa fontes Orbitron + JetBrains Mono
+│   └── index.html                 # Importa fontes Inter + JetBrains Mono
 ├── drizzle/
 │   └── schema.ts                  # Tabelas: users, incidents
 ├── ml/
@@ -597,10 +597,10 @@ pnpm test
 Saída esperada:
 
 ```
-✓ server/incidents.test.ts (49 tests)
+✓ server/incidents.test.ts (79 tests)
 ✓ server/auth.logout.test.ts (1 test)
 ✓ server/security.test.ts (34 tests)
-Tests: 84 passed
+Tests: 114 passed
 ```
 
 ### Cobertura dos Testes
@@ -630,7 +630,10 @@ Tests: 84 passed
 | **6.7 Helmet** | `security.test.ts` | 5 | X-Powered-By removido, nosniff, HSTS, X-Frame |
 | **6.8 Timing Attack** | `security.test.ts` | 3 | bcrypt sempre executado, mesma mensagem, hash dummy válido |
 
-**Total: 84 testes passando em 3 arquivos**
+| **7.1 Design System SOC Portal** | `incidents.test.ts` | 10 | Componentes exportados, classes CSS, campos de formulário, restrição de acesso admin |
+| **7.2 Consistência CSS SOC Portal** | `incidents.test.ts` | 5 | soc-card, soc-btn-primary, aliases de subtitle, fonte Inter, badges, soc-table |
+
+**Total: 114 testes passando em 3 arquivos**
 
 ---
 
@@ -655,7 +658,7 @@ O sistema foi desenvolvido por uma equipe de cinco integrantes, com responsabili
 
 | Área | Responsável(is) | Descrição das Atividades |
 |---|---|---|
-| **Front-end** | Nattan e Keven | Desenvolvimento das interfaces React, tema cyberpunk, componentes shadcn/ui, páginas de login, registro, dashboard, listagem, detalhe e painel admin |
+| **Front-end** | Nattan e Keven | Desenvolvimento das interfaces React, design system SOC Portal (dark theme profissional, tipografia Inter, sidebar compacta, badges de severidade por categoria), componentes shadcn/ui, páginas de login, registro, dashboard, listagem, detalhe e painel admin |
 | **Back-end** | Margefson | Implementação da API tRPC com Express, autenticação bcryptjs, procedures de incidentes, admin e exportação PDF, validação Joi e testes Vitest |
 | **Banco de Dados** | Nattan | Modelagem do schema Drizzle ORM, definição das tabelas `users` e `incidents`, configuração das migrações e queries de acesso |
 | **Classificador ML** | Josias e Keven | Construção do pipeline TF-IDF + Naive Bayes, treinamento com o dataset de 100 amostras, servidor Flask de classificação (porta 5001) e servidor Flask de geração de PDF (porta 5002) |

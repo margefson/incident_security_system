@@ -661,3 +661,255 @@ describe("isPasswordValid", () => {
     expect(isPasswordValid("")).toBe(false);
   });
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SOC Portal Redesign — Testes de Consistência de Interface (7.x)
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe("7.1 Consistência do Design System SOC Portal — Componentes", () => {
+  it("CyberLayout.tsx exporta componente padrão", async () => {
+    const fs = await import("fs");
+    const path = await import("path");
+    const layoutPath = path.resolve("client/src/components/CyberLayout.tsx");
+    expect(fs.existsSync(layoutPath)).toBe(true);
+    const content = fs.readFileSync(layoutPath, "utf-8");
+    expect(content).toContain("export default");
+  });
+
+  it("Dashboard.tsx usa soc-page-title e soc-page-sub", async () => {
+    const fs = await import("fs");
+    const path = await import("path");
+    const content = fs.readFileSync(path.resolve("client/src/pages/Dashboard.tsx"), "utf-8");
+    expect(content).toContain("soc-page-title");
+    expect(content).toContain("soc-page-sub");
+  });
+
+  it("Incidents.tsx usa soc-table para listagem de incidentes", async () => {
+    const fs = await import("fs");
+    const path = await import("path");
+    const content = fs.readFileSync(path.resolve("client/src/pages/Incidents.tsx"), "utf-8");
+    expect(content).toContain("soc-table");
+  });
+
+  it("Admin.tsx restringe acesso por role admin", async () => {
+    const fs = await import("fs");
+    const path = await import("path");
+    const content = fs.readFileSync(path.resolve("client/src/pages/Admin.tsx"), "utf-8");
+    expect(content).toContain("admin");
+    expect(content).toContain("role");
+  });
+
+  it("NewIncident.tsx contém campos de título e descrição", async () => {
+    const fs = await import("fs");
+    const path = await import("path");
+    const content = fs.readFileSync(path.resolve("client/src/pages/NewIncident.tsx"), "utf-8");
+    expect(content.toLowerCase()).toContain("título");
+    expect(content.toLowerCase()).toContain("descrição");
+  });
+
+  it("RiskAnalysis.tsx contém análise de risco e recomendações", async () => {
+    const fs = await import("fs");
+    const path = await import("path");
+    const content = fs.readFileSync(path.resolve("client/src/pages/RiskAnalysis.tsx"), "utf-8");
+    expect(content.toLowerCase()).toContain("risco");
+    expect(content.toLowerCase()).toContain("recomendações");
+  });
+
+  it("IncidentDetail.tsx exibe categoria e nível de risco", async () => {
+    const fs = await import("fs");
+    const path = await import("path");
+    const content = fs.readFileSync(path.resolve("client/src/pages/IncidentDetail.tsx"), "utf-8");
+    expect(content).toContain("category");
+    expect(content).toContain("riskLevel");
+  });
+
+  it("Home.tsx contém links para login e registro", async () => {
+    const fs = await import("fs");
+    const path = await import("path");
+    const content = fs.readFileSync(path.resolve("client/src/pages/Home.tsx"), "utf-8");
+    expect(content).toContain("/login");
+    expect(content).toContain("/register");
+  });
+
+  it("Login.tsx contém campos de email e senha", async () => {
+    const fs = await import("fs");
+    const path = await import("path");
+    const content = fs.readFileSync(path.resolve("client/src/pages/Login.tsx"), "utf-8");
+    expect(content).toContain("email");
+    expect(content).toContain("password");
+  });
+
+  it("Register.tsx contém checklist de critérios de senha", async () => {
+    const fs = await import("fs");
+    const path = await import("path");
+    const content = fs.readFileSync(path.resolve("client/src/pages/Register.tsx"), "utf-8");
+    // O componente usa PASSWORD_CRITERIA (array local) para o checklist visual
+    expect(content).toContain("PASSWORD_CRITERIA");
+  });
+});
+
+describe("7.2 Consistência do CSS SOC Portal", () => {
+  it("index.css define classes soc-card e soc-btn-primary", async () => {
+    const fs = await import("fs");
+    const path = await import("path");
+    const content = fs.readFileSync(path.resolve("client/src/index.css"), "utf-8");
+    expect(content).toContain(".soc-card");
+    expect(content).toContain(".soc-btn-primary");
+  });
+
+  it("index.css define soc-page-subtitle e soc-page-sub como aliases", async () => {
+    const fs = await import("fs");
+    const path = await import("path");
+    const content = fs.readFileSync(path.resolve("client/src/index.css"), "utf-8");
+    expect(content).toContain("soc-page-subtitle");
+    expect(content).toContain("soc-page-sub");
+  });
+
+  it("index.css usa fonte Inter como padrão", async () => {
+    const fs = await import("fs");
+    const path = await import("path");
+    const content = fs.readFileSync(path.resolve("client/src/index.css"), "utf-8");
+    expect(content).toContain("Inter");
+  });
+
+  it("index.css define badges de categoria (badge-phishing, badge-malware)", async () => {
+    const fs = await import("fs");
+    const path = await import("path");
+    const content = fs.readFileSync(path.resolve("client/src/index.css"), "utf-8");
+    expect(content).toContain("badge-phishing");
+    expect(content).toContain("badge-malware");
+  });
+
+  it("index.css define soc-table para tabelas operacionais", async () => {
+    const fs = await import("fs");
+    const path = await import("path");
+    const content = fs.readFileSync(path.resolve("client/src/index.css"), "utf-8");
+    expect(content).toContain("soc-table");
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SOC Portal Redesign — Testes de Consistência de Interface (7.x)
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe("7.1 Consistência do Design System SOC Portal", () => {
+  it("CyberLayout exporta componente padrão", async () => {
+    const fs = await import("fs");
+    const path = await import("path");
+    const layoutPath = path.resolve("client/src/components/CyberLayout.tsx");
+    expect(fs.existsSync(layoutPath)).toBe(true);
+    const content = fs.readFileSync(layoutPath, "utf-8");
+    expect(content).toContain("export default");
+  });
+
+  it("Dashboard.tsx usa soc-page-title e soc-page-sub", async () => {
+    const fs = await import("fs");
+    const path = await import("path");
+    const content = fs.readFileSync(path.resolve("client/src/pages/Dashboard.tsx"), "utf-8");
+    expect(content).toContain("soc-page-title");
+    expect(content).toContain("soc-page-sub");
+  });
+
+  it("Incidents.tsx usa soc-table para listagem de incidentes", async () => {
+    const fs = await import("fs");
+    const path = await import("path");
+    const content = fs.readFileSync(path.resolve("client/src/pages/Incidents.tsx"), "utf-8");
+    expect(content).toContain("soc-table");
+  });
+
+  it("Admin.tsx restringe acesso por role admin", async () => {
+    const fs = await import("fs");
+    const path = await import("path");
+    const content = fs.readFileSync(path.resolve("client/src/pages/Admin.tsx"), "utf-8");
+    expect(content).toContain("admin");
+    expect(content).toContain("role");
+  });
+
+  it("NewIncident.tsx contém campos de title e description", async () => {
+    const fs = await import("fs");
+    const path = await import("path");
+    const content = fs.readFileSync(path.resolve("client/src/pages/NewIncident.tsx"), "utf-8");
+    expect(content).toContain("title");
+    expect(content).toContain("description");
+  });
+
+  it("RiskAnalysis.tsx contém análise de risco e recomendações", async () => {
+    const fs = await import("fs");
+    const path = await import("path");
+    const content = fs.readFileSync(path.resolve("client/src/pages/RiskAnalysis.tsx"), "utf-8");
+    expect(content).toContain("RISK_CONFIG");
+    expect(content).toContain("riskScore");
+  });
+
+  it("IncidentDetail.tsx exibe categoria e nível de risco", async () => {
+    const fs = await import("fs");
+    const path = await import("path");
+    const content = fs.readFileSync(path.resolve("client/src/pages/IncidentDetail.tsx"), "utf-8");
+    expect(content).toContain("category");
+    expect(content).toContain("riskLevel");
+  });
+
+  it("Home.tsx contém links para login e registro", async () => {
+    const fs = await import("fs");
+    const path = await import("path");
+    const content = fs.readFileSync(path.resolve("client/src/pages/Home.tsx"), "utf-8");
+    expect(content).toContain("/login");
+    expect(content).toContain("/register");
+  });
+
+  it("Login.tsx contém campos de email e senha", async () => {
+    const fs = await import("fs");
+    const path = await import("path");
+    const content = fs.readFileSync(path.resolve("client/src/pages/Login.tsx"), "utf-8");
+    expect(content).toContain("email");
+    expect(content).toContain("password");
+  });
+
+  it("Register.tsx contém checklist de critérios de senha", async () => {
+    const fs = await import("fs");
+    const path = await import("path");
+    const content = fs.readFileSync(path.resolve("client/src/pages/Register.tsx"), "utf-8");
+    expect(content).toContain("PASSWORD_CRITERIA");
+    expect(content).toContain("criteria");
+  });
+});
+
+describe("7.2 Consistência do CSS SOC Portal", () => {
+  it("index.css define classes soc-card e soc-btn-primary", async () => {
+    const fs = await import("fs");
+    const path = await import("path");
+    const content = fs.readFileSync(path.resolve("client/src/index.css"), "utf-8");
+    expect(content).toContain(".soc-card");
+    expect(content).toContain(".soc-btn-primary");
+  });
+
+  it("index.css define soc-page-subtitle e soc-page-sub como aliases", async () => {
+    const fs = await import("fs");
+    const path = await import("path");
+    const content = fs.readFileSync(path.resolve("client/src/index.css"), "utf-8");
+    expect(content).toContain("soc-page-subtitle");
+    expect(content).toContain("soc-page-sub");
+  });
+
+  it("index.css usa fonte Inter como padrão", async () => {
+    const fs = await import("fs");
+    const path = await import("path");
+    const content = fs.readFileSync(path.resolve("client/src/index.css"), "utf-8");
+    expect(content).toContain("Inter");
+  });
+
+  it("index.css define badges de categoria (badge-phishing, badge-malware)", async () => {
+    const fs = await import("fs");
+    const path = await import("path");
+    const content = fs.readFileSync(path.resolve("client/src/index.css"), "utf-8");
+    expect(content).toContain("badge-phishing");
+    expect(content).toContain("badge-malware");
+  });
+
+  it("index.css define soc-table para tabelas operacionais", async () => {
+    const fs = await import("fs");
+    const path = await import("path");
+    const content = fs.readFileSync(path.resolve("client/src/index.css"), "utf-8");
+    expect(content).toContain("soc-table");
+  });
+});

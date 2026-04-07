@@ -1,32 +1,28 @@
 import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
-import { Shield, AlertTriangle, ChevronRight, Cpu, Calendar, Hash, Trash2 } from "lucide-react";
+import { Shield, AlertTriangle, ChevronRight, Cpu, Calendar, Trash2 } from "lucide-react";
 import { toast } from "sonner";
-import CyberLayout from "@/components/CyberLayout";
 
 const CATEGORY_LABELS: Record<string, string> = {
-  phishing: "Phishing",
-  malware: "Malware",
-  brute_force: "Força Bruta",
-  ddos: "DDoS",
-  vazamento_de_dados: "Vazamento de Dados",
-  unknown: "Desconhecido",
+  phishing: "Phishing", malware: "Malware", brute_force: "Brute Force",
+  ddos: "DDoS", vazamento_de_dados: "Vazamento de Dados", unknown: "Desconhecido",
 };
-
-const RISK_LABELS: Record<string, string> = {
-  critical: "Crítico",
-  high: "Alto",
-  medium: "Médio",
-  low: "Baixo",
+const CAT_COLORS: Record<string, string> = {
+  phishing: "#3b82f6", malware: "#ef4444", brute_force: "#f97316",
+  ddos: "#a855f7", vazamento_de_dados: "#ec4899", unknown: "#64748b",
 };
-
+const RISK_CONFIG: Record<string, { label: string; color: string }> = {
+  critical: { label: "Crítico", color: "#ef4444" },
+  high:     { label: "Alto",    color: "#f97316" },
+  medium:   { label: "Médio",   color: "#eab308" },
+  low:      { label: "Baixo",   color: "#22c55e" },
+};
 const RISK_DESCRIPTIONS: Record<string, string> = {
   critical: "Ameaça severa com potencial de causar danos irreversíveis. Requer resposta imediata e escalação para equipe de segurança.",
   high: "Ameaça significativa com alto potencial de impacto. Deve ser tratada com urgência nas próximas horas.",
   medium: "Ameaça moderada que requer atenção. Pode ser tratada dentro do ciclo normal de resposta a incidentes.",
   low: "Ameaça de baixo impacto. Deve ser monitorada e documentada para análise de tendências.",
 };
-
 const CATEGORY_DESCRIPTIONS: Record<string, string> = {
   phishing: "Tentativa de engenharia social para obter credenciais ou informações sensíveis através de comunicações fraudulentas.",
   malware: "Software malicioso projetado para danificar, comprometer ou obter acesso não autorizado a sistemas.",
@@ -55,131 +51,121 @@ export default function IncidentDetail({ id }: { id: string }) {
 
   if (isLoading) {
     return (
-      <CyberLayout>
-        <div className="flex items-center justify-center py-20">
-          <div className="font-mono text-sm neon-text-cyan">CARREGANDO...</div>
-        </div>
-      </CyberLayout>
+      <div className="soc-page">
+        <div className="soc-empty" style={{ padding: "4rem" }}>Carregando incidente...</div>
+      </div>
     );
   }
 
   if (error || !incident) {
     return (
-      <CyberLayout>
-        <div className="flex items-center justify-center py-20">
-          <div className="font-mono text-sm" style={{ color: "oklch(0.65 0.32 0)" }}>INCIDENTE NÃO ENCONTRADO</div>
-        </div>
-      </CyberLayout>
+      <div className="soc-page">
+        <div className="soc-empty" style={{ padding: "4rem", color: "#ef4444" }}>Incidente não encontrado.</div>
+      </div>
     );
   }
 
-  const riskColor = {
-    critical: "oklch(0.6 0.28 20)",
-    high: "oklch(0.65 0.32 0)",
-    medium: "oklch(0.9 0.25 100)",
-    low: "oklch(0.75 0.25 145)",
-  }[incident.riskLevel] ?? "oklch(0.45 0.02 240)";
+  const riskCfg = RISK_CONFIG[incident.riskLevel] ?? { label: incident.riskLevel, color: "#94a3b8" };
+  const catColor = CAT_COLORS[incident.category] ?? "#64748b";
 
   return (
-    <CyberLayout>
-      <div className="max-w-3xl mx-auto">
-        {/* Breadcrumb */}
-        <div className="flex items-center gap-2 mb-6">
-          <button onClick={() => navigate("/incidents")} className="font-mono text-xs transition-colors" style={{ color: "oklch(0.45 0.02 240)" }}>
-            INCIDENTES
-          </button>
-          <ChevronRight className="w-3 h-3" style={{ color: "oklch(0.35 0.02 240)" }} />
-          <span className="font-mono text-xs neon-text-cyan">#{incident.id}</span>
-        </div>
+    <div className="soc-page">
+      {/* Breadcrumb */}
+      <div style={{ display: "flex", alignItems: "center", gap: "0.375rem", marginBottom: "1.25rem", fontSize: "0.78rem", color: "oklch(0.45 0.010 240)" }}>
+        <button className="soc-link" onClick={() => navigate("/incidents")}>Incidentes</button>
+        <ChevronRight size={12} />
+        <span style={{ color: "oklch(0.82 0.008 240)" }}>INC-{String(incident.id).padStart(3, "0")}</span>
+      </div>
 
-        {/* Title card */}
-        <div className="relative p-5 rounded mb-4" style={{ background: "oklch(0.09 0.012 240)", border: `1px solid ${riskColor.replace(")", " / 0.3)")}` }}>
-          <span className="absolute top-0 left-0 w-4 h-4" style={{ borderTop: `1px solid ${riskColor.replace(")", " / 0.6)")}`, borderLeft: `1px solid ${riskColor.replace(")", " / 0.6)")}` }} />
-          <span className="absolute bottom-0 right-0 w-4 h-4" style={{ borderBottom: `1px solid ${riskColor.replace(")", " / 0.6)")}`, borderRight: `1px solid ${riskColor.replace(")", " / 0.6)")}` }} />
-
-          <div className="flex items-start justify-between gap-4">
-            <div className="flex-1">
-              <div className="flex items-center gap-2 mb-2">
-                <Hash className="w-3.5 h-3.5" style={{ color: "oklch(0.45 0.02 240)" }} />
-                <span className="font-mono text-xs" style={{ color: "oklch(0.45 0.02 240)" }}>INCIDENTE #{incident.id}</span>
+      {/* Header card */}
+      <div className="soc-card" style={{ marginBottom: "1rem", borderLeft: `3px solid ${riskCfg.color}` }}>
+        <div className="soc-card-body">
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "1rem" }}>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: "0.75rem", color: "oklch(0.45 0.010 240)", marginBottom: "0.4rem", fontFamily: "monospace" }}>
+                INC-{String(incident.id).padStart(3, "0")}
               </div>
-              <h1 className="text-lg font-bold" style={{ color: "oklch(0.92 0.01 240)" }}>{incident.title}</h1>
-              <div className="flex items-center gap-2 mt-2">
-                <Calendar className="w-3 h-3" style={{ color: "oklch(0.45 0.02 240)" }} />
-                <span className="font-mono text-xs" style={{ color: "oklch(0.45 0.02 240)" }}>
-                  {new Date(incident.createdAt).toLocaleString("pt-BR")}
-                </span>
+              <h1 style={{ fontSize: "1.15rem", fontWeight: 600, color: "oklch(0.92 0.008 240)", marginBottom: "0.5rem" }}>
+                {incident.title}
+              </h1>
+              <div style={{ display: "flex", alignItems: "center", gap: "0.375rem", fontSize: "0.75rem", color: "oklch(0.45 0.010 240)" }}>
+                <Calendar size={12} />
+                {new Date(incident.createdAt).toLocaleString("pt-BR")}
               </div>
             </div>
             <button
-              onClick={() => { if (confirm("Remover este incidente?")) deleteMutation.mutate({ id: incident.id }); }}
-              className="p-2 rounded transition-colors flex-shrink-0"
-              style={{ color: "oklch(0.45 0.02 240)", border: "1px solid oklch(0.22 0.03 240)" }}
-              onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = "oklch(0.65 0.32 0)"; (e.currentTarget as HTMLElement).style.borderColor = "oklch(0.65 0.32 0 / 0.4)"; }}
-              onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = "oklch(0.45 0.02 240)"; (e.currentTarget as HTMLElement).style.borderColor = "oklch(0.22 0.03 240)"; }}
+              className="soc-icon-btn soc-icon-btn-danger"
+              title="Excluir incidente"
+              onClick={() => { if (confirm("Remover este incidente permanentemente?")) deleteMutation.mutate({ id: incident.id }); }}
             >
-              <Trash2 className="w-4 h-4" />
+              <Trash2 size={15} />
             </button>
           </div>
         </div>
+      </div>
 
-        {/* Classification + Risk */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-          {/* Category */}
-          <div className="p-4 rounded" style={{ background: "oklch(0.09 0.012 240)", border: "1px solid oklch(0.22 0.03 240)" }}>
-            <div className="flex items-center gap-2 mb-3">
-              <Cpu className="w-4 h-4 neon-text-cyan" />
-              <h3 className="font-mono text-xs font-bold" style={{ color: "oklch(0.65 0.01 240)" }}>CLASSIFICAÇÃO ML</h3>
-            </div>
-            <div className="mb-3">
-              <span className={`badge-${incident.category} px-3 py-1.5 rounded font-mono text-sm font-bold`}>
+      {/* Classification + Risk row */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem", marginBottom: "1rem" }}>
+        {/* Category */}
+        <div className="soc-card">
+          <div className="soc-card-header">
+            <Cpu size={14} style={{ color: "oklch(0.82 0.20 155)" }} />
+            <span className="soc-card-title">Classificação ML</span>
+          </div>
+          <div className="soc-card-body">
+            <div style={{ marginBottom: "0.75rem" }}>
+              <span style={{ display: "inline-flex", alignItems: "center", padding: "4px 12px", borderRadius: 4, fontSize: "0.82rem", fontWeight: 600, color: catColor, background: `${catColor}18`, border: `1px solid ${catColor}40` }}>
                 {CATEGORY_LABELS[incident.category] ?? incident.category}
               </span>
             </div>
             {incident.confidence != null && incident.confidence > 0 && (
-              <div className="mb-3">
-                <div className="flex justify-between mb-1">
-                  <span className="font-mono text-xs" style={{ color: "oklch(0.45 0.02 240)" }}>CONFIANÇA</span>
-                  <span className="font-mono text-xs neon-text-cyan">{Math.round(incident.confidence * 100)}%</span>
+              <div style={{ marginBottom: "0.75rem" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "0.3rem", fontSize: "0.72rem", color: "oklch(0.45 0.010 240)" }}>
+                  <span>Confiança do modelo</span>
+                  <span style={{ color: "oklch(0.82 0.20 155)", fontWeight: 600 }}>{Math.round(incident.confidence * 100)}%</span>
                 </div>
-                <div className="h-1.5 rounded-full overflow-hidden" style={{ background: "oklch(0.18 0.02 240)" }}>
-                  <div className="h-full rounded-full transition-all duration-500" style={{ width: `${Math.round(incident.confidence * 100)}%`, background: "oklch(0.85 0.2 195)", boxShadow: "0 0 8px oklch(0.85 0.2 195 / 0.6)" }} />
+                <div className="soc-bar-track">
+                  <div className="soc-bar-fill" style={{ width: `${Math.round(incident.confidence * 100)}%`, background: "oklch(0.82 0.20 155)" }} />
                 </div>
               </div>
             )}
-            <p className="font-mono text-xs" style={{ color: "oklch(0.45 0.02 240)" }}>
+            <p style={{ fontSize: "0.78rem", color: "oklch(0.48 0.010 240)", lineHeight: 1.5 }}>
               {CATEGORY_DESCRIPTIONS[incident.category] ?? ""}
             </p>
           </div>
+        </div>
 
-          {/* Risk */}
-          <div className="p-4 rounded" style={{ background: "oklch(0.09 0.012 240)", border: `1px solid ${riskColor.replace(")", " / 0.25)")}` }}>
-            <div className="flex items-center gap-2 mb-3">
-              <AlertTriangle className="w-4 h-4" style={{ color: riskColor }} />
-              <h3 className="font-mono text-xs font-bold" style={{ color: "oklch(0.65 0.01 240)" }}>ANÁLISE DE RISCO</h3>
-            </div>
-            <div className="mb-3">
-              <span className={`risk-${incident.riskLevel} px-3 py-1.5 rounded font-mono text-sm font-bold`}>
-                {RISK_LABELS[incident.riskLevel] ?? incident.riskLevel}
+        {/* Risk */}
+        <div className="soc-card" style={{ borderTop: `2px solid ${riskCfg.color}40` }}>
+          <div className="soc-card-header">
+            <AlertTriangle size={14} style={{ color: riskCfg.color }} />
+            <span className="soc-card-title">Análise de Risco</span>
+          </div>
+          <div className="soc-card-body">
+            <div style={{ marginBottom: "0.75rem" }}>
+              <span style={{ display: "inline-flex", alignItems: "center", padding: "4px 12px", borderRadius: 4, fontSize: "0.82rem", fontWeight: 700, color: riskCfg.color, background: `${riskCfg.color}1a`, border: `1px solid ${riskCfg.color}50` }}>
+                {riskCfg.label}
               </span>
             </div>
-            <p className="font-mono text-xs" style={{ color: "oklch(0.45 0.02 240)" }}>
+            <p style={{ fontSize: "0.78rem", color: "oklch(0.48 0.010 240)", lineHeight: 1.5 }}>
               {RISK_DESCRIPTIONS[incident.riskLevel] ?? ""}
             </p>
           </div>
         </div>
+      </div>
 
-        {/* Description */}
-        <div className="p-5 rounded" style={{ background: "oklch(0.09 0.012 240)", border: "1px solid oklch(0.22 0.03 240)" }}>
-          <div className="flex items-center gap-2 mb-3">
-            <Shield className="w-4 h-4 neon-text-cyan" />
-            <h3 className="font-mono text-xs font-bold" style={{ color: "oklch(0.65 0.01 240)" }}>DESCRIÇÃO DO INCIDENTE</h3>
-          </div>
-          <p className="text-sm leading-relaxed" style={{ color: "oklch(0.75 0.01 240)", whiteSpace: "pre-wrap" }}>
+      {/* Description */}
+      <div className="soc-card">
+        <div className="soc-card-header">
+          <Shield size={14} style={{ color: "oklch(0.82 0.20 155)" }} />
+          <span className="soc-card-title">Descrição do Incidente</span>
+        </div>
+        <div className="soc-card-body">
+          <p style={{ fontSize: "0.875rem", color: "oklch(0.75 0.008 240)", lineHeight: 1.7, whiteSpace: "pre-wrap" }}>
             {incident.description}
           </p>
         </div>
       </div>
-    </CyberLayout>
+    </div>
   );
 }
