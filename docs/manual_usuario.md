@@ -718,3 +718,57 @@ O sistema foi desenvolvido de forma colaborativa por uma equipe de cinco integra
 ---
 
 *Manual atualizado em Abril de 2026 — Versão 5.0. Para suporte técnico, consulte o repositório: https://github.com/margefson/incident_security_system*
+
+## 7. Gerenciamento de Usuários (Admin)
+
+O painel **Usuários** no menu de administração permite controle completo sobre os usuários cadastrados.
+
+### 7.1 Editar Dados do Usuário
+
+1. Acesse **Admin → Usuários**
+2. Localize o usuário na tabela
+3. Clique no ícone de lápis (✏️) na coluna **Ações**
+4. Altere o **Nome** e/ou **Email** no formulário
+5. Clique em **Salvar Alterações**
+
+### 7.2 Resetar Senha
+
+Caso um usuário esqueça sua senha, o administrador pode redefini-la para o valor padrão:
+
+1. Clique no ícone de chave (🔑) na linha do usuário
+2. Confirme a operação no diálogo
+3. A senha será redefinida para **Security2026@**
+4. Oriente o usuário a alterar a senha no primeiro acesso via **Meu Perfil → Alterar Senha**
+
+### 7.3 Excluir Usuário
+
+> **Atenção:** A exclusão é **irreversível** e remove todos os incidentes e histórico do usuário.
+
+1. Clique no ícone de lixeira (🗑️) na linha do usuário
+2. Leia o aviso de confirmação
+3. Clique em **Excluir Permanentemente**
+
+### 7.4 Promover / Rebaixar Perfil
+
+- **Promover para Admin**: clique em **Promover** — o usuário ganha acesso ao painel administrativo
+- **Rebaixar para Usuário**: clique em **Rebaixar** — o usuário perde o acesso ao painel
+
+> **Nota de Segurança:** O administrador não pode editar, excluir ou resetar a própria conta via painel admin. Use a página **Meu Perfil** para gerenciar seus próprios dados.
+
+## 8. Dataset e Retreinamento ML
+
+### 8.1 Download do Dataset
+
+No menu **Admin → Machine Learning**, seção **Dataset de Treinamento**:
+
+- Clique em **Download XLSX** para baixar o arquivo `incidentes_cybersecurity_100.xlsx`
+- Clique em **Visualizar Online** para abrir a planilha no Microsoft Office Online (sem instalação)
+
+### 8.2 Retreinamento Dinâmico
+
+O botão **Retreinar Modelo** usa automaticamente:
+1. Todos os incidentes cadastrados no banco de dados (de todos os usuários)
+2. O dataset original de 100 amostras
+3. As novas amostras adicionadas manualmente no formulário
+
+Isso garante que novas categorias cadastradas sejam incorporadas ao modelo automaticamente.

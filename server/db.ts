@@ -425,3 +425,35 @@ export async function getIncidentHistory(incidentId: number) {
     .where(eq(incidentHistory.incidentId, incidentId))
     .orderBy(desc(incidentHistory.createdAt));
 }
+
+// ─── User Management helpers (admin) ────────────────────────────────────────
+export async function updateUserInfo(userId: number, data: { name?: string; email?: string }) {
+  const db = await getDb();
+  if (!db) return;
+  const updates: Record<string, string> = {};
+  if (data.name !== undefined) updates.name = data.name;
+  if (data.email !== undefined) updates.email = data.email;
+  if (Object.keys(updates).length === 0) return;
+  await db.update(users).set(updates).where(eq(users.id, userId));
+}
+
+export async function deleteUserById(userId: number) {
+  const db = await getDb();
+  if (!db) return;
+  // Delete related data first (incidents, history)
+  const userIncidents = await db
+    .select({ id: incidents.id })
+    .from(incidents)
+    .where(eq(incidents.userId, userId));
+  for (const inc of userIncidents) {
+    await db.delete(incidentHistory).where(eq(incidentHistory.incidentId, inc.id));
+  }
+  await db.delete(incidents).where(eq(incidents.userId, userId));
+  await db.delete(users).where(eq(users.id, userId));
+}
+
+export async function resetUserPassword(userId: number, newPasswordHash: string) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(users).set({ passwordHash: newPasswordHash }).where(eq(users.id, userId));
+}

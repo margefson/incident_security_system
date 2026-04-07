@@ -21,7 +21,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from "sonner";
 import {
   Brain, Download, RefreshCw, Plus, Trash2, BarChart2,
-  CheckCircle2, AlertTriangle, Database, Cpu,
+  CheckCircle2, AlertTriangle, Database, Cpu, ExternalLink, Table2,
 } from "lucide-react";
 
 type RiskLevel = "critical" | "high" | "medium" | "low";
@@ -56,6 +56,8 @@ export default function AdminML() {
     message: string;
     metrics?: Record<string, unknown>;
   } | null>(null);
+  const [, setShowOnlineViewer] = useState(false);
+  void setShowOnlineViewer;
 
   const metricsQuery = trpc.admin.getMLMetrics.useQuery();
   const datasetQuery = trpc.admin.getDataset.useQuery();
@@ -71,12 +73,15 @@ export default function AdminML() {
   });
 
   const DATASET_CDN_URL = "https://d2xsxph8kpxj0f.cloudfront.net/310519663148675640/KjT4emSwzjBHV8i56oSYsp/incidentes_cybersecurity_100_54912b47.xlsx";
+  const ONLINE_VIEWER_URL = `https://view.officeapps.live.com/op/view.aspx?src=${encodeURIComponent(DATASET_CDN_URL)}`;
 
   const handleDownloadDataset = () => {
     const a = document.createElement("a");
     a.href = DATASET_CDN_URL;
     a.download = "incidentes_cybersecurity_100.xlsx";
+    document.body.appendChild(a);
     a.click();
+    document.body.removeChild(a);
     toast.success("Download iniciado: incidentes_cybersecurity_100.xlsx");
   };
 
@@ -96,10 +101,6 @@ export default function AdminML() {
 
   const handleRetrain = () => {
     const validSamples = samples.filter((s) => s.description.trim() && s.category.trim());
-    if (validSamples.length === 0) {
-      toast.error("Adicione pelo menos uma amostra com descrição e categoria preenchidas.");
-      return;
-    }
     const risk_map: Record<string, RiskLevel> = {};
     for (const s of validSamples) {
       risk_map[s.category.toLowerCase().replace(/\s+/g, "_")] = s.riskLevel;
@@ -111,6 +112,7 @@ export default function AdminML() {
         category: s.category.toLowerCase().replace(/\s+/g, "_"),
       })),
       risk_map,
+      includeAllIncidents: true,
     });
   };
 
@@ -262,10 +264,18 @@ export default function AdminML() {
                 variant="outline"
                 className="font-mono text-xs gap-1.5"
                 onClick={handleDownloadDataset}
-                disabled={datasetQuery.isLoading || !dataset}
               >
                 <Download className="w-3.5 h-3.5" />
                 Download XLSX
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                className="font-mono text-xs gap-1.5"
+                onClick={() => window.open(ONLINE_VIEWER_URL, "_blank")}
+              >
+                <ExternalLink className="w-3.5 h-3.5" />
+                Visualizar Online
               </Button>
             </div>
 
@@ -309,10 +319,16 @@ export default function AdminML() {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <p className="text-xs font-mono text-muted-foreground">
-              Adicione amostras de novas categorias (ex: Engenharia Social, Insider Threat, APT) para expandir
-              o modelo. As amostras existentes do dataset original serão preservadas.
-            </p>
+            <div className="bg-primary/5 border border-primary/20 rounded-lg p-3">
+              <p className="text-xs font-mono text-primary font-semibold mb-1 flex items-center gap-1.5">
+                <Table2 className="w-3.5 h-3.5" />
+                Retreinamento Completo com Incidentes do Sistema
+              </p>
+              <p className="text-xs font-mono text-muted-foreground">
+                Ao clicar em "Retreinar Modelo", o sistema usa <span className="text-foreground font-semibold">todos os incidentes cadastrados</span> no banco
+                + o dataset original + as novas amostras abaixo. Novas categorias são incorporadas automaticamente.
+              </p>
+            </div>
 
             {/* Amostras */}
             <div className="space-y-3">

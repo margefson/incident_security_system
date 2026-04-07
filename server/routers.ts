@@ -27,6 +27,9 @@ import {
   searchIncidents,
   addIncidentHistory,
   getIncidentHistory,
+  updateUserInfo,
+  deleteUserById,
+  resetUserPassword,
 } from "./db";
 import { registerSchema, loginSchema, createIncidentSchema, validateJoi } from "./validation";
 import bcrypt from "bcryptjs";
@@ -465,6 +468,42 @@ const adminRouter = router({
       return { success: true };
     }),
 
+  // Edit user info
+  updateUser: adminProcedure
+    .input(z.object({
+      userId: z.number(),
+      name: z.string().min(1).max(100).optional(),
+      email: z.string().email().optional(),
+    }))
+    .mutation(async ({ input, ctx }) => {
+      if (input.userId === ctx.user.id) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Use a página de perfil para editar seus próprios dados" });
+      }
+      await updateUserInfo(input.userId, { name: input.name, email: input.email });
+      return { success: true };
+    }),
+  // Delete user
+  deleteUser: adminProcedure
+    .input(z.object({ userId: z.number() }))
+    .mutation(async ({ input, ctx }) => {
+      if (input.userId === ctx.user.id) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Você não pode excluir sua própria conta" });
+      }
+      await deleteUserById(input.userId);
+      return { success: true };
+    }),
+  // Reset user password to default
+  resetUserPassword: adminProcedure
+    .input(z.object({ userId: z.number() }))
+    .mutation(async ({ input, ctx }) => {
+      if (input.userId === ctx.user.id) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Use a página de perfil para alterar sua própria senha" });
+      }
+      const DEFAULT_PASSWORD = "Security2026@";
+      const hash = await bcrypt.hash(DEFAULT_PASSWORD, 12);
+      await resetUserPassword(input.userId, hash);
+      return { success: true };
+    }),
   // Global stats
   stats: adminProcedure.query(async () => {
     return getGlobalStats();
@@ -504,15 +543,32 @@ const adminRouter = router({
         title: z.string().optional(),
         description: z.string().min(1, "Descrição obrigatória"),
         category: z.string().min(1, "Categoria obrigatória"),
-      })).min(1, "Pelo menos uma amostra é necessária"),
+      })).optional().default([]),
       risk_map: z.record(z.string(), z.enum(["critical", "high", "medium", "low"])).optional(),
+      includeAllIncidents: z.boolean().optional().default(false),
     }))
     .mutation(async ({ input }) => {
       const ML_URL = process.env.ML_SERVICE_URL ?? "http://localhost:5001";
+      // If includeAllIncidents=true, fetch all incidents from DB and merge with new samples
+      let allSamples = [...input.samples];
+      if (input.includeAllIncidents) {
+        const dbIncidents = await getAllIncidents({ limit: 5000 });
+        const dbSamples = dbIncidents
+          .filter((i) => i.description && i.category && i.category !== "unknown")
+          .map((i) => ({
+            title: (i.title as string) || undefined,
+            description: i.description as string,
+            category: i.category as string,
+          }));
+        allSamples = [...dbSamples, ...allSamples];
+      }
+      if (allSamples.length === 0) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Nenhuma amostra disponível para retreinamento. Cadastre incidentes ou adicione amostras manuais." });
+      }
       const response = await fetch(`${ML_URL}/retrain`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ samples: input.samples, risk_map: input.risk_map ?? {} }),
+        body: JSON.stringify({ samples: allSamples, risk_map: input.risk_map ?? {} }),
       });
       if (!response.ok) {
         const err = await response.json() as { error?: string };

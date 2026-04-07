@@ -5,7 +5,7 @@
 ![Python](https://img.shields.io/badge/Python-3.11-3776AB?style=flat-square&logo=python)
 ![MySQL](https://img.shields.io/badge/MySQL-8.x-4479A1?style=flat-square&logo=mysql)
 ![ML Accuracy](https://img.shields.io/badge/ML%20Accuracy-97%25-brightgreen?style=flat-square)
-![Tests](https://img.shields.io/badge/Tests-296%20passing-brightgreen?style=flat-square)
+![Tests](https://img.shields.io/badge/tests-319%20passing-brightgreen)
 ![License](https://img.shields.io/badge/License-MIT-blue?style=flat-square)
 
 Plataforma de gerenciamento de incidentes de segurança cibernética com classificação automática por Machine Learning (TF-IDF + Naive Bayes), painel de administração global, **CRUD de categorias de incidentes (exclusivo para administradores)**, exportação de relatórios em PDF, notificações automáticas de risco crítico e interface SOC Portal — design profissional dark com tipografia Inter, sidebar compacta, badges coloridos por severidade e tabelas operacionais.
@@ -708,7 +708,7 @@ Tests: 296 passed
 | **8.5 Fluxo de Classificação** | `ml.test.ts` | 6 | Endpoint /classify, retorno category+confidence+method, fallback keyword |
 | **8.6 Admin ML — Dataset** | `ml.test.ts` | 4 | Download dataset, getMLMetrics, acesso admin-only |
 | **8.6 Admin ML — Retreinamento** | `ml.test.ts` | 4 | retrainModel, novas categorias, FORBIDDEN para user |
-**Total: 200 testes passando em 6 arquivos***
+**Total: 319 testes passando em 10 arquivos***
 
 ---
 

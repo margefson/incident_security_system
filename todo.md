@@ -275,3 +275,32 @@
 - [x] Atualizar README com busca, histórico, badge 296 testes
 - [x] Atualizar manual do usuário (seções 5.3, 6.4, 6.5, 6.6)
 - [x] Regenerar PDFs dos manuais
+
+## Sessão 5 — Gerenciamento Usuários, Dataset, Retreinamento (Abr 2026)
+- [ ] Admin: editar nome/email de usuário
+- [ ] Admin: excluir usuário do sistema
+- [ ] Admin: resetar senha de usuário para "Security2026@"
+- [ ] Corrigir download do dataset incidentes_cybersecurity_100.xlsx
+- [ ] Atualizar planilha dataset com novas categorias cadastradas dinamicamente
+- [ ] Retreinamento dinâmico usando todos os incidentes cadastrados + categorias
+- [ ] Visualização online da planilha (tabela HTML interativa)
+- [ ] Testes individuais para gerenciamento de usuários (S5-1 a S5-x)
+- [ ] Testes individuais para dataset e retreinamento (S5-x a S5-y)
+- [ ] Atualizar README com novas funcionalidades
+- [ ] Atualizar manuais PDF
+- [ ] Commitar no GitHub
+
+## Sessão 5 — Gerenciamento de Usuários, Dataset, Retreinamento
+
+- [x] Admin: editar nome/email de usuários
+- [x] Admin: excluir usuário com confirmação
+- [x] Admin: resetar senha para Security2026@
+- [x] Admin: proteção contra auto-edição/exclusão
+- [x] Dataset: botão de download sem dependência do Flask
+- [x] Dataset: botão "Visualizar Online" via Microsoft Office Online
+- [x] ML: retreinamento com todos os incidentes do banco (includeAllIncidents)
+- [x] ML: samples opcional no input do retrainModel
+- [x] 23 novos testes S5-1 a S5-6 (319 total em 10 arquivos)
+- [x] README atualizado (badge 319, seções 4.4, 5.3, 5.4)
+- [x] Manual do usuário atualizado (seções 7 e 8)
+- [x] PDFs dos manuais regenerados
