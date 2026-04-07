@@ -330,17 +330,17 @@
 
 ## Sessão 7 — Segurança de Senha e Redefinição por E-mail
 
-- [ ] Bloquear CTRL+C e CTRL+V no campo de senha (login e cadastro)
-- [ ] Redirecionar para troca de senha obrigatória após login com senha padrão (Security2026@)
-- [ ] Fluxo de redefinição de senha por e-mail com link de 10 minutos
-- [ ] Tabela password_reset_tokens no banco de dados
-- [ ] Envio de e-mail com link de redefinição (Nodemailer ou SMTP)
-- [ ] Página de redefinição de senha (/reset-password?token=...)
-- [ ] Botão/link "Esqueci minha senha" na tela de login
-- [ ] Validação de e-mail válido no formulário de redefinição
-- [ ] Testes individuais para todas as novas funcionalidades (S7)
-- [ ] Atualizar README e manuais
-- [ ] Commitar no GitHub
+- [x] Bloquear CTRL+C e CTRL+V no campo de senha (login e cadastro)
+- [x] Redirecionar para troca de senha obrigatória após login com senha padrão (Security2026@)
+- [x] Fluxo de redefinição de senha por e-mail com link de 10 minutos
+- [x] Tabela password_reset_tokens no banco de dados
+- [x] Envio de e-mail com link de redefinição (Nodemailer ou SMTP)
+- [x] Página de redefinição de senha (/reset-password?token=...)
+- [x] Botão/link "Esqueci minha senha" na tela de login
+- [x] Validação de e-mail válido no formulário de redefinição
+- [x] Testes individuais para todas as novas funcionalidades (S7)
+- [x] Atualizar README e manuais
+- [x] Commitar no GitHub
 
 ## Sessão 7 — Segurança de Senha
 
