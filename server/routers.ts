@@ -41,7 +41,7 @@ const CATEGORY_RISK: Record<string, "critical" | "high" | "medium" | "low"> = {
 async function classifyIncident(
   title: string,
   description: string
-): Promise<{ category: string; confidence: number }> {
+): Promise<{ category: string; confidence: number; method: string }> {
   try {
     const response = await fetch("http://localhost:5001/classify", {
       method: "POST",
@@ -51,7 +51,7 @@ async function classifyIncident(
     });
     if (!response.ok) throw new Error("ML service error");
     const data = (await response.json()) as { category: string; confidence: number };
-    return data;
+    return { ...data, method: "ml" };
   } catch {
     // Fallback: keyword-based classification
     return fallbackClassify(title, description);
@@ -61,7 +61,7 @@ async function classifyIncident(
 function fallbackClassify(
   title: string,
   description: string
-): { category: string; confidence: number } {
+): { category: string; confidence: number; method: string } {
   const text = `${title} ${description}`.toLowerCase();
   const scores: Record<string, number> = {
     phishing: 0,
@@ -88,9 +88,9 @@ function fallbackClassify(
   for (const kw of vazamentoKw) if (text.includes(kw)) scores.vazamento_de_dados += 1;
 
   const best = Object.entries(scores).sort((a, b) => b[1] - a[1])[0];
-  if (!best || best[1] === 0) return { category: "unknown", confidence: 0 };
+  if (!best || best[1] === 0) return { category: "unknown", confidence: 0, method: "keyword" };
   const total = Object.values(scores).reduce((a, b) => a + b, 0);
-  return { category: best[0], confidence: Math.round((best[1] / total) * 100) / 100 };
+  return { category: best[0], confidence: Math.round((best[1] / total) * 100) / 100, method: "keyword" };
 }
 
 // ─── Auth Router ───────────────────────────────────────────────────────────
@@ -288,7 +288,7 @@ const incidentsRouter = router({
     .mutation(async ({ input }) => {
       const result = await classifyIncident("", input.description);
       const riskLevel = CATEGORY_RISK[result.category] ?? "medium";
-      return { category: result.category, riskLevel, confidence: result.confidence };
+      return { category: result.category, riskLevel, confidence: result.confidence, method: result.method };
     }),
 });
 // ─── Categories Router ────────────────────────────────────────────────────────────
@@ -381,9 +381,64 @@ const adminRouter = router({
   stats: adminProcedure.query(async () => {
     return getGlobalStats();
   }),
+  // ─── ML Procedures ───────────────────────────────────────────────────────
+  getMLMetrics: adminProcedure.query(async () => {
+    const ML_URL = process.env.ML_SERVICE_URL ?? "http://localhost:5001";
+    const response = await fetch(`${ML_URL}/metrics`);
+    if (!response.ok) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "ML service unavailable" });
+    const data = await response.json() as {
+      method: string;
+      dataset_size: number;
+      categories: string[];
+      cv_accuracy_mean: number;
+      cv_accuracy_std: number;
+      train_accuracy: number;
+      category_distribution: Record<string, number>;
+    };
+    return data;
+  }),
+  getDataset: adminProcedure.query(async () => {
+    const ML_URL = process.env.ML_SERVICE_URL ?? "http://localhost:5001";
+    const response = await fetch(`${ML_URL}/dataset`);
+    if (!response.ok) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "ML service unavailable" });
+    const data = await response.json() as {
+      filename: string;
+      base64: string;
+      total_samples: number;
+      category_distribution: Record<string, number>;
+      preview: Array<{ title: string; description: string; category: string }>;
+    };
+    return data;
+  }),
+  retrainModel: adminProcedure
+    .input(z.object({
+      samples: z.array(z.object({
+        title: z.string().optional(),
+        description: z.string().min(1, "Descrição obrigatória"),
+        category: z.string().min(1, "Categoria obrigatória"),
+      })).min(1, "Pelo menos uma amostra é necessária"),
+      risk_map: z.record(z.string(), z.enum(["critical", "high", "medium", "low"])).optional(),
+    }))
+    .mutation(async ({ input }) => {
+      const ML_URL = process.env.ML_SERVICE_URL ?? "http://localhost:5001";
+      const response = await fetch(`${ML_URL}/retrain`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ samples: input.samples, risk_map: input.risk_map ?? {} }),
+      });
+      if (!response.ok) {
+        const err = await response.json() as { error?: string };
+        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: err.error ?? "Retrain failed" });
+      }
+      const data = await response.json() as {
+        success: boolean;
+        message: string;
+        metrics: Record<string, unknown>;
+      };
+      return data;
+    }),
 });
-
-// ─── Reports Router ───────────────────────────────────────────────────────
+// ─── Reports Routerr ───────────────────────────────────────────────────────
 const reportsRouter = router({
   exportPdf: protectedProcedure
     .input(z.object({
@@ -441,8 +496,7 @@ const reportsRouter = router({
       };
     }),
 });
-
-// ─── App Router ────────────────────────────────────────────────────────
+// ─── App Router ─────────────────────────────────────────────────────────
 export const appRouter = router({
   system: systemRouter,
   auth: authRouter,

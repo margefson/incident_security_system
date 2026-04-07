@@ -14,6 +14,7 @@ import IncidentDetail from "./pages/IncidentDetail";
 import RiskAnalysis from "./pages/RiskAnalysis";
 import Admin from "./pages/Admin";
 import AdminCategories from "./pages/AdminCategories";
+import AdminML from "./pages/AdminML";
 function Router() {
   return (
     <Switch>
@@ -27,6 +28,7 @@ function Router() {
       <Route path="/risk" component={RiskAnalysis} />
       <Route path="/admin" component={Admin} />
       <Route path="/admin/categories" component={AdminCategories} />
+      <Route path="/admin/ml" component={AdminML} />
       <Route path="/404" component={NotFound} />
       <Route component={NotFound} />
     </Switch>

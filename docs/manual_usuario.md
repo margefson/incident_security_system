@@ -312,7 +312,35 @@ O modelo foi treinado com o arquivo `incidentes_cybersecurity_100.xlsx`, contend
 
 ### 8.5 Fluxo de Classificação
 
-O servidor Flask (porta 5001) é iniciado manualmente antes do servidor Node.js. A comunicação entre os dois servidores é interna (localhost), nunca exposta publicamente. O endpoint `/classify` recebe um JSON com `title` e `description`, processa o texto e retorna `category`, `confidence` e `risk_level`.
+O servidor Flask (porta 5001) é iniciado manualmente antes do servidor Node.js. A comunicação entre os dois servidores é interna (localhost), nunca exposta publicamente. O endpoint `/classify` recebe um JSON com `title` e `description`, processa o texto e retorna `category`, `confidence`, `risk_level` e `method`.
+
+O campo `method` indica a origem da classificação:
+
+| Valor | Descrição |
+|---|---|
+| `"ml"` | Classificação realizada pelo modelo TF-IDF + Naive Bayes (servidor Flask disponível) |
+| `"keyword"` | Classificação por palavras-chave (fallback automático quando o servidor Flask está indisponível) |
+
+### 8.6 Gestão do Dataset e Retreinamento (Admin)
+
+Administradores têm acesso à tela **Machine Learning** (`/admin/ml`) com as seguintes funcionalidades:
+
+**Download do Dataset de Treinamento:** O botão "Baixar Dataset" disponibiliza o arquivo `incidentes_cybersecurity_100.xlsx` diretamente no navegador. O arquivo contém as 100 amostras originais (20 por categoria) usadas para treinar o modelo atual.
+
+**Métricas do Modelo:** A tela exibe as métricas atuais do modelo (acurácia de treino, acurácia CV, tamanho do dataset, distribuição por categoria).
+
+**Retreinamento com Novas Categorias:** A seção "Retreinar Modelo" permite que o administrador adicione novas amostras de treinamento para categorias existentes ou novas categorias que não fazem parte das 5 originais. O formulário solicita:
+
+| Campo | Obrigatório | Descrição |
+|---|---|---|
+| Título | Não | Título do incidente de exemplo |
+| Descrição | Sim | Texto descritivo do incidente |
+| Categoria | Sim | Rótulo da categoria (ex: `engenharia_social`) |
+| Nível de Risco | Sim | `critical`, `high`, `medium` ou `low` |
+
+Após o retreinamento, o modelo é atualizado imediatamente e as novas categorias passam a ser reconhecidas pelo endpoint `/classify`. As métricas de desempenho são exibidas na tela após o processo.
+
+> **Nota:** O retreinamento é incremental — as novas amostras são adicionadas ao dataset existente antes de retreinar o modelo completo. Recomenda-se fornecer pelo menos 5 amostras por nova categoria para garantir boa acurácia.
 
 ---
 
@@ -661,7 +689,7 @@ O sistema foi desenvolvido de forma colaborativa por uma equipe de cinco integra
 | Área | Integrante(s) | Responsabilidades |
 |---|---|---|
 | **Front-end** | Nattan e Keven | Desenvolvimento de todas as interfaces React: páginas de login, registro, dashboard, listagem de incidentes, formulário de novo incidente, detalhe do incidente, análise de risco e painel de administração. Implementação do design system SOC Portal (CSS variables OKLCH, fonte Inter, sidebar compacta, badges de severidade coloridos). Integração com hooks tRPC e componentes shadcn/ui. |
-| **Back-end** | Margefson | Implementação completa da API tRPC com Express: routers de autenticação (bcryptjs, JWT), incidentes, administração e exportação de relatórios. Validação de entradas com Joi (incluindo regras robustas de complexidade de senha), controle de acesso por papel (user/admin), 8 requisitos de segurança (helmet, CORS, rate limiting, IDOR), integração com serviços Flask internos e suite de 162 testes Vitest (incluindo testes de consistência do design system SOC Portal, CRUD de categorias e recomendações de segurança contextualizadas). |
+| **Back-end** | Margefson | Implementação completa da API tRPC com Express: routers de autenticação (bcryptjs, JWT), incidentes, administração e exportação de relatórios. Validação de entradas com Joi (incluindo regras robustas de complexidade de senha), controle de acesso por papel (user/admin), 8 requisitos de segurança (helmet, CORS, rate limiting, IDOR), integração com serviços Flask internos e suite de 191 testes Vitest (incluindo testes de consistência do design system SOC Portal, CRUD de categorias, recomendações de segurança contextualizadas e classificação automática por Machine Learning). |
 | **Banco de Dados** | Nattan | Modelagem do schema relacional com Drizzle ORM: definição das tabelas `users` e `incidents`, tipos enumerados para categoria e nível de risco, configuração das migrações automáticas e implementação dos helpers de consulta em `server/db.ts`. |
 | **Classificador ML** | Josias e Keven | Construção do pipeline de classificação: pré-processamento do dataset de 100 amostras, vetorização TF-IDF (5.000 features, bigramas) e classificador Multinomial Naive Bayes. Servidor Flask de classificação (porta 5001) e servidor Flask de geração de relatórios PDF com ReportLab (porta 5002). |
 

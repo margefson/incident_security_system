@@ -5,7 +5,7 @@
 ![Python](https://img.shields.io/badge/Python-3.11-3776AB?style=flat-square&logo=python)
 ![MySQL](https://img.shields.io/badge/MySQL-8.x-4479A1?style=flat-square&logo=mysql)
 ![ML Accuracy](https://img.shields.io/badge/ML%20Accuracy-97%25-brightgreen?style=flat-square)
-![Tests](https://img.shields.io/badge/Tests-162%20passing-brightgreen?style=flat-square)
+![Tests](https://img.shields.io/badge/Tests-191%20passing-brightgreen?style=flat-square)
 ![License](https://img.shields.io/badge/License-MIT-blue?style=flat-square)
 
 Plataforma de gerenciamento de incidentes de segurança cibernética com classificação automática por Machine Learning (TF-IDF + Naive Bayes), painel de administração global, **CRUD de categorias de incidentes (exclusivo para administradores)**, exportação de relatórios em PDF, notificações automáticas de risco crítico e interface SOC Portal — design profissional dark com tipografia Inter, sidebar compacta, badges coloridos por severidade e tabelas operacionais.
@@ -611,7 +611,8 @@ Saída esperada:
 ✓ server/security.test.ts (34 tests)
 ✓ server/categories.test.ts (21 tests)
 ✓ server/recommendations.test.ts (27 tests)
-Tests: 162 passed
+✓ server/ml.test.ts (29 tests)
+Tests: 191 passed
 ```
 
 ### Cobertura dos Testes
@@ -656,8 +657,14 @@ Tests: 162 passed
 | **7.5 DDoS → CDN** | `recommendations.test.ts` | 4 | Ativa recomendação, prioridade alta, CDN, rate limiting, auto-scaling |
 | **7.5 Múltiplas Categorias** | `recommendations.test.ts` | 4 | Múltiplas recomendações, ordenação por prioridade, sem incidentes, categoria desconhecida |
 | **7.5 Estrutura dos Dados** | `recommendations.test.ts` | 4 | Campos obrigatórios, priority válido, count correto, campo recommendations sempre presente |
-
-**Total: 162 testes passando em 5 arquivos**
+| **8.1 Arquitetura TF-IDF** | `ml.test.ts` | 3 | Config ngram_range=(1,2), max_features=5000, sublinear_tf=True |
+| **8.2 Dataset de Treinamento** | `ml.test.ts` | 3 | 100 amostras, 5 categorias, 20 por categoria |
+| **8.3 Métricas de Desempenho** | `ml.test.ts` | 4 | Acurácia treino 100%, CV 97%, 5 categorias, 5000 features |
+| **8.4 Mapeamento de Risco** | `ml.test.ts` | 5 | Cada categoria mapeia para o risco correto (critical/high/medium/low) |
+| **8.5 Fluxo de Classificação** | `ml.test.ts` | 6 | Endpoint /classify, retorno category+confidence+method, fallback keyword |
+| **8.6 Admin ML — Dataset** | `ml.test.ts` | 4 | Download dataset, getMLMetrics, acesso admin-only |
+| **8.6 Admin ML — Retreinamento** | `ml.test.ts` | 4 | retrainModel, novas categorias, FORBIDDEN para user |
+**Total: 191 testes passando em 6 arquivos***
 
 ---
 
