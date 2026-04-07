@@ -5,7 +5,7 @@
 ![Python](https://img.shields.io/badge/Python-3.11-3776AB?style=flat-square&logo=python)
 ![MySQL](https://img.shields.io/badge/MySQL-8.x-4479A1?style=flat-square&logo=mysql)
 ![ML Accuracy](https://img.shields.io/badge/ML%20Accuracy-97%25-brightgreen?style=flat-square)
-![Tests](https://img.shields.io/badge/Tests-200%20passing-brightgreen?style=flat-square)
+![Tests](https://img.shields.io/badge/Tests-233%20passing-brightgreen?style=flat-square)
 ![License](https://img.shields.io/badge/License-MIT-blue?style=flat-square)
 
 Plataforma de gerenciamento de incidentes de segurança cibernética com classificação automática por Machine Learning (TF-IDF + Naive Bayes), painel de administração global, **CRUD de categorias de incidentes (exclusivo para administradores)**, exportação de relatórios em PDF, notificações automáticas de risco crítico e interface SOC Portal — design profissional dark com tipografia Inter, sidebar compacta, badges coloridos por severidade e tabelas operacionais.
@@ -180,11 +180,13 @@ Node.js recebe via tRPC incidents.create
 - Lista de incidentes recentes com indicador visual de risco
 - Botão de exportação PDF integrado ao dashboard
 
-### Listagem e Filtros
+### Listagem e Filtros Avançados
 - Listagem paginada dos incidentes do usuário autenticado
-- Filtros por categoria e nível de risco
-- Busca por texto no título
+- **Filtros avançados**: categoria, nível de risco, data inicial e data final
+- Contador de filtros ativos com botão de limpeza rápida
+- Busca por texto no título e descrição
 - Ordenação por data (mais recente primeiro)
+- **Exportação CSV** com BOM UTF-8, aspas escapadas e labels legíveis
 - Exportação PDF com filtros aplicados
 
 ### Detalhe do Incidente
@@ -226,6 +228,13 @@ Node.js recebe via tRPC incidents.create
 - Modo admin: relatório global com nome do usuário por incidente
 - Tema profissional aplicado ao PDF com paleta SOC Portal dark
 - Download automático com nome de arquivo timestampado
+
+### Perfil do Usuário (`/profile`)
+- Visualização de dados da conta (nome, e-mail, papel, data de criação)
+- Avatar com inicial do nome e badge de papel (Administrador/Usuário)
+- Estatísticas pessoais: total de incidentes, críticos, em aberto, resolvidos
+- Distribuição por nível de risco com barras de progresso percentuais
+- Incidente mais recente com categoria e nível de risco
 
 ### Notificações de Risco Crítico
 - Alerta automático ao administrador do sistema quando um incidente crítico é registrado

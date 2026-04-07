@@ -2,12 +2,17 @@ import "dotenv/config";
 import express from "express";
 import { createServer } from "http";
 import net from "net";
+import { spawn } from "child_process";
+import path from "path";
+import { fileURLToPath } from "url";
 import { createExpressMiddleware } from "@trpc/server/adapters/express";
 import { registerOAuthRoutes } from "./oauth";
 import { appRouter } from "../routers";
 import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
 import { applySecurityMiddleware } from "../security";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
@@ -28,9 +33,50 @@ async function findAvailablePort(startPort: number = 3000): Promise<number> {
   throw new Error(`No available port found starting from ${startPort}`);
 }
 
+function startFlaskServer(scriptName: string, port: number) {
+  const mlDir = path.resolve(__dirname, "../../ml");
+  const proc = spawn("python3", [path.join(mlDir, scriptName)], {
+    cwd: mlDir,
+    detached: false,
+    stdio: ["ignore", "pipe", "pipe"],
+    env: { ...process.env, ML_PORT: String(port) },
+  });
+  proc.stdout?.on("data", (d: Buffer) => {
+    const msg = d.toString().trim();
+    if (msg) console.log(`[Flask:${port}] ${msg}`);
+  });
+  proc.stderr?.on("data", (d: Buffer) => {
+    const msg = d.toString().trim();
+    if (msg && !msg.includes("WARNING") && !msg.includes("Debugger")) {
+      console.error(`[Flask:${port}] ${msg}`);
+    }
+  });
+  proc.on("exit", (code: number | null) => {
+    console.log(`[Flask:${port}] process exited with code ${code}`);
+  });
+  return proc;
+}
+
 async function startServer() {
   const app = express();
   const server = createServer(app);
+
+  // ─── Start Python ML services ───────────────────────────────────────────────
+  const mlClassifierAvailable = await isPortAvailable(5001);
+  if (mlClassifierAvailable) {
+    console.log("[ML] Starting classifier server on port 5001...");
+    startFlaskServer("classifier_server.py", 5001);
+  } else {
+    console.log("[ML] Classifier server already running on port 5001");
+  }
+
+  const mlPdfAvailable = await isPortAvailable(5002);
+  if (mlPdfAvailable) {
+    console.log("[ML] Starting PDF server on port 5002...");
+    startFlaskServer("pdf_server.py", 5002);
+  } else {
+    console.log("[ML] PDF server already running on port 5002");
+  }
 
   // ─── Security Middleware (req. 6.5, 6.6, 6.7) ──────────────────────────────
   // Applied BEFORE body parsers and route handlers.

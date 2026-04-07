@@ -207,3 +207,18 @@
 - [x] Atualizar Manual de Implantação com seção 7.5
 - [x] Gerar PDFs atualizados
 - [x] Commitar no GitHub
+
+## Correções de Bugs e Funcionalidades Avançadas (Fase Final)
+- [x] Bug: Rota /profile 404 — criar página Profile.tsx e registrar no App.tsx
+- [x] Bug: Label "Seção 8 —" no AdminML — verificado: label visível já está correto ("Machine Learning")
+- [x] Filtros avançados na listagem de incidentes: categoria, risco, data inicial, data final
+- [x] Contador de filtros ativos com botão de limpeza rápida
+- [x] Exportação CSV dos incidentes filtrados (BOM UTF-8, aspas escapadas, labels legíveis)
+- [x] Relatório consolidado no painel admin (ExportPdfButton com adminMode=true)
+- [x] Painel Admin: adicionar card de Machine Learning e stats globais (total, usuários, críticos, categorias)
+- [x] Testes: advanced_features.test.ts com 33 testes (AF-1 a AF-5)
+- [x] Total de testes: 233 passando em 7 arquivos
+- [x] README.md atualizado (badge 233 testes, filtros avançados, perfil, CSV)
+- [x] Manual do usuário atualizado (seção 5.3 filtros avançados, seção 5.4 CSV)
+- [x] PDFs dos manuais regenerados
+- [x] Checkpoint final e commit no GitHub

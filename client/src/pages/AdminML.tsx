@@ -70,20 +70,14 @@ export default function AdminML() {
     },
   });
 
+  const DATASET_CDN_URL = "https://d2xsxph8kpxj0f.cloudfront.net/310519663148675640/KjT4emSwzjBHV8i56oSYsp/incidentes_cybersecurity_100_54912b47.xlsx";
+
   const handleDownloadDataset = () => {
-    if (!datasetQuery.data) return;
-    const { base64, filename } = datasetQuery.data;
-    const blob = new Blob(
-      [Uint8Array.from(atob(base64), (c) => c.charCodeAt(0))],
-      { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }
-    );
-    const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
-    a.href = url;
-    a.download = filename;
+    a.href = DATASET_CDN_URL;
+    a.download = "incidentes_cybersecurity_100.xlsx";
     a.click();
-    URL.revokeObjectURL(url);
-    toast.success(`Download iniciado: ${filename}`);
+    toast.success("Download iniciado: incidentes_cybersecurity_100.xlsx");
   };
 
   const addSample = () => {
@@ -133,7 +127,7 @@ export default function AdminML() {
             Machine Learning
           </h1>
           <p className="soc-page-sub">
-            Seção 8 — Classificação automática de incidentes via TF-IDF + Naive Bayes
+            Classificação automática de incidentes via TF-IDF + Naive Bayes
           </p>
         </div>
 

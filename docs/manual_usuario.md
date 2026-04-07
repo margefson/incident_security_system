@@ -15,6 +15,8 @@
 3. [Painel de Controle (Dashboard)](#3-painel-de-controle-dashboard)
 4. [Registro de Incidentes](#4-registro-de-incidentes)
 5. [Listagem e Filtros de Incidentes](#5-listagem-e-filtros-de-incidentes)
+   - [5.3 Filtros Disponíveis](#53-filtros-disponíveis)
+   - [5.4 Exportação CSV](#54-exportação-csv)
 6. [Visualização Detalhada de Incidente](#6-visualização-detalhada-de-incidente)
 7. [Análise de Risco](#7-análise-de-risco)
 8. [Classificação Automática por Machine Learning](#8-classificação-automática-por-machine-learning)
@@ -198,7 +200,7 @@ A barra de filtros acima da tabela oferece três controles independentes:
 
 O contador no cabeçalho da página exibe "X de Y registros" refletindo o número de itens visíveis após a aplicação dos filtros.
 
-### 5.4 Exclusão de Incidente
+### 5.5 Exclusão de Incidente
 
 Ao clicar no ícone de lixeira, uma caixa de confirmação é exibida. Após confirmação, o incidente é removido permanentemente do banco de dados e os contadores do Dashboard são atualizados automaticamente.
 
