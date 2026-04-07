@@ -137,27 +137,27 @@
 - [x] Commitar no GitHub
 
 ## Redesign Frontend (Estilo v2x_security_system) + CRUD de Categorias
-- [ ] Reverter CSS global para o tema do v2x_security_system (OKLCH dark theme, fontes Inter+JetBrains Mono)
-- [ ] Adaptar DashboardLayout para o estilo v2x (sidebar com SidebarProvider, ícones, font-mono)
-- [ ] Redesenhar Login no estilo v2x (card dark, ícone Shield, blur decorativo)
-- [ ] Redesenhar Register no estilo v2x (card dark, ícone Shield)
-- [ ] Redesenhar Dashboard no estilo v2x (StatCards, gráficos AreaChart/PieChart, eventos recentes)
-- [ ] Redesenhar Incidents no estilo v2x (tabela operacional, badges coloridos)
-- [ ] Redesenhar NewIncident no estilo v2x (formulário clean)
-- [ ] Redesenhar IncidentDetail no estilo v2x
-- [ ] Redesenhar RiskAnalysis no estilo v2x
-- [ ] Redesenhar Admin no estilo v2x
-- [ ] Atualizar index.html com fontes Google (Inter + JetBrains Mono)
-- [ ] Schema: adicionar tabela `categories` (id, name, description, isActive, createdAt, updatedAt)
-- [ ] Backend: procedures categories.list, categories.create, categories.update, categories.delete (adminProcedure)
-- [ ] Backend: seed das 5 categorias padrão (Phishing, Malware, Força Bruta, DDoS, Vazamento)
-- [ ] Frontend: página Categories.tsx (CRUD admin) com listagem, criação, edição e exclusão
-- [ ] Frontend: rota /admin/categories protegida por role admin
-- [ ] Frontend: usar categorias dinâmicas no formulário NewIncident (select com categorias do banco)
-- [ ] Testes: casos de teste individuais para CRUD de categorias (create, list, update, delete, acesso negado para user)
-- [ ] Atualizar README com CRUD de categorias
-- [ ] Atualizar Manual do Usuário com CRUD de categorias
-- [ ] Atualizar Manual de Implantação com CRUD de categorias
+- [x] Reverter CSS global para o tema do v2x_security_system (OKLCH dark theme, fontes Inter+JetBrains Mono)
+- [x] Adaptar DashboardLayout para o estilo v2x (sidebar com SidebarProvider, ícones, font-mono)
+- [x] Redesenhar Login no estilo v2x (card dark, ícone Shield, blur decorativo)
+- [x] Redesenhar Register no estilo v2x (card dark, ícone Shield)
+- [x] Redesenhar Dashboard no estilo v2x (StatCards, gráficos AreaChart/PieChart, eventos recentes)
+- [x] Redesenhar Incidents no estilo v2x (tabela operacional, badges coloridos)
+- [x] Redesenhar NewIncident no estilo v2x (formulário clean)
+- [x] Redesenhar IncidentDetail no estilo v2x
+- [x] Redesenhar RiskAnalysis no estilo v2x
+- [x] Redesenhar Admin no estilo v2x
+- [x] Atualizar index.html com fontes Google (Inter + JetBrains Mono)
+- [x] Schema: adicionar tabela `categories` (id, name, description, isActive, createdAt, updatedAt)
+- [x] Backend: procedures categories.list, categories.create, categories.update, categories.delete (adminProcedure)
+- [x] Backend: seed das 5 categorias padrão (Phishing, Malware, Força Bruta, DDoS, Vazamento)
+- [x] Frontend: página Categories.tsx (CRUD admin) com listagem, criação, edição e exclusão
+- [x] Frontend: rota /admin/categories protegida por role admin
+- [x] Frontend: usar categorias dinâmicas no formulário NewIncident (select com categorias do banco)
+- [x] Testes: casos de teste individuais para CRUD de categorias (create, list, update, delete, acesso negado para user)
+- [x] Atualizar README com CRUD de categorias
+- [x] Atualizar Manual do Usuário com CRUD de categorias
+- [x] Atualizar Manual de Implantação com CRUD de categorias
 - [x] Gerar PDFs atualizados
 - [x] Commitar no GitHub
 
