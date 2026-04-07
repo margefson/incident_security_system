@@ -17,6 +17,7 @@ export default function Profile() {
   const { user } = useAuth();
   const statsQuery = trpc.incidents.stats.useQuery();
   const incidentsQuery = trpc.incidents.list.useQuery();
+  const statusStatsQuery = trpc.incidents.statusStats.useQuery();
 
   const stats = statsQuery.data;
   const incidents = incidentsQuery.data ?? [];
@@ -25,8 +26,8 @@ export default function Profile() {
   const total = incidents.length;
   const critical = incidents.filter((i) => i.riskLevel === "critical").length;
   const high = incidents.filter((i) => i.riskLevel === "high").length;
-  const open = 0; // status field not in current schema
-  const resolved = 0; // status field not in current schema
+  const open = statusStatsQuery.data?.open ?? 0;
+  const resolved = statusStatsQuery.data?.resolved ?? 0;
 
   // Most recent incident
   const recent = incidents.length > 0 ? incidents[0] : null;

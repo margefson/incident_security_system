@@ -41,6 +41,14 @@ function startFlaskServer(scriptName: string, port: number) {
     stdio: ["ignore", "pipe", "pipe"],
     env: { ...process.env, ML_PORT: String(port) },
   });
+  // Gracefully handle spawn errors (e.g. python3 not installed in container)
+  proc.on("error", (err: NodeJS.ErrnoException) => {
+    if (err.code === "ENOENT") {
+      console.warn(`[Flask:${port}] python3 not found — ML/PDF service will run in fallback mode.`);
+    } else {
+      console.error(`[Flask:${port}] spawn error: ${err.message}`);
+    }
+  });
   proc.stdout?.on("data", (d: Buffer) => {
     const msg = d.toString().trim();
     if (msg) console.log(`[Flask:${port}] ${msg}`);
@@ -52,7 +60,7 @@ function startFlaskServer(scriptName: string, port: number) {
     }
   });
   proc.on("exit", (code: number | null) => {
-    console.log(`[Flask:${port}] process exited with code ${code}`);
+    if (code !== null) console.log(`[Flask:${port}] process exited with code ${code}`);
   });
   return proc;
 }

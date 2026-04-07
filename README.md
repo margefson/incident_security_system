@@ -5,7 +5,7 @@
 ![Python](https://img.shields.io/badge/Python-3.11-3776AB?style=flat-square&logo=python)
 ![MySQL](https://img.shields.io/badge/MySQL-8.x-4479A1?style=flat-square&logo=mysql)
 ![ML Accuracy](https://img.shields.io/badge/ML%20Accuracy-97%25-brightgreen?style=flat-square)
-![Tests](https://img.shields.io/badge/Tests-233%20passing-brightgreen?style=flat-square)
+![Tests](https://img.shields.io/badge/Tests-261%20passing-brightgreen?style=flat-square)
 ![License](https://img.shields.io/badge/License-MIT-blue?style=flat-square)
 
 Plataforma de gerenciamento de incidentes de segurança cibernética com classificação automática por Machine Learning (TF-IDF + Naive Bayes), painel de administração global, **CRUD de categorias de incidentes (exclusivo para administradores)**, exportação de relatórios em PDF, notificações automáticas de risco crítico e interface SOC Portal — design profissional dark com tipografia Inter, sidebar compacta, badges coloridos por severidade e tabelas operacionais.
@@ -40,6 +40,22 @@ O sistema opera com três servidores independentes: um servidor Node.js/Express 
 ---
 
 ## Arquitetura
+
+> O diagrama abaixo foi gerado automaticamente a partir de `docs/architecture.d2` e representa a comunicação entre todas as camadas do sistema.
+
+![Diagrama de Arquitetura do Sistema](https://d2xsxph8kpxj0f.cloudfront.net/310519663148675640/KjT4emSwzjBHV8i56oSYsp/architecture_7007dcad.png)
+
+**Legenda das camadas:**
+
+| Camada | Tecnologia | Porta |
+|---|---|---|
+| Frontend | React 19 + Vite + Tailwind CSS 4 | — |
+| Backend (API) | Node.js 22 + Express 4 + tRPC 11 | 3000 |
+| Banco de Dados | TiDB / MySQL 8 via Drizzle ORM | TLS |
+| ML Classifier | Python Flask + TF-IDF + Naive Bayes | 5001 |
+| PDF Generator | Python Flask + ReportLab | 5002 |
+
+### Diagrama Textual (ASCII)
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
@@ -196,6 +212,14 @@ Node.js recebe via tRPC incidents.create
 - Análise de risco com recomendações específicas
 - Opção de exclusão do incidente
 
+### Acompanhamento de Incidentes (Status, Notas e Timeline)
+- **Status de acompanhamento**: cada incidente possui um dos três estados — `Em Aberto`, `Em Andamento` ou `Resolvido`
+- Alteração de status com um clique diretamente na página de detalhe
+- Campo `resolvedAt` preenchido automaticamente ao resolver; zerado ao reabrir
+- **Notas de acompanhamento**: campo de texto livre (até 5.000 caracteres) para registrar observações, ações tomadas, evidências coletadas
+- **Timeline visual**: linha do tempo com os eventos do incidente (registro, investigação iniciada, resolução)
+- Contadores de status no perfil do usuário (`/profile`): Em Aberto e Resolvidos com dados reais
+
 ### Análise de Risco
 - Score de risco global calculado por ponderação (crítico=4, alto=3, médio=2, baixo=1)
 - Gráfico de barras por nível de risco
@@ -308,7 +332,13 @@ incident_security_system/
 │   ├── routers.ts                 # Procedures tRPC (auth, incidents, admin, reports)
 │   ├── validation.ts              # Schemas Joi
 │   ├── incidents.test.ts          # 27 testes de funcionalidades
-│   └── auth.logout.test.ts        # 1 teste de logout
+│   ├── auth.logout.test.ts        # 1 teste de logout
+│   ├── categories.test.ts         # 30 testes de categorias
+│   ├── ml.test.ts                 # 29 testes de ML
+│   ├── recommendations.test.ts    # 27 testes de recomendações
+│   ├── security.test.ts           # 34 testes de segurança
+│   ├── advanced_features.test.ts  # 33 testes de funcionalidades avançadas
+│   └── followup.test.ts           # 28 testes de acompanhamento (FU-1 a FU-6)
 ├── shared/
 │   └── const.ts                   # Constantes compartilhadas
 ├── todo.md                        # Rastreamento de funcionalidades

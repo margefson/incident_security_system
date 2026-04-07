@@ -287,3 +287,53 @@ export async function getGlobalStats() {
     byRisk,
   };
 }
+
+// ─── Status & Notes helpers ──────────────────────────────────────────────────
+
+export async function updateIncidentStatus(
+  id: number,
+  userId: number,
+  status: "open" | "in_progress" | "resolved",
+  isAdmin: boolean = false
+) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const resolvedAt = status === "resolved" ? new Date() : null;
+  const where = isAdmin ? eq(incidents.id, id) : and(eq(incidents.id, id), eq(incidents.userId, userId));
+  await db
+    .update(incidents)
+    .set({ status, resolvedAt: resolvedAt ?? undefined, updatedAt: new Date() })
+    .where(where!);
+  return { success: true };
+}
+
+export async function updateIncidentNotes(
+  id: number,
+  userId: number,
+  notes: string,
+  isAdmin: boolean = false
+) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const where = isAdmin ? eq(incidents.id, id) : and(eq(incidents.id, id), eq(incidents.userId, userId));
+  await db
+    .update(incidents)
+    .set({ notes, updatedAt: new Date() })
+    .where(where!);
+  return { success: true };
+}
+
+export async function getIncidentStatusStats(userId: number) {
+  const db = await getDb();
+  if (!db) return { open: 0, in_progress: 0, resolved: 0 };
+  const rows = await db
+    .select({ status: incidents.status, count: sql<number>`count(*)` })
+    .from(incidents)
+    .where(eq(incidents.userId, userId))
+    .groupBy(incidents.status);
+  const result = { open: 0, in_progress: 0, resolved: 0 };
+  for (const row of rows) {
+    result[row.status as keyof typeof result] = Number(row.count);
+  }
+  return result;
+}

@@ -20,6 +20,9 @@ import {
   reclassifyIncident,
   getAllUsers,
   updateUserRole,
+  updateIncidentStatus,
+  updateIncidentNotes,
+  getIncidentStatusStats,
 } from "./db";
 import { registerSchema, loginSchema, createIncidentSchema, validateJoi } from "./validation";
 import bcrypt from "bcryptjs";
@@ -290,6 +293,34 @@ const incidentsRouter = router({
       const riskLevel = CATEGORY_RISK[result.category] ?? "medium";
       return { category: result.category, riskLevel, confidence: result.confidence, method: result.method };
     }),
+  // ─── Status & Notes (sugestões de acompanhamento) ────────────────────────
+  updateStatus: protectedProcedure
+    .input(z.object({
+      id: z.number(),
+      status: z.enum(["open", "in_progress", "resolved"]),
+    }))
+    .mutation(async ({ input, ctx }) => {
+      const incident = await getIncidentById(input.id);
+      if (!incident || (incident.userId !== ctx.user.id && ctx.user.role !== "admin")) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Incidente não encontrado" });
+      }
+      return updateIncidentStatus(input.id, ctx.user.id, input.status, ctx.user.role === "admin");
+    }),
+  updateNotes: protectedProcedure
+    .input(z.object({
+      id: z.number(),
+      notes: z.string().max(5000),
+    }))
+    .mutation(async ({ input, ctx }) => {
+      const incident = await getIncidentById(input.id);
+      if (!incident || (incident.userId !== ctx.user.id && ctx.user.role !== "admin")) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Incidente não encontrado" });
+      }
+      return updateIncidentNotes(input.id, ctx.user.id, input.notes, ctx.user.role === "admin");
+    }),
+  statusStats: protectedProcedure.query(async ({ ctx }) => {
+    return getIncidentStatusStats(ctx.user.id);
+  }),
 });
 // ─── Categories Router ────────────────────────────────────────────────────────────
 const categoriesRouter = router({

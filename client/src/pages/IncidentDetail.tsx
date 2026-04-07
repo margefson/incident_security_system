@@ -1,9 +1,16 @@
+import { useState } from "react";
 import { useLocation, useParams } from "wouter";
 import { trpc } from "@/lib/trpc";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { ArrowLeft, Trash2, Calendar, Tag, AlertTriangle, Activity, Shield } from "lucide-react";
+import {
+  ArrowLeft, Trash2, Calendar, Tag, AlertTriangle, Activity,
+  Shield, ClipboardList, CheckCircle2, Clock, Loader2, Save,
+} from "lucide-react";
 
 const SEV: Record<string, string> = {
   critical: "text-red-400 bg-red-400/10 border-red-400/30",
@@ -11,6 +18,12 @@ const SEV: Record<string, string> = {
   medium:   "text-yellow-400 bg-yellow-400/10 border-yellow-400/30",
   low:      "text-emerald-400 bg-emerald-400/10 border-emerald-400/30",
 };
+
+const STATUS_CONFIG = {
+  open:        { label: "Em Aberto",    icon: Clock,         cls: "text-yellow-400 bg-yellow-400/10 border-yellow-400/30" },
+  in_progress: { label: "Em Andamento", icon: Loader2,       cls: "text-blue-400 bg-blue-400/10 border-blue-400/30" },
+  resolved:    { label: "Resolvido",    icon: CheckCircle2,  cls: "text-emerald-400 bg-emerald-400/10 border-emerald-400/30" },
+} as const;
 
 // Recomendações contextualizadas por categoria (seção 7.5)
 const CATEGORY_RECOMMENDATIONS: Record<string, { title: string; description: string; priority: string; action: string }> = {
@@ -67,6 +80,15 @@ export default function IncidentDetail() {
   const utils = trpc.useUtils();
 
   const { data: incident, isLoading } = trpc.incidents.getById.useQuery({ id });
+  const [notes, setNotes] = useState<string>("");
+  const [notesInitialized, setNotesInitialized] = useState(false);
+
+  // Initialize notes from incident data
+  if (incident && !notesInitialized) {
+    setNotes(incident.notes ?? "");
+    setNotesInitialized(true);
+  }
+
   const deleteMutation = trpc.incidents.delete.useMutation({
     onSuccess: () => {
       toast.success("Incidente excluído.");
@@ -76,14 +98,36 @@ export default function IncidentDetail() {
     onError: (e) => toast.error(e.message),
   });
 
+  const updateStatusMutation = trpc.incidents.updateStatus.useMutation({
+    onSuccess: () => {
+      toast.success("Status atualizado com sucesso.");
+      utils.incidents.getById.invalidate({ id });
+      utils.incidents.list.invalidate();
+      utils.incidents.statusStats.invalidate();
+    },
+    onError: (e) => toast.error("Erro ao atualizar status: " + e.message),
+  });
+
+  const updateNotesMutation = trpc.incidents.updateNotes.useMutation({
+    onSuccess: () => {
+      toast.success("Notas salvas com sucesso.");
+      utils.incidents.getById.invalidate({ id });
+    },
+    onError: (e) => toast.error("Erro ao salvar notas: " + e.message),
+  });
+
   if (isLoading) return <DashboardLayout><div className="text-muted-foreground p-8 text-center">Carregando...</div></DashboardLayout>;
   if (!incident) return <DashboardLayout><div className="text-muted-foreground p-8 text-center">Incidente não encontrado.</div></DashboardLayout>;
 
   const recommendation = incident.category ? CATEGORY_RECOMMENDATIONS[incident.category] : null;
+  const currentStatus = (incident.status ?? "open") as "open" | "in_progress" | "resolved";
+  const statusCfg = STATUS_CONFIG[currentStatus];
+  const StatusIcon = statusCfg.icon;
 
   return (
     <DashboardLayout>
       <div className="max-w-2xl space-y-6">
+        {/* Header */}
         <div className="flex items-center gap-3">
           <button onClick={() => navigate("/incidents")} className="text-muted-foreground hover:text-foreground transition-colors">
             <ArrowLeft className="w-4 h-4" />
@@ -97,40 +141,197 @@ export default function IncidentDetail() {
           </Button>
         </div>
 
-        <div className="bg-card border border-border rounded-xl p-6 space-y-5">
-          <div className="flex flex-wrap gap-2">
-            {incident.category && (
-              <span className="text-xs px-2.5 py-1 rounded-full border font-mono capitalize text-primary bg-primary/10 border-primary/30">
-                <Tag className="w-3 h-3 inline mr-1" />{incident.category.replace(/_/g, " ")}
+        {/* Detalhes principais */}
+        <Card className="bg-card border-border">
+          <CardContent className="pt-6 space-y-5">
+            <div className="flex flex-wrap gap-2">
+              {incident.category && (
+                <span className="text-xs px-2.5 py-1 rounded-full border font-mono capitalize text-primary bg-primary/10 border-primary/30">
+                  <Tag className="w-3 h-3 inline mr-1" />{incident.category.replace(/_/g, " ")}
+                </span>
+              )}
+              {incident.riskLevel && (
+                <span className={`text-xs px-2.5 py-1 rounded-full border font-mono ${SEV[incident.riskLevel] ?? SEV.low}`}>
+                  <AlertTriangle className="w-3 h-3 inline mr-1" />{incident.riskLevel}
+                </span>
+              )}
+              {incident.confidence != null && (
+                <span className="text-xs px-2.5 py-1 rounded-full border font-mono text-muted-foreground bg-muted/30 border-border">
+                  <Activity className="w-3 h-3 inline mr-1" />{Math.round(incident.confidence * 100)}% confiança
+                </span>
+              )}
+              {/* Badge de status atual */}
+              <span className={`text-xs px-2.5 py-1 rounded-full border font-mono ${statusCfg.cls}`}>
+                <StatusIcon className="w-3 h-3 inline mr-1" />{statusCfg.label}
               </span>
-            )}
-            {incident.riskLevel && (
-              <span className={`text-xs px-2.5 py-1 rounded-full border font-mono ${SEV[incident.riskLevel] ?? SEV.low}`}>
-                <AlertTriangle className="w-3 h-3 inline mr-1" />{incident.riskLevel}
-              </span>
-            )}
-            {incident.confidence != null && (
-              <span className="text-xs px-2.5 py-1 rounded-full border font-mono text-muted-foreground bg-muted/30 border-border">
-                <Activity className="w-3 h-3 inline mr-1" />{Math.round(incident.confidence * 100)}% confiança
-              </span>
-            )}
-          </div>
-
-          <div>
-            <p className="text-xs font-mono text-muted-foreground uppercase tracking-wider mb-2">Descrição</p>
-            <p className="text-sm text-foreground leading-relaxed">{incident.description}</p>
-          </div>
-
-          <div className="pt-4 border-t border-border grid grid-cols-2 gap-4">
-            <div>
-              <p className="text-xs font-mono text-muted-foreground uppercase tracking-wider mb-1">Registrado em</p>
-              <p className="text-sm text-foreground font-mono flex items-center gap-1.5">
-                <Calendar className="w-3.5 h-3.5 text-muted-foreground" />
-                {new Date(incident.createdAt).toLocaleString("pt-BR")}
-              </p>
             </div>
-          </div>
-        </div>
+
+            <div>
+              <p className="text-xs font-mono text-muted-foreground uppercase tracking-wider mb-2">Descrição</p>
+              <p className="text-sm text-foreground leading-relaxed">{incident.description}</p>
+            </div>
+
+            <div className="pt-4 border-t border-border grid grid-cols-2 gap-4">
+              <div>
+                <p className="text-xs font-mono text-muted-foreground uppercase tracking-wider mb-1">Registrado em</p>
+                <p className="text-sm text-foreground font-mono flex items-center gap-1.5">
+                  <Calendar className="w-3.5 h-3.5 text-muted-foreground" />
+                  {new Date(incident.createdAt).toLocaleString("pt-BR")}
+                </p>
+              </div>
+              {incident.resolvedAt && (
+                <div>
+                  <p className="text-xs font-mono text-muted-foreground uppercase tracking-wider mb-1">Resolvido em</p>
+                  <p className="text-sm text-emerald-400 font-mono flex items-center gap-1.5">
+                    <CheckCircle2 className="w-3.5 h-3.5" />
+                    {new Date(incident.resolvedAt).toLocaleString("pt-BR")}
+                  </p>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* ── Acompanhamento: Status ─────────────────────────────────────────── */}
+        <Card className="bg-card border-border" data-testid="status-section">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-mono font-semibold text-foreground flex items-center gap-2">
+              <ClipboardList className="w-4 h-4 text-primary" />
+              Acompanhamento — Status
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-wrap gap-2">
+              {(["open", "in_progress", "resolved"] as const).map((s) => {
+                const cfg = STATUS_CONFIG[s];
+                const Icon = cfg.icon;
+                const isActive = currentStatus === s;
+                return (
+                  <button
+                    key={s}
+                    onClick={() => updateStatusMutation.mutate({ id, status: s })}
+                    disabled={isActive || updateStatusMutation.isPending}
+                    className={`flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg border font-mono transition-all
+                      ${isActive ? cfg.cls + " cursor-default" : "text-muted-foreground border-border hover:border-primary/50 hover:text-foreground bg-transparent"}
+                    `}
+                  >
+                    <Icon className="w-3.5 h-3.5" />
+                    {cfg.label}
+                    {isActive && <span className="ml-1 text-[10px] opacity-70">(atual)</span>}
+                  </button>
+                );
+              })}
+            </div>
+            <p className="text-xs text-muted-foreground font-mono mt-3">
+              Clique em um status para atualizar o acompanhamento deste incidente.
+            </p>
+          </CardContent>
+        </Card>
+
+        {/* ── Acompanhamento: Notas ─────────────────────────────────────────── */}
+        <Card className="bg-card border-border" data-testid="notes-section">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-mono font-semibold text-foreground flex items-center gap-2">
+              <ClipboardList className="w-4 h-4 text-primary" />
+              Acompanhamento — Notas e Observações
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <Textarea
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              placeholder="Registre observações, ações tomadas, contatos realizados, evidências coletadas..."
+              className="font-mono text-sm bg-background border-border resize-none min-h-[120px]"
+              maxLength={5000}
+            />
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-muted-foreground font-mono">{notes.length}/5000 caracteres</span>
+              <Button
+                size="sm"
+                onClick={() => updateNotesMutation.mutate({ id, notes })}
+                disabled={updateNotesMutation.isPending}
+                className="gap-2 font-mono text-xs"
+              >
+                {updateNotesMutation.isPending ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                ) : (
+                  <Save className="w-3.5 h-3.5" />
+                )}
+                Salvar Notas
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* ── Timeline de Acompanhamento ────────────────────────────────────── */}
+        <Card className="bg-card border-border" data-testid="timeline-section">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-mono font-semibold text-foreground flex items-center gap-2">
+              <Clock className="w-4 h-4 text-primary" />
+              Timeline de Acompanhamento
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="relative pl-4 space-y-4">
+              {/* Linha vertical */}
+              <div className="absolute left-1.5 top-2 bottom-2 w-px bg-border" />
+
+              {/* Evento: Registro */}
+              <div className="relative flex items-start gap-3">
+                <div className="absolute -left-[3px] w-3 h-3 rounded-full bg-primary border-2 border-background mt-0.5" />
+                <div className="ml-4">
+                  <p className="text-xs font-mono font-semibold text-foreground">Incidente Registrado</p>
+                  <p className="text-xs font-mono text-muted-foreground">
+                    {new Date(incident.createdAt).toLocaleString("pt-BR")}
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    Classificado como <span className="text-primary font-mono">{incident.category?.replace(/_/g, " ") ?? "desconhecido"}</span> com risco{" "}
+                    <Badge variant="outline" className={`text-[10px] font-mono px-1.5 py-0 ${SEV[incident.riskLevel ?? "low"]}`}>
+                      {incident.riskLevel ?? "low"}
+                    </Badge>
+                  </p>
+                </div>
+              </div>
+
+              {/* Evento: Em Andamento (se aplicável) */}
+              {(currentStatus === "in_progress" || currentStatus === "resolved") && (
+                <div className="relative flex items-start gap-3">
+                  <div className="absolute -left-[3px] w-3 h-3 rounded-full bg-blue-400 border-2 border-background mt-0.5" />
+                  <div className="ml-4">
+                    <p className="text-xs font-mono font-semibold text-blue-400">Investigação Iniciada</p>
+                    <p className="text-xs font-mono text-muted-foreground">
+                      Status alterado para <span className="text-blue-400">Em Andamento</span>
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* Evento: Resolução */}
+              {currentStatus === "resolved" && incident.resolvedAt && (
+                <div className="relative flex items-start gap-3">
+                  <div className="absolute -left-[3px] w-3 h-3 rounded-full bg-emerald-400 border-2 border-background mt-0.5" />
+                  <div className="ml-4">
+                    <p className="text-xs font-mono font-semibold text-emerald-400">Incidente Resolvido</p>
+                    <p className="text-xs font-mono text-muted-foreground">
+                      {new Date(incident.resolvedAt).toLocaleString("pt-BR")}
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* Estado atual (se ainda em aberto) */}
+              {currentStatus === "open" && (
+                <div className="relative flex items-start gap-3">
+                  <div className="absolute -left-[3px] w-3 h-3 rounded-full bg-yellow-400 border-2 border-background mt-0.5 animate-pulse" />
+                  <div className="ml-4">
+                    <p className="text-xs font-mono font-semibold text-yellow-400">Aguardando Investigação</p>
+                    <p className="text-xs font-mono text-muted-foreground">Incidente em aberto — nenhuma ação registrada ainda.</p>
+                  </div>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Recomendação contextualizada por categoria (seção 7.5) */}
         {recommendation && (

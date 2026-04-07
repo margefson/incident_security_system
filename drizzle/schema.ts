@@ -47,6 +47,9 @@ export const incidents = mysqlTable("incidents", {
     .default("medium")
     .notNull(),
   confidence: float("confidence").default(0),
+  status: mysqlEnum("status", ["open", "in_progress", "resolved"]).default("open").notNull(),
+  notes: text("notes"),
+  resolvedAt: timestamp("resolvedAt"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });

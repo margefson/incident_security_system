@@ -222,3 +222,19 @@
 - [x] Manual do usuário atualizado (seção 5.3 filtros avançados, seção 5.4 CSV)
 - [x] PDFs dos manuais regenerados
 - [x] Checkpoint final e commit no GitHub
+
+## Sessão 3 — Diagrama, Acompanhamento, Testes e Manuais
+
+- [x] Diagrama de arquitetura do sistema (docs/architecture.d2 + docs/architecture.png)
+- [x] Corrigir erro de deploy: python3 ENOENT — handler gracioso em startFlaskServer
+- [x] Adicionar campo status (open/in_progress/resolved) na tabela incidents
+- [x] Adicionar campo notes (text) na tabela incidents
+- [x] Adicionar campo resolvedAt (timestamp) na tabela incidents
+- [x] Helpers updateIncidentStatus, updateIncidentNotes, getIncidentStatusStats no db.ts
+- [x] Procedures incidents.updateStatus, incidents.updateNotes, incidents.statusStats no routers.ts
+- [x] IncidentDetail.tsx com seção de status, notas e timeline de acompanhamento
+- [x] Profile.tsx atualizado com contadores reais de statusStats
+- [x] followup.test.ts — 28 testes individuais (FU-1 a FU-6)
+- [x] README.md atualizado: diagrama PNG, seção de acompanhamento, badge 261 testes
+- [x] manual_usuario.md atualizado: seções 6.4, 6.5, 6.6 (status, notas, timeline)
+- [x] PDFs dos manuais regenerados
