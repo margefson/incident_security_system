@@ -262,7 +262,8 @@ export async function updateCategory(id: number, data: { name?: string; descript
 export async function deleteCategory(id: number) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
-  await db.update(categories).set({ isActive: false }).where(eq(categories.id, id));
+  // Hard delete: remove o registro fisicamente do banco
+  await db.delete(categories).where(eq(categories.id, id));
   return { success: true };
 }
 export async function getGlobalStats() {

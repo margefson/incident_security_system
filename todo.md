@@ -304,3 +304,26 @@
 - [x] README atualizado (badge 319, seções 4.4, 5.3, 5.4)
 - [x] Manual do usuário atualizado (seções 7 e 8)
 - [x] PDFs dos manuais regenerados
+
+## Sessão 6 — PDF, ML, Categorias
+
+- [ ] PDF: corrigir quebra de linha na coluna título da lista de incidentes
+- [ ] PDF: admin visualiza todos os incidentes de todos os usuários no relatório
+- [ ] ML: mostrar data da última atualização do modelo
+- [ ] ML: contagem dinâmica de categorias no dataset (leitura real)
+- [ ] Categorias: exclusão física do banco (não apenas desativar)
+- [ ] Testes individuais S6-1 a S6-N
+- [ ] README atualizado
+- [ ] Manuais PDF atualizados
+- [ ] Commit no GitHub
+
+## Sessão 6 — PDF, ML, Categorias
+- [x] PDF: quebra de linha automática no título (estimateRowH + lineBreak: true)
+- [x] Admin vê todos os incidentes no PDF (adminMode=true)
+- [x] ML: data de última atualização do modelo (last_updated no metrics.json)
+- [x] ML: contagem dinâmica de categorias no dataset (fallback para metrics.categories)
+- [x] Categorias: exclusão física permanente (hard delete com db.delete())
+- [x] AdminCategories: confirmação de exclusão permanente com aviso explícito
+- [x] 28 novos testes (S6-1 a S6-6) — 347 passando em 11 arquivos
+- [x] README e manuais atualizados (seções 9, 10, 11)
+- [x] PDFs dos manuais regenerados

@@ -356,11 +356,15 @@ export default function AdminCategories() {
       <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
         <AlertDialogContent className="bg-card border-border">
           <AlertDialogHeader>
-            <AlertDialogTitle className="font-mono text-foreground">Remover Categoria</AlertDialogTitle>
-            <AlertDialogDescription className="text-muted-foreground">
-              Tem certeza que deseja remover a categoria{" "}
-              <span className="font-semibold text-foreground">"{deleteTarget?.name}"</span>?
-              Esta ação não pode ser desfeita.
+            <AlertDialogTitle className="font-mono text-foreground text-red-400">Excluir Categoria Permanentemente</AlertDialogTitle>
+            <AlertDialogDescription className="text-muted-foreground space-y-2">
+              <span className="block">
+                Tem certeza que deseja <strong className="text-destructive">excluir permanentemente</strong> a categoria{" "}
+                <span className="font-semibold text-foreground">"{deleteTarget?.name}"</span>?
+              </span>
+              <span className="block text-xs">
+                O registro será removido fisicamente do banco de dados. Esta ação não pode ser desfeita.
+              </span>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -369,7 +373,7 @@ export default function AdminCategories() {
               onClick={() => deleteTarget && deleteMutation.mutate({ id: deleteTarget.id })}
               className="bg-red-600 hover:bg-red-700 font-mono"
             >
-              Remover
+              Excluir Permanentemente
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

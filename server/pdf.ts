@@ -215,68 +215,93 @@ export function generatePdfBuffer(payload: PdfPayload): Promise<Buffer> {
           ];
 
       let rowY = tableY + 22;
-      const rowH = 18;
       const fontSize = 8;
+      const cellPadY = 5;
+      const minRowH = 18;
+      const lineH = fontSize + 3; // approx line height for font size 8
 
-      // Header row
-      doc.rect(40, rowY, pageWidth, rowH).fill("#21262d");
-      let cx = 40;
-      for (const col of colsBase) {
-        doc.fillColor(COLORS.cyan).fontSize(fontSize).font("Helvetica-Bold").text(col.label, cx + 3, rowY + 5, { width: col.w - 6, ellipsis: true });
-        cx += col.w;
-      }
-      rowY += rowH;
+      // Helper: estimate row height based on title length
+      const estimateRowH = (titleText: string, titleColW: number): number => {
+        const charsPerLine = Math.floor((titleColW - 6) / (fontSize * 0.52));
+        const lines = Math.ceil(titleText.length / Math.max(charsPerLine, 1));
+        return Math.max(minRowH, cellPadY * 2 + lines * lineH);
+      };
+
+      // Helper: draw header row
+      const drawHeader = (y: number) => {
+        doc.rect(40, y, pageWidth, minRowH).fill("#21262d");
+        let hx = 40;
+        for (const col of colsBase) {
+          doc.fillColor(COLORS.cyan).fontSize(fontSize).font("Helvetica-Bold").text(col.label, hx + 3, y + 5, { width: col.w - 6, lineBreak: false });
+          hx += col.w;
+        }
+        return y + minRowH;
+      };
+
+      rowY = drawHeader(rowY);
 
       // Data rows
       for (let i = 0; i < incidents.length; i++) {
         const inc = incidents[i];
         const bgColor = i % 2 === 0 ? "#0d1117" : "#161b22";
 
+        const riskColor = RISK_COLORS[inc.riskLevel ?? "low"] ?? COLORS.gray;
+        const cells = isAdmin
+          ? [
+              { text: String(inc.id ?? ""), color: COLORS.gray, wrap: false },
+              { text: String(inc.title ?? ""), color: COLORS.white, wrap: true },
+              { text: String(inc.userName ?? "—"), color: COLORS.gray, wrap: false },
+              { text: CAT_LABELS[inc.category ?? ""] ?? String(inc.category ?? "—"), color: COLORS.white, wrap: false },
+              { text: RISK_LABELS[inc.riskLevel ?? "low"] ?? "—", color: riskColor, wrap: false },
+              { text: STATUS_LABELS[inc.status ?? "open"] ?? "—", color: COLORS.gray, wrap: false },
+              { text: formatDate(inc.createdAt), color: COLORS.gray, wrap: false },
+            ]
+          : [
+              { text: String(inc.id ?? ""), color: COLORS.gray, wrap: false },
+              { text: String(inc.title ?? ""), color: COLORS.white, wrap: true },
+              { text: CAT_LABELS[inc.category ?? ""] ?? String(inc.category ?? "—"), color: COLORS.white, wrap: false },
+              { text: RISK_LABELS[inc.riskLevel ?? "low"] ?? "—", color: riskColor, wrap: false },
+              { text: STATUS_LABELS[inc.status ?? "open"] ?? "—", color: COLORS.gray, wrap: false },
+              { text: formatDate(inc.createdAt), color: COLORS.gray, wrap: false },
+            ];
+
+        // Find title column width for height estimation
+        const titleColIdx = 1;
+        const titleColW = colsBase[titleColIdx].w;
+        const rowH = estimateRowH(cells[titleColIdx].text, titleColW);
+
         // Check if we need a new page
         if (rowY + rowH > doc.page.height - 60) {
           doc.addPage();
           rowY = 40;
-          // Repeat header
-          doc.rect(40, rowY, pageWidth, rowH).fill("#21262d");
-          cx = 40;
-          for (const col of colsBase) {
-            doc.fillColor(COLORS.cyan).fontSize(fontSize).font("Helvetica-Bold").text(col.label, cx + 3, rowY + 5, { width: col.w - 6, ellipsis: true });
-            cx += col.w;
-          }
-          rowY += rowH;
+          rowY = drawHeader(rowY);
         }
 
         doc.rect(40, rowY, pageWidth, rowH).fill(bgColor);
 
-        const riskColor = RISK_COLORS[inc.riskLevel ?? "low"] ?? COLORS.gray;
-        const cells = isAdmin
-          ? [
-              { text: String(inc.id ?? ""), color: COLORS.gray },
-              { text: String(inc.title ?? "").slice(0, 50), color: COLORS.white },
-              { text: String(inc.userName ?? "—").slice(0, 20), color: COLORS.gray },
-              { text: CAT_LABELS[inc.category ?? ""] ?? String(inc.category ?? "—"), color: COLORS.white },
-              { text: RISK_LABELS[inc.riskLevel ?? "low"] ?? "—", color: riskColor },
-              { text: STATUS_LABELS[inc.status ?? "open"] ?? "—", color: COLORS.gray },
-              { text: formatDate(inc.createdAt), color: COLORS.gray },
-            ]
-          : [
-              { text: String(inc.id ?? ""), color: COLORS.gray },
-              { text: String(inc.title ?? "").slice(0, 60), color: COLORS.white },
-              { text: CAT_LABELS[inc.category ?? ""] ?? String(inc.category ?? "—"), color: COLORS.white },
-              { text: RISK_LABELS[inc.riskLevel ?? "low"] ?? "—", color: riskColor },
-              { text: STATUS_LABELS[inc.status ?? "open"] ?? "—", color: COLORS.gray },
-              { text: formatDate(inc.createdAt), color: COLORS.gray },
-            ];
-
-        cx = 40;
+        let cx = 40;
         for (let j = 0; j < colsBase.length; j++) {
           const col = colsBase[j];
           const cell = cells[j];
-          doc
-            .fillColor(cell.color)
-            .fontSize(fontSize)
-            .font(j === 4 ? "Helvetica-Bold" : "Helvetica")
-            .text(cell.text, cx + 3, rowY + 5, { width: col.w - 6, ellipsis: true });
+          const isRisk = j === (isAdmin ? 4 : 3);
+          if (cell.wrap) {
+            // Allow word wrap for title column
+            doc
+              .fillColor(cell.color)
+              .fontSize(fontSize)
+              .font("Helvetica")
+              .text(cell.text, cx + 3, rowY + cellPadY, {
+                width: col.w - 6,
+                lineBreak: true,
+                lineGap: 1,
+              });
+          } else {
+            doc
+              .fillColor(cell.color)
+              .fontSize(fontSize)
+              .font(isRisk ? "Helvetica-Bold" : "Helvetica")
+              .text(cell.text, cx + 3, rowY + cellPadY, { width: col.w - 6, lineBreak: false, ellipsis: true });
+          }
           cx += col.w;
         }
         rowY += rowH;

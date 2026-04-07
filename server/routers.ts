@@ -521,6 +521,7 @@ const adminRouter = router({
       cv_accuracy_std: number;
       train_accuracy: number;
       category_distribution: Record<string, number>;
+      last_updated?: string;
     };
     return data;
   }),

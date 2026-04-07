@@ -16,6 +16,7 @@ import json
 import base64
 import joblib
 import numpy as np
+from datetime import datetime, timezone
 from flask import Flask, request, jsonify
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -251,6 +252,7 @@ def retrain():
             "category_distribution": cat_dist,
             "new_samples_added": len(new_samples),
             "new_categories": list(new_categories),
+            "last_updated": datetime.now(timezone.utc).isoformat(),
         }
         with open(METRICS_PATH, "w", encoding="utf-8") as f:
             json.dump(new_metrics, f, ensure_ascii=False, indent=2)

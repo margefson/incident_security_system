@@ -254,9 +254,14 @@ export default function AdminML() {
                   Arquivo: <span className="text-foreground">incidentes_cybersecurity_100.xlsx</span>
                 </p>
                 <p className="text-xs font-mono text-muted-foreground mt-0.5">
-                  Total: <span className="text-foreground">{dataset?.total_samples ?? "..."} amostras</span>
+                  Total: <span className="text-foreground">{dataset?.total_samples ?? metrics?.dataset_size ?? "..."} amostras</span>
                   {" · "}
-                  Categorias: <span className="text-foreground">{Object.keys(dataset?.category_distribution ?? {}).length}</span>
+                  Categorias:{" "}
+                  <span className="text-foreground font-medium">
+                    {dataset?.category_distribution
+                      ? Object.keys(dataset.category_distribution).length
+                      : metrics?.categories?.length ?? "..."}
+                  </span>
                 </p>
               </div>
               <Button
@@ -313,10 +318,28 @@ export default function AdminML() {
         {/* Retreinamento com Novas Categorias */}
         <Card className="bg-card border-border">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-mono font-semibold text-foreground flex items-center gap-2">
-              <RefreshCw className="w-4 h-4 text-primary" />
-              Retreinar Modelo com Novas Categorias
-            </CardTitle>
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <CardTitle className="text-sm font-mono font-semibold text-foreground flex items-center gap-2">
+                <RefreshCw className="w-4 h-4 text-primary" />
+                Retreinar Modelo com Novas Categorias
+              </CardTitle>
+              {metrics?.last_updated ? (
+                <span className="text-xs font-mono text-muted-foreground">
+                  Última atualização:{" "}
+                  <span className="text-foreground font-medium">
+                    {new Date(metrics.last_updated).toLocaleString("pt-BR", {
+                      day: "2-digit",
+                      month: "2-digit",
+                      year: "numeric",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
+                  </span>
+                </span>
+              ) : (
+                <span className="text-xs font-mono text-muted-foreground">Sem registro de atualização</span>
+              )}
+            </div>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="bg-primary/5 border border-primary/20 rounded-lg p-3">
