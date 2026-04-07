@@ -22,8 +22,8 @@ export const users = mysqlTable("users", {
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
   lastSignedIn: timestamp("lastSignedIn").defaultNow().notNull(),
   isActive: boolean("isActive").default(true).notNull(),
+  mustChangePassword: boolean("mustChangePassword").default(false).notNull(),
 });
-
 export type User = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;
 
@@ -89,3 +89,14 @@ export const incidentHistory = mysqlTable("incident_history", {
 });
 export type IncidentHistory = typeof incidentHistory.$inferSelect;
 export type InsertIncidentHistory = typeof incidentHistory.$inferInsert;
+// ─── Password Reset Tokens ──────────────────────────────────────────────────
+export const passwordResetTokens = mysqlTable("password_reset_tokens", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  token: varchar("token", { length: 128 }).notNull().unique(),
+  expiresAt: timestamp("expiresAt").notNull(),
+  usedAt: timestamp("usedAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+export type PasswordResetToken = typeof passwordResetTokens.$inferSelect;
+export type InsertPasswordResetToken = typeof passwordResetTokens.$inferInsert;

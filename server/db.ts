@@ -1,6 +1,6 @@
 import { eq, desc, and, or, like, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { users, incidents, categories, incidentHistory, InsertUser, InsertIncident, Incident } from "../drizzle/schema";
+import { users, incidents, categories, incidentHistory, passwordResetTokens, InsertUser, InsertIncident, Incident } from "../drizzle/schema";
 import { ENV } from "./_core/env";
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -456,5 +456,38 @@ export async function deleteUserById(userId: number) {
 export async function resetUserPassword(userId: number, newPasswordHash: string) {
   const db = await getDb();
   if (!db) return;
-  await db.update(users).set({ passwordHash: newPasswordHash }).where(eq(users.id, userId));
+  await db.update(users).set({ passwordHash: newPasswordHash, mustChangePassword: true }).where(eq(users.id, userId));
+}
+export async function clearMustChangePassword(userId: number) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(users).set({ mustChangePassword: false }).where(eq(users.id, userId));
+}
+export async function createPasswordResetToken(userId: number, token: string, expiresAt: Date) {
+  const db = await getDb();
+  if (!db) return;
+  // Invalidate any existing tokens for this user
+  await db.delete(passwordResetTokens).where(eq(passwordResetTokens.userId, userId));
+  await db.insert(passwordResetTokens).values({ userId, token, expiresAt });
+}
+export async function getPasswordResetToken(token: string) {
+  const db = await getDb();
+  if (!db) return null;
+  const rows = await db
+    .select()
+    .from(passwordResetTokens)
+    .where(eq(passwordResetTokens.token, token))
+    .limit(1);
+  return rows[0] ?? null;
+}
+export async function markTokenUsed(tokenId: number) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(passwordResetTokens).set({ usedAt: new Date() }).where(eq(passwordResetTokens.id, tokenId));
+}
+export async function resetPasswordWithToken(userId: number, newPasswordHash: string, tokenId: number) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(users).set({ passwordHash: newPasswordHash, mustChangePassword: false }).where(eq(users.id, userId));
+  await db.update(passwordResetTokens).set({ usedAt: new Date() }).where(eq(passwordResetTokens.id, tokenId));
 }

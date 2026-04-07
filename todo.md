@@ -327,3 +327,35 @@
 - [x] 28 novos testes (S6-1 a S6-6) — 347 passando em 11 arquivos
 - [x] README e manuais atualizados (seções 9, 10, 11)
 - [x] PDFs dos manuais regenerados
+
+## Sessão 7 — Segurança de Senha e Redefinição por E-mail
+
+- [ ] Bloquear CTRL+C e CTRL+V no campo de senha (login e cadastro)
+- [ ] Redirecionar para troca de senha obrigatória após login com senha padrão (Security2026@)
+- [ ] Fluxo de redefinição de senha por e-mail com link de 10 minutos
+- [ ] Tabela password_reset_tokens no banco de dados
+- [ ] Envio de e-mail com link de redefinição (Nodemailer ou SMTP)
+- [ ] Página de redefinição de senha (/reset-password?token=...)
+- [ ] Botão/link "Esqueci minha senha" na tela de login
+- [ ] Validação de e-mail válido no formulário de redefinição
+- [ ] Testes individuais para todas as novas funcionalidades (S7)
+- [ ] Atualizar README e manuais
+- [ ] Commitar no GitHub
+
+## Sessão 7 — Segurança de Senha
+
+- [x] Bloquear CTRL+C/V nos campos de senha (login, cadastro, perfil, reset)
+- [x] Redirecionar para troca obrigatória de senha após reset pelo admin
+- [x] Banner de aviso de troca obrigatória no perfil
+- [x] Seção "Alterar Senha" no perfil com campos protegidos
+- [x] Procedure changePassword no authRouter
+- [x] Fluxo de redefinição de senha por e-mail com link de 10 minutos
+- [x] Tabela password_reset_tokens no banco de dados
+- [x] Helper sendPasswordResetEmail com template HTML
+- [x] Procedures requestPasswordReset e confirmPasswordReset
+- [x] Página ResetPassword.tsx com validação de força de senha
+- [x] Rota /reset-password registrada no App.tsx
+- [x] 35 novos testes (S7-1 a S7-8) — 382 testes passando em 12 arquivos
+- [x] README atualizado com seção 12 (Segurança de Senha)
+- [x] Manual do usuário atualizado com seção 9 (Segurança de Senha)
+- [x] PDFs regenerados

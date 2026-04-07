@@ -10,11 +10,56 @@ import { Badge } from "@/components/ui/badge";
 import { trpc } from "@/lib/trpc";
 import {
   User, Mail, Shield, Calendar, Activity,
-  AlertTriangle, CheckCircle2, Clock,
+  AlertTriangle, CheckCircle2, Clock, Lock, Eye, EyeOff,
 } from "lucide-react";
+import { useState } from "react";
+import { useSearch } from "wouter";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { toast } from "sonner";
+
+function blockClipboard(e: React.ClipboardEvent | React.KeyboardEvent) {
+  if ("key" in e) {
+    const isCtrl = e.ctrlKey || e.metaKey;
+    if (isCtrl && ["c", "x", "v"].includes(e.key.toLowerCase())) {
+      e.preventDefault();
+      toast.warning("Copiar/colar não é permitido no campo de senha por segurança.");
+      return;
+    }
+  }
+  if ("clipboardData" in e) {
+    e.preventDefault();
+    toast.warning("Copiar/colar não é permitido no campo de senha por segurança.");
+  }
+}
 
 export default function Profile() {
   const { user } = useAuth();
+  const search = useSearch();
+  const mustChangePwd = new URLSearchParams(search).get("mustChangePassword") === "1";
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [showCurrent, setShowCurrent] = useState(false);
+  const [showNew, setShowNew] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
+  const utils = trpc.useUtils();
+  const changePasswordMutation = trpc.auth.changePassword.useMutation({
+    onSuccess: () => {
+      toast.success("Senha alterada com sucesso!");
+      setCurrentPassword(""); setNewPassword(""); setConfirmPassword("");
+      window.history.replaceState({}, "", "/profile");
+      utils.auth.me.invalidate();
+    },
+    onError: (e) => toast.error(e.message),
+  });
+  const handleChangePassword = () => {
+    if (!currentPassword) { toast.error("Informe a senha atual."); return; }
+    if (newPassword.length < 8) { toast.error("A nova senha deve ter no mínimo 8 caracteres."); return; }
+    if (newPassword !== confirmPassword) { toast.error("As senhas não coincidem."); return; }
+    changePasswordMutation.mutate({ currentPassword, newPassword });
+  };
   const statsQuery = trpc.incidents.stats.useQuery();
   const incidentsQuery = trpc.incidents.list.useQuery();
   const statusStatsQuery = trpc.incidents.statusStats.useQuery();
@@ -236,6 +281,94 @@ export default function Profile() {
             )}
           </div>
         </div>
+      </div>
+
+      {/* ── Alterar Senha ── */}
+      <div className="mt-6">
+        {mustChangePwd && (
+          <div className="mb-4 flex items-start gap-3 bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-4">
+            <AlertTriangle className="w-5 h-5 text-yellow-400 flex-shrink-0 mt-0.5" />
+            <div>
+              <p className="text-sm font-semibold text-yellow-300">Troca de senha obrigatória</p>
+              <p className="text-xs text-yellow-400/80 mt-0.5">
+                Sua senha foi redefinida pelo administrador. Por segurança, você deve criar uma nova senha antes de continuar.
+              </p>
+            </div>
+          </div>
+        )}
+        <Card className="bg-card border-border">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-mono font-semibold text-foreground flex items-center gap-2">
+              <Lock className="w-4 h-4 text-primary" />
+              Alterar Senha
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <Label className="text-xs text-muted-foreground">Senha Atual</Label>
+                <div className="relative mt-1">
+                  <Input
+                    type={showCurrent ? "text" : "password"}
+                    placeholder="••••••••"
+                    value={currentPassword}
+                    onChange={e => setCurrentPassword(e.target.value)}
+                    className="pr-9 bg-input border-border text-sm"
+                    autoComplete="current-password"
+                    onCopy={blockClipboard} onCut={blockClipboard} onPaste={blockClipboard} onKeyDown={blockClipboard}
+                  />
+                  <button type="button" onClick={() => setShowCurrent(!showCurrent)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">
+                    {showCurrent ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                  </button>
+                </div>
+              </div>
+              <div>
+                <Label className="text-xs text-muted-foreground">Nova Senha</Label>
+                <div className="relative mt-1">
+                  <Input
+                    type={showNew ? "text" : "password"}
+                    placeholder="••••••••"
+                    value={newPassword}
+                    onChange={e => setNewPassword(e.target.value)}
+                    className="pr-9 bg-input border-border text-sm"
+                    autoComplete="new-password"
+                    onCopy={blockClipboard} onCut={blockClipboard} onPaste={blockClipboard} onKeyDown={blockClipboard}
+                  />
+                  <button type="button" onClick={() => setShowNew(!showNew)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">
+                    {showNew ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                  </button>
+                </div>
+              </div>
+              <div>
+                <Label className="text-xs text-muted-foreground">Confirmar Nova Senha</Label>
+                <div className="relative mt-1">
+                  <Input
+                    type={showConfirm ? "text" : "password"}
+                    placeholder="••••••••"
+                    value={confirmPassword}
+                    onChange={e => setConfirmPassword(e.target.value)}
+                    className="pr-9 bg-input border-border text-sm"
+                    autoComplete="new-password"
+                    onCopy={blockClipboard} onCut={blockClipboard} onPaste={blockClipboard} onKeyDown={blockClipboard}
+                  />
+                  <button type="button" onClick={() => setShowConfirm(!showConfirm)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">
+                    {showConfirm ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                  </button>
+                </div>
+              </div>
+            </div>
+            <p className="text-xs text-muted-foreground mt-2 flex items-center gap-1">
+              <Lock className="w-3 h-3" /> Copiar/colar desabilitado nos campos de senha por segurança.
+            </p>
+            <Button
+              className="mt-4"
+              onClick={handleChangePassword}
+              disabled={changePasswordMutation.isPending || !currentPassword || !newPassword || !confirmPassword}
+            >
+              {changePasswordMutation.isPending ? "Salvando..." : "Alterar Senha"}
+            </Button>
+          </CardContent>
+        </Card>
       </div>
     </DashboardLayout>
   );

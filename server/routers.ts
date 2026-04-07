@@ -30,7 +30,13 @@ import {
   updateUserInfo,
   deleteUserById,
   resetUserPassword,
+  clearMustChangePassword,
+  createPasswordResetToken,
+  getPasswordResetToken,
+  resetPasswordWithToken,
 } from "./db";
+import { sendPasswordResetEmail } from "./email";
+import crypto from "crypto";
 import { registerSchema, loginSchema, createIncidentSchema, validateJoi } from "./validation";
 import bcrypt from "bcryptjs";
 import { v4 as uuidv4 } from "uuid";
@@ -147,14 +153,70 @@ const authRouter = router({
       const token = await sdk.createSessionToken(user.openId, { name: user.name ?? "" });
       const cookieOptions = getSessionCookieOptions(ctx.req);
       ctx.res.cookie(COOKIE_NAME, token, cookieOptions);
-      return { success: true };
+      return { success: true, mustChangePassword: user.mustChangePassword ?? false };
     }),
-
   logout: publicProcedure.mutation(({ ctx }) => {
     const cookieOptions = getSessionCookieOptions(ctx.req);
     ctx.res.clearCookie(COOKIE_NAME, { ...cookieOptions, maxAge: -1 });
     return { success: true } as const;
   }),
+  // ─── Password Reset Flow ────────────────────────────────────────────────
+  requestPasswordReset: publicProcedure
+    .input(z.object({ email: z.string().email(), origin: z.string() }))
+    .mutation(async ({ input }) => {
+      const user = await getUserByEmail(input.email);
+      // Always return success to prevent email enumeration
+      if (!user || !user.email) return { success: true };
+      const token = crypto.randomBytes(48).toString("hex");
+      const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+      await createPasswordResetToken(user.id, token, expiresAt);
+      const resetUrl = `${input.origin}/reset-password?token=${token}`;
+      await sendPasswordResetEmail({
+        to: user.email,
+        userName: user.name ?? "Usuário",
+        resetUrl,
+        expiresMinutes: 10,
+      });
+      return { success: true };
+    }),
+  validateResetToken: publicProcedure
+    .input(z.object({ token: z.string() }))
+    .query(async ({ input }) => {
+      const record = await getPasswordResetToken(input.token);
+      if (!record) return { valid: false, reason: "Token inválido" };
+      if (record.usedAt) return { valid: false, reason: "Token já utilizado" };
+      if (new Date() > record.expiresAt) return { valid: false, reason: "Token expirado" };
+      return { valid: true };
+    }),
+  confirmPasswordReset: publicProcedure
+    .input(z.object({ token: z.string(), newPassword: z.string().min(8) }))
+    .mutation(async ({ input }) => {
+      const record = await getPasswordResetToken(input.token);
+      if (!record) throw new TRPCError({ code: "BAD_REQUEST", message: "Token inválido" });
+      if (record.usedAt) throw new TRPCError({ code: "BAD_REQUEST", message: "Token já utilizado" });
+      if (new Date() > record.expiresAt) throw new TRPCError({ code: "BAD_REQUEST", message: "Token expirado. Solicite uma nova redefinição." });
+      const hash = await bcrypt.hash(input.newPassword, 12);
+      await resetPasswordWithToken(record.userId, hash, record.id);
+      return { success: true };
+    }),
+  clearMustChangePassword: protectedProcedure
+    .mutation(async ({ ctx }) => {
+      await clearMustChangePassword(ctx.user.id);
+      return { success: true };
+    }),
+  changePassword: protectedProcedure
+    .input(z.object({ currentPassword: z.string(), newPassword: z.string().min(8) }))
+    .mutation(async ({ input, ctx }) => {
+      const user = await getUserByEmail(ctx.user.email ?? "");
+      if (!user || !user.passwordHash) throw new TRPCError({ code: "BAD_REQUEST", message: "Usuário não possui senha local" });
+      const valid = await bcrypt.compare(input.currentPassword, user.passwordHash);
+      if (!valid) throw new TRPCError({ code: "UNAUTHORIZED", message: "Senha atual incorreta" });
+      const hash = await bcrypt.hash(input.newPassword, 12);
+      await resetUserPassword(ctx.user.id, hash);
+      // After voluntary change, clear mustChangePassword flag
+      await clearMustChangePassword(ctx.user.id);
+      return { success: true };
+    }),
 });
 
 // ─── Incidents Router ──────────────────────────────────────────────────────

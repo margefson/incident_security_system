@@ -17,11 +17,13 @@ import AdminCategories from "./pages/AdminCategories";
 import AdminML from "./pages/AdminML";
 import AdminUsers from "./pages/AdminUsers";
 import Profile from "./pages/Profile";
+import ResetPassword from "./pages/ResetPassword";
 function Router() {
   return (
     <Switch>
       <Route path="/" component={Home} />
       <Route path="/login" component={Login} />
+      <Route path="/reset-password" component={ResetPassword} />
       <Route path="/register" component={Register} />
       <Route path="/dashboard" component={Dashboard} />
       <Route path="/incidents/new" component={NewIncident} />

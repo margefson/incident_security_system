@@ -641,6 +641,25 @@ Todas as procedures sensíveis usam `protectedProcedure`. Operações de inciden
 
 ---
 
+
+## Segurança de Senha
+
+### 12.1 Proteção contra Copiar/Colar
+Todos os campos de senha (login, cadastro, alteração e redefinição) bloqueiam as operações de copiar (`Ctrl+C`/`Cmd+C`), cortar (`Ctrl+X`) e colar (`Ctrl+V`). O usuário recebe uma notificação visual ao tentar usar esses atalhos.
+
+### 12.2 Troca Obrigatória após Reset pelo Admin
+Quando o administrador redefine a senha de um usuário para a senha padrão (`Security2026@`), o campo `mustChangePassword` é marcado como `true` no banco de dados. No próximo login, o usuário é redirecionado automaticamente para `/profile?mustChangePassword=1`, onde um banner amarelo de aviso exige a criação de uma nova senha antes de continuar.
+
+### 12.3 Redefinição de Senha por E-mail
+Na tela de login, o link **"Esqueci minha senha"** abre um modal onde o usuário informa seu e-mail cadastrado. O sistema:
+1. Gera um token criptograficamente seguro (48 bytes aleatórios = 96 caracteres hex)
+2. Salva o token na tabela `password_reset_tokens` com validade de **10 minutos**
+3. Envia um e-mail HTML com o link de redefinição e aviso explícito do prazo
+4. Após uso, o token é marcado como `usedAt` e não pode ser reutilizado
+
+O e-mail informa claramente: *"Este link é válido por apenas 10 minutos. Após esse prazo, você precisará solicitar um novo link."*
+
+
 ## Testes
 
 ```bash
@@ -708,7 +727,7 @@ Tests: 296 passed
 | **8.5 Fluxo de Classificação** | `ml.test.ts` | 6 | Endpoint /classify, retorno category+confidence+method, fallback keyword |
 | **8.6 Admin ML — Dataset** | `ml.test.ts` | 4 | Download dataset, getMLMetrics, acesso admin-only |
 | **8.6 Admin ML — Retreinamento** | `ml.test.ts` | 4 | retrainModel, novas categorias, FORBIDDEN para user |
-**Total: 319 testes passando em 10 arquivos***
+**Total: 382 testes passando em 10 arquivos***
 
 ---
 

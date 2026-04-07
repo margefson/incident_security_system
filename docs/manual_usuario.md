@@ -412,6 +412,49 @@ A função de login executa `bcrypt.compare()` **sempre**, mesmo quando o e-mail
 
 ---
 
+
+## 9. Segurança de Senha
+
+### 9.1 Proteção contra Copiar/Colar
+
+Por razões de segurança, os campos de senha em todas as telas do sistema (login, cadastro, alteração e redefinição) **não permitem** as operações de copiar, cortar ou colar. Ao tentar usar `Ctrl+C`, `Ctrl+X` ou `Ctrl+V` em um campo de senha, o sistema exibirá uma mensagem informando que a operação não é permitida.
+
+Essa medida protege contra ataques de shoulder surfing e impede que senhas sejam inadvertidamente expostas na área de transferência.
+
+### 9.2 Troca Obrigatória de Senha após Reset pelo Administrador
+
+Quando o administrador redefine sua senha (para a senha padrão `Security2026@`), no próximo login você será redirecionado automaticamente para a página de perfil com um **banner amarelo de aviso**. Esse banner indica que você deve criar uma nova senha antes de continuar usando o sistema.
+
+**Passos para trocar a senha obrigatória:**
+1. Faça login com a senha padrão `Security2026@`
+2. Você será redirecionado para `/perfil` com o aviso de troca obrigatória
+3. Role até a seção **"Alterar Senha"** no final da página
+4. Informe a senha atual (`Security2026@`), a nova senha e a confirmação
+5. Clique em **"Alterar Senha"**
+6. O banner desaparecerá e você poderá usar o sistema normalmente
+
+### 9.3 Redefinição de Senha por E-mail ("Esqueci minha senha")
+
+Se você esqueceu sua senha, siga os passos abaixo:
+
+1. Na tela de login, clique no link **"Esqueci minha senha"**
+2. Informe seu **e-mail cadastrado** no sistema
+3. Clique em **"Enviar Link de Redefinição"**
+4. Acesse seu e-mail e clique no link recebido
+   - O link é válido por **apenas 10 minutos**
+   - Após o prazo, você precisará solicitar um novo link
+5. Na página de redefinição, crie uma nova senha forte
+6. Clique em **"Redefinir Senha"**
+7. Você será redirecionado para o login para entrar com a nova senha
+
+> **Atenção:** O link de redefinição pode ser usado apenas uma vez. Após o uso, ele é invalidado automaticamente.
+
+### 9.4 Requisitos de Senha
+
+Sua senha deve atender aos seguintes requisitos mínimos:
+- Pelo menos **8 caracteres**
+- Recomendado: letras maiúsculas, minúsculas, números e caracteres especiais
+
 ## 10. Fluxos Completos do Sistema
 
 ### Fluxo 1: Primeiro Acesso e Registro

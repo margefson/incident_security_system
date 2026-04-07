@@ -50,6 +50,13 @@
       "when": 1775600670296,
       "tag": "0006_easy_dagger",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "5",
+      "when": 1775605378770,
+      "tag": "0007_flaky_gladiator",
+      "breakpoints": true
     }
   ]
 }
