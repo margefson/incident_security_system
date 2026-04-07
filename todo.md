@@ -83,3 +83,10 @@
 - [ ] Atualizar Manual do Usuário (PDF)
 - [ ] Atualizar Manual de Implantação (PDF)
 - [ ] Commit final no GitHub
+
+## Divisão de Atividades do Grupo
+- [x] Adicionar divisão de atividades no README.md
+- [x] Adicionar divisão de atividades no Manual do Usuário
+- [x] Adicionar divisão de atividades no Manual de Implantação
+- [x] Gerar PDFs atualizados
+- [x] Commitar no GitHub

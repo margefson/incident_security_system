@@ -27,6 +27,7 @@ Plataforma de gerenciamento de incidentes de segurança cibernética com classif
 - [Segurança](#segurança)
 - [Testes](#testes)
 - [Solução de Problemas](#solução-de-problemas)
+- [Equipe](#equipe)
 
 ---
 
@@ -569,6 +570,19 @@ Tests: 28 passed
 | Página em branco após login | Cookie bloqueado pelo navegador | Use Chrome/Firefox em modo normal |
 | PDF vazio ou erro 500 | Nenhum incidente registrado | Registre ao menos um incidente antes de exportar |
 | Acesso negado ao `/admin` | Usuário sem role admin | Execute `UPDATE users SET role='admin' WHERE email='...'` |
+
+---
+
+## Equipe
+
+O sistema foi desenvolvido por uma equipe de cinco integrantes, com responsabilidades distribuídas conforme a especialidade de cada membro:
+
+| Área | Responsável(is) | Descrição das Atividades |
+|---|---|---|
+| **Front-end** | Nattan e Keven | Desenvolvimento das interfaces React, tema cyberpunk, componentes shadcn/ui, páginas de login, registro, dashboard, listagem, detalhe e painel admin |
+| **Back-end** | Margefson | Implementação da API tRPC com Express, autenticação bcryptjs, procedures de incidentes, admin e exportação PDF, validação Joi e testes Vitest |
+| **Banco de Dados** | Nattan | Modelagem do schema Drizzle ORM, definição das tabelas `users` e `incidents`, configuração das migrações e queries de acesso |
+| **Classificador ML** | Josias e Keven | Construção do pipeline TF-IDF + Naive Bayes, treinamento com o dataset de 100 amostras, servidor Flask de classificação (porta 5001) e servidor Flask de geração de PDF (porta 5002) |
 
 ---
 
