@@ -307,15 +307,15 @@
 
 ## Sessão 6 — PDF, ML, Categorias
 
-- [ ] PDF: corrigir quebra de linha na coluna título da lista de incidentes
-- [ ] PDF: admin visualiza todos os incidentes de todos os usuários no relatório
-- [ ] ML: mostrar data da última atualização do modelo
-- [ ] ML: contagem dinâmica de categorias no dataset (leitura real)
-- [ ] Categorias: exclusão física do banco (não apenas desativar)
-- [ ] Testes individuais S6-1 a S6-N
-- [ ] README atualizado
-- [ ] Manuais PDF atualizados
-- [ ] Commit no GitHub
+- [x] PDF: corrigir quebra de linha na coluna título da lista de incidentes
+- [x] PDF: admin visualiza todos os incidentes de todos os usuários no relatório
+- [x] ML: mostrar data da última atualização do modelo
+- [x] ML: contagem dinâmica de categorias no dataset (leitura real)
+- [x] Categorias: exclusão física do banco (não apenas desativar)
+- [x] Testes individuais S6-1 a S6-N
+- [x] README atualizado
+- [x] Manuais PDF atualizados
+- [x] Commit no GitHub
 
 ## Sessão 6 — PDF, ML, Categorias
 - [x] PDF: quebra de linha automática no título (estimateRowH + lineBreak: true)
