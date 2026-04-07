@@ -1,5 +1,38 @@
 import Joi from "joi";
 
+// ─── Password Rules (exportadas para reuso no frontend) ────────────────────
+export const PASSWORD_RULES = {
+  minLength: 8,
+  maxLength: 128,
+  lowercase: /[a-z]/,
+  uppercase: /[A-Z]/,
+  digit: /[0-9]/,
+  special: /[^a-zA-Z0-9]/,
+} as const;
+
+/**
+ * Verifica quais critérios de senha estão satisfeitos.
+ * Retornado como objeto para uso no frontend (checklist visual).
+ */
+export function checkPasswordCriteria(password: string) {
+  return {
+    minLength: password.length >= PASSWORD_RULES.minLength,
+    maxLength: password.length <= PASSWORD_RULES.maxLength,
+    lowercase: PASSWORD_RULES.lowercase.test(password),
+    uppercase: PASSWORD_RULES.uppercase.test(password),
+    digit: PASSWORD_RULES.digit.test(password),
+    special: PASSWORD_RULES.special.test(password),
+  };
+}
+
+/**
+ * Retorna true se todos os critérios de senha forem atendidos.
+ */
+export function isPasswordValid(password: string): boolean {
+  const c = checkPasswordCriteria(password);
+  return c.minLength && c.maxLength && c.lowercase && c.uppercase && c.digit && c.special;
+}
+
 // ─── Auth Schemas ──────────────────────────────────────────────────────────
 export const registerSchema = Joi.object({
   name: Joi.string().min(2).max(100).required().messages({
@@ -14,11 +47,20 @@ export const registerSchema = Joi.object({
       "string.email": "Email inválido",
       "any.required": "Email é obrigatório",
     }),
-  password: Joi.string().min(8).max(128).required().messages({
-    "string.min": "Senha deve ter pelo menos 8 caracteres",
-    "string.max": "Senha deve ter no máximo 128 caracteres",
-    "any.required": "Senha é obrigatória",
-  }),
+  password: Joi.string()
+    .min(PASSWORD_RULES.minLength)
+    .max(PASSWORD_RULES.maxLength)
+    .pattern(PASSWORD_RULES.lowercase, "lowercase")
+    .pattern(PASSWORD_RULES.uppercase, "uppercase")
+    .pattern(PASSWORD_RULES.digit, "digit")
+    .pattern(PASSWORD_RULES.special, "special")
+    .required()
+    .messages({
+      "string.min": `Senha deve ter pelo menos ${PASSWORD_RULES.minLength} caracteres`,
+      "string.max": `Senha deve ter no máximo ${PASSWORD_RULES.maxLength} caracteres`,
+      "string.pattern.name": "Senha deve conter pelo menos: {{#name}}",
+      "any.required": "Senha é obrigatória",
+    }),
 });
 
 export const loginSchema = Joi.object({

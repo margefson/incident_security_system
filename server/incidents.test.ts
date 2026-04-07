@@ -92,7 +92,7 @@ describe("auth.register", () => {
     const result = await caller.auth.register({
       name: "Test User",
       email: "test@example.com",
-      password: "password123",
+      password: "Senha@123",
     });
 
     expect(result.success).toBe(true);
@@ -108,7 +108,7 @@ describe("auth.register", () => {
 
     const caller = appRouter.createCaller(createPublicContext());
     await expect(
-      caller.auth.register({ name: "Test", email: "test@example.com", password: "password123" })
+      caller.auth.register({ name: "Test", email: "test@example.com", password: "Senha@123" })
     ).rejects.toThrow("Email já cadastrado");
   });
 
@@ -134,7 +134,7 @@ describe("auth.login", () => {
 
     const ctx = createPublicContext();
     const caller = appRouter.createCaller(ctx);
-    const result = await caller.auth.login({ email: "test@example.com", password: "password123" });
+    const result = await caller.auth.login({ email: "test@example.com", password: "Senha@123" });
 
     expect(result.success).toBe(true);
   });
@@ -488,5 +488,174 @@ describe("incidents.create - notificação de risco crítico", () => {
         title: expect.stringContaining("CRÍTICO"),
       })
     );
+  });
+});
+
+// ─── Testes de Validação de Senha (Signup) ────────────────────────────────────
+describe("auth.register - validação de senha", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.mocked(db.getUserByEmail).mockResolvedValue(undefined);
+    vi.mocked(db.createLocalUser).mockResolvedValue({
+      id: 99, openId: "local_test", name: "Test", email: "pw@test.com",
+      passwordHash: "$2b$12$hash", loginMethod: "local", role: "user",
+      createdAt: new Date(), updatedAt: new Date(), lastSignedIn: new Date(), isActive: true,
+    });
+  });
+
+  it("aceita senha válida com todos os critérios atendidos", async () => {
+    const caller = appRouter.createCaller(createPublicContext());
+    const result = await caller.auth.register({
+      name: "Test User",
+      email: "pw@test.com",
+      password: "Senha@123",
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it("rejeita senha sem letra maiúscula", async () => {
+    const caller = appRouter.createCaller(createPublicContext());
+    await expect(
+      caller.auth.register({ name: "Test", email: "pw@test.com", password: "senha@123" })
+    ).rejects.toThrow();
+  });
+
+  it("rejeita senha sem letra minúscula", async () => {
+    const caller = appRouter.createCaller(createPublicContext());
+    await expect(
+      caller.auth.register({ name: "Test", email: "pw@test.com", password: "SENHA@123" })
+    ).rejects.toThrow();
+  });
+
+  it("rejeita senha sem número", async () => {
+    const caller = appRouter.createCaller(createPublicContext());
+    await expect(
+      caller.auth.register({ name: "Test", email: "pw@test.com", password: "Senha@abc" })
+    ).rejects.toThrow();
+  });
+
+  it("rejeita senha sem caractere especial", async () => {
+    const caller = appRouter.createCaller(createPublicContext());
+    await expect(
+      caller.auth.register({ name: "Test", email: "pw@test.com", password: "Senha1234" })
+    ).rejects.toThrow();
+  });
+
+  it("rejeita senha com menos de 8 caracteres", async () => {
+    const caller = appRouter.createCaller(createPublicContext());
+    await expect(
+      caller.auth.register({ name: "Test", email: "pw@test.com", password: "S@1a" })
+    ).rejects.toThrow();
+  });
+
+  it("rejeita senha com mais de 128 caracteres", async () => {
+    const longPassword = "Aa1@" + "x".repeat(125); // 129 chars
+    const caller = appRouter.createCaller(createPublicContext());
+    await expect(
+      caller.auth.register({ name: "Test", email: "pw@test.com", password: longPassword })
+    ).rejects.toThrow();
+  });
+
+  it("aceita senha exatamente no limite mínimo (8 chars com todos os critérios)", async () => {
+    const caller = appRouter.createCaller(createPublicContext());
+    const result = await caller.auth.register({
+      name: "Test User",
+      email: "pw@test.com",
+      password: "Aa1@bcde", // 8 chars: maiúscula, minúscula, número, especial
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it("aceita senha exatamente no limite máximo (128 chars com todos os critérios)", async () => {
+    const maxPassword = "Aa1@" + "b".repeat(124); // 128 chars
+    const caller = appRouter.createCaller(createPublicContext());
+    const result = await caller.auth.register({
+      name: "Test User",
+      email: "pw@test.com",
+      password: maxPassword,
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it("rejeita senha vazia", async () => {
+    const caller = appRouter.createCaller(createPublicContext());
+    await expect(
+      caller.auth.register({ name: "Test", email: "pw@test.com", password: "" })
+    ).rejects.toThrow();
+  });
+});
+
+// ─── Testes unitários de checkPasswordCriteria e isPasswordValid ──────────────
+import { checkPasswordCriteria, isPasswordValid } from "./validation";
+
+describe("checkPasswordCriteria", () => {
+  it("retorna todos os critérios falsos para string vazia", () => {
+    const result = checkPasswordCriteria("");
+    expect(result.minLength).toBe(false);
+    expect(result.lowercase).toBe(false);
+    expect(result.uppercase).toBe(false);
+    expect(result.digit).toBe(false);
+    expect(result.special).toBe(false);
+  });
+
+  it("detecta corretamente cada critério individualmente", () => {
+    expect(checkPasswordCriteria("aaaaaaaa").minLength).toBe(true);
+    expect(checkPasswordCriteria("aaaaaaaa").lowercase).toBe(true);
+    expect(checkPasswordCriteria("aaaaaaaa").uppercase).toBe(false);
+    expect(checkPasswordCriteria("AAAAAAAA").uppercase).toBe(true);
+    expect(checkPasswordCriteria("AAAAAAAA").lowercase).toBe(false);
+    expect(checkPasswordCriteria("Aa123456").digit).toBe(true);
+    expect(checkPasswordCriteria("Aa@bcdef").special).toBe(true);
+    expect(checkPasswordCriteria("Aa1bcdef").special).toBe(false);
+  });
+
+  it("detecta vários caracteres especiais válidos", () => {
+    const specials = ["!", "@", "#", "$", "%", "^", "&", "*", "(", ")", "-", "_", "+", "=", ".", ","];
+    for (const s of specials) {
+      expect(checkPasswordCriteria(`Aa1${s}bcde`).special).toBe(true);
+    }
+  });
+
+  it("maxLength é true para senha de exatamente 128 caracteres", () => {
+    const pw128 = "a".repeat(128);
+    expect(checkPasswordCriteria(pw128).maxLength).toBe(true);
+  });
+
+  it("maxLength é false para senha de 129 caracteres", () => {
+    const pw129 = "a".repeat(129);
+    expect(checkPasswordCriteria(pw129).maxLength).toBe(false);
+  });
+});
+
+describe("isPasswordValid", () => {
+  it("retorna true para senhas que atendem todos os critérios", () => {
+    expect(isPasswordValid("Senha@123")).toBe(true);
+    expect(isPasswordValid("Aa1@bcde")).toBe(true);
+    expect(isPasswordValid("MyP@ssw0rd!")).toBe(true);
+    expect(isPasswordValid("C0mplex!Pass")).toBe(true);
+  });
+
+  it("retorna false para senhas sem letra maiúscula", () => {
+    expect(isPasswordValid("senha@123")).toBe(false);
+  });
+
+  it("retorna false para senhas sem letra minúscula", () => {
+    expect(isPasswordValid("SENHA@123")).toBe(false);
+  });
+
+  it("retorna false para senhas sem número", () => {
+    expect(isPasswordValid("SenhaABCD@")).toBe(false);
+  });
+
+  it("retorna false para senhas sem caractere especial", () => {
+    expect(isPasswordValid("Senha1234")).toBe(false);
+  });
+
+  it("retorna false para senhas muito curtas", () => {
+    expect(isPasswordValid("S@1a")).toBe(false);
+  });
+
+  it("retorna false para string vazia", () => {
+    expect(isPasswordValid("")).toBe(false);
   });
 });

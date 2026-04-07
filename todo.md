@@ -90,3 +90,13 @@
 - [x] Adicionar divisão de atividades no Manual de Implantação
 - [x] Gerar PDFs atualizados
 - [x] Commitar no GitHub
+
+## Validação Robusta de Senha (Signup)
+- [x] Atualizar schema Joi: mín. 8, máx. 128 chars, minúscula, maiúscula, número, especial
+- [x] Adicionar feedback visual em tempo real no formulário de registro (checklist de critérios)
+- [x] Adicionar casos de teste para todas as regras de senha (22 novos testes, total 50)
+- [x] Atualizar README.md com as regras de validação
+- [x] Atualizar Manual do Usuário com as regras de validação
+- [x] Atualizar Manual de Implantação com as regras de validação
+- [x] Gerar PDFs atualizados
+- [x] Commitar no GitHub

@@ -5,7 +5,7 @@
 ![Python](https://img.shields.io/badge/Python-3.11-3776AB?style=flat-square&logo=python)
 ![MySQL](https://img.shields.io/badge/MySQL-8.x-4479A1?style=flat-square&logo=mysql)
 ![ML Accuracy](https://img.shields.io/badge/ML%20Accuracy-97%25-brightgreen?style=flat-square)
-![Tests](https://img.shields.io/badge/Tests-28%20passing-brightgreen?style=flat-square)
+![Tests](https://img.shields.io/badge/Tests-50%20passing-brightgreen?style=flat-square)
 ![License](https://img.shields.io/badge/License-MIT-blue?style=flat-square)
 
 Plataforma de gerenciamento de incidentes de segurança cibernética com classificação automática por Machine Learning (TF-IDF + Naive Bayes), painel de administração global, exportação de relatórios em PDF, notificações automáticas de risco crítico e interface cyberpunk de alto contraste.
@@ -150,7 +150,11 @@ Node.js recebe via tRPC incidents.create
 ## Funcionalidades
 
 ### Autenticação e Segurança
-- Registro de usuários com validação de e-mail e senha (mínimo 8 caracteres)
+- Registro de usuários com validação de e-mail e senha com regras robustas:
+  - Mínimo de 8 caracteres, máximo de 128
+  - Pelo menos uma letra minúscula, uma maiúscula, um número e um caractere especial
+  - Checklist visual em tempo real com barra de força (Muito Fraca / Fraca / Média / Forte)
+  - Botão de submissão bloqueado até todos os critérios serem atendidos
 - Login com hash bcrypt (custo 12) e sessão JWT HttpOnly
 - Controle de acesso por usuário: cada usuário vê apenas seus próprios incidentes
 - Controle de acesso por papel (role): `user` e `admin`
@@ -516,6 +520,17 @@ O sistema implementa múltiplas camadas de proteção:
 
 **Autenticação:** Senhas armazenadas com bcrypt (custo 12). Sessões gerenciadas via JWT assinado com `JWT_SECRET`, armazenado em cookie HttpOnly, Secure, SameSite=None para prevenir CSRF.
 
+**Validação de Senha (Signup):** Regras aplicadas em dupla camada — backend (Joi) e frontend (checklist visual em tempo real):
+
+| Critério | Regra |
+|---|---|
+| Comprimento mínimo | 8 caracteres |
+| Comprimento máximo | 128 caracteres |
+| Letra minúscula | Pelo menos uma (`[a-z]`) |
+| Letra maiúscula | Pelo menos uma (`[A-Z]`) |
+| Número | Pelo menos um (`[0-9]`) |
+| Caractere especial | Pelo menos um (`[^a-zA-Z0-9]`) |
+
 **Controle de Acesso:** Todas as procedures sensíveis usam `protectedProcedure` que verifica a presença do usuário no contexto. Operações de leitura/escrita de incidentes verificam `userId === ctx.user.id` ou `role === "admin"`. O `adminProcedure` bloqueia qualquer usuário sem `role === "admin"` com erro FORBIDDEN.
 
 **Validação de Entrada:** Joi valida todos os campos de autenticação e criação de incidentes no servidor antes de qualquer operação no banco. Zod valida os inputs das procedures tRPC.
@@ -532,9 +547,9 @@ pnpm test
 
 Saída esperada:
 ```
-✓ server/incidents.test.ts (27 tests)
+✓ server/incidents.test.ts (49 tests)
 ✓ server/auth.logout.test.ts (1 test)
-Tests: 28 passed
+Tests: 50 passed
 ```
 
 ### Cobertura dos Testes
@@ -542,6 +557,9 @@ Tests: 28 passed
 | Suite | Testes | O que cobre |
 |---|---|---|
 | `auth.register` | 3 | Registro bem-sucedido, e-mail duplicado, senha curta |
+| `auth.register - validação de senha` | 9 | Sem maiúscula, sem minúscula, sem número, sem especial, muito curta, muito longa, limites exatos (8 e 128 chars), vazia, válida |
+| `checkPasswordCriteria` | 5 | Critérios individuais, caracteres especiais, limites |
+| `isPasswordValid` | 8 | Senhas válidas e inválidas para cada regra |
 | `auth.login` | 2 | Login bem-sucedido, credenciais inválidas |
 | `auth.logout` | 1 | Limpeza do cookie de sessão |
 | `incidents.create` | 3 | Classificação ML, validação, autenticação |
@@ -555,6 +573,8 @@ Tests: 28 passed
 | `admin.updateUserRole` | 2 | Admin promove, usuário bloqueado |
 | `reports.exportPdf` | 2 | Exportação autenticada, não autenticado bloqueado |
 | `incidents.create (notif.)` | 1 | Notificação disparada para risco crítico |
+
+**Total: 50 testes passando**
 
 ---
 
