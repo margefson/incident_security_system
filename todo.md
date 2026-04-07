@@ -241,29 +241,29 @@
 
 ## Sessão 4 — PDF, Busca, Histórico, Testes e Manuais
 
-- [ ] Corrigir erro de exportação PDF (fetch failed) — verificar URL do servidor Flask e fallback
-- [ ] Busca de texto completo nos incidentes (título + descrição) com destaque visual
-- [ ] Tabela incident_history — registrar todas as alterações de status com timestamp e usuário
-- [ ] Exibir histórico de alterações na página de detalhe do incidente
-- [ ] Testes individuais para busca de texto (FTS-1 a FTS-N)
-- [ ] Testes individuais para histórico de status (IH-1 a IH-N)
-- [ ] Testes individuais para exportação PDF corrigida
-- [ ] README atualizado com novas funcionalidades
-- [ ] Manuais PDF atualizados
-- [ ] Commit no GitHub
+- [x] Corrigir erro de exportação PDF (fetch failed) — verificar URL do servidor Flask e fallback
+- [x] Busca de texto completo nos incidentes (título + descrição) com destaque visual
+- [x] Tabela incident_history — registrar todas as alterações de status com timestamp e usuário
+- [x] Exibir histórico de alterações na página de detalhe do incidente
+- [x] Testes individuais para busca de texto (FTS-1 a FTS-N)
+- [x] Testes individuais para histórico de status (IH-1 a IH-N)
+- [x] Testes individuais para exportação PDF corrigida
+- [x] README atualizado com novas funcionalidades
+- [x] Manuais PDF atualizados
+- [x] Commit no GitHub
 
 ## Sessao 4 - PDF, Busca, Historico, Testes e Manuais
 
-- [ ] Corrigir erro de exportacao PDF (fetch failed)
-- [ ] Busca de texto completo nos incidentes (titulo + descricao) com destaque visual
-- [ ] Tabela incident_history - registrar todas as alteracoes de status
-- [ ] Exibir historico de alteracoes na pagina de detalhe do incidente
-- [ ] Testes individuais para busca de texto (FTS-1 a FTS-N)
-- [ ] Testes individuais para historico de status (IH-1 a IH-N)
-- [ ] Testes individuais para exportacao PDF corrigida
-- [ ] README atualizado com novas funcionalidades
-- [ ] Manuais PDF atualizados
-- [ ] Commit no GitHub
+- [x] Corrigir erro de exportacao PDF (fetch failed)
+- [x] Busca de texto completo nos incidentes (titulo + descricao) com destaque visual
+- [x] Tabela incident_history - registrar todas as alteracoes de status
+- [x] Exibir historico de alteracoes na pagina de detalhe do incidente
+- [x] Testes individuais para busca de texto (FTS-1 a FTS-N)
+- [x] Testes individuais para historico de status (IH-1 a IH-N)
+- [x] Testes individuais para exportacao PDF corrigida
+- [x] README atualizado com novas funcionalidades
+- [x] Manuais PDF atualizados
+- [x] Commit no GitHub
 
 ## Sessão 4 — PDF, Busca, Histórico (Abr 2026)
 - [x] Corrigir exportação PDF (fetch failed) — implementar PDFKit nativo como fallback sem Flask
@@ -277,18 +277,18 @@
 - [x] Regenerar PDFs dos manuais
 
 ## Sessão 5 — Gerenciamento Usuários, Dataset, Retreinamento (Abr 2026)
-- [ ] Admin: editar nome/email de usuário
-- [ ] Admin: excluir usuário do sistema
-- [ ] Admin: resetar senha de usuário para "Security2026@"
-- [ ] Corrigir download do dataset incidentes_cybersecurity_100.xlsx
-- [ ] Atualizar planilha dataset com novas categorias cadastradas dinamicamente
-- [ ] Retreinamento dinâmico usando todos os incidentes cadastrados + categorias
-- [ ] Visualização online da planilha (tabela HTML interativa)
-- [ ] Testes individuais para gerenciamento de usuários (S5-1 a S5-x)
-- [ ] Testes individuais para dataset e retreinamento (S5-x a S5-y)
-- [ ] Atualizar README com novas funcionalidades
-- [ ] Atualizar manuais PDF
-- [ ] Commitar no GitHub
+- [x] Admin: editar nome/email de usuário
+- [x] Admin: excluir usuário do sistema
+- [x] Admin: resetar senha de usuário para "Security2026@"
+- [x] Corrigir download do dataset incidentes_cybersecurity_100.xlsx
+- [x] Atualizar planilha dataset com novas categorias cadastradas dinamicamente
+- [x] Retreinamento dinâmico usando todos os incidentes cadastrados + categorias
+- [x] Visualização online da planilha (tabela HTML interativa)
+- [x] Testes individuais para gerenciamento de usuários (S5-1 a S5-x)
+- [x] Testes individuais para dataset e retreinamento (S5-x a S5-y)
+- [x] Atualizar README com novas funcionalidades
+- [x] Atualizar manuais PDF
+- [x] Commitar no GitHub
 
 ## Sessão 5 — Gerenciamento de Usuários, Dataset, Retreinamento
 
