@@ -248,7 +248,7 @@ export async function listCategories() {
 export async function createCategory(name: string, description?: string, color?: string) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
-  await db.insert(categories).values({ name, description: description ?? null, color: color ?? "#22d3ee" });
+  await db.insert(categories).values({ name, description: description ?? "", color: color ?? "#22d3ee" });
   const result = await db.select().from(categories).where(eq(categories.name, name)).limit(1);
   return result[0];
 }

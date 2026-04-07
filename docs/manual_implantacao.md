@@ -535,7 +535,7 @@ Todos os scripts são executados na raiz do projeto com `pnpm <script>`:
 | `dev` | `pnpm dev` | Inicia o servidor de desenvolvimento (Node.js + Vite HMR) |
 | `build` | `pnpm build` | Compila o frontend (Vite) e o backend (esbuild) para produção |
 | `start` | `pnpm start` | Inicia o servidor em modo produção (requer `build` antes) |
-| `test` | `pnpm test` | Executa todos os testes Vitest (**191 testes** em 6 arquivos) |
+| `test` | `pnpm test` | Executa todos os testes Vitest (**200 testes** em 6 arquivos) |
 | `db:push` | `pnpm db:push` | Gera e aplica migrações do schema Drizzle no banco |
 | `check` | `pnpm check` | Verifica erros de TypeScript sem compilar |
 | `format` | `pnpm format` | Formata todos os arquivos com Prettier |

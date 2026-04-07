@@ -689,10 +689,30 @@ O sistema foi desenvolvido de forma colaborativa por uma equipe de cinco integra
 | Área | Integrante(s) | Responsabilidades |
 |---|---|---|
 | **Front-end** | Nattan e Keven | Desenvolvimento de todas as interfaces React: páginas de login, registro, dashboard, listagem de incidentes, formulário de novo incidente, detalhe do incidente, análise de risco e painel de administração. Implementação do design system SOC Portal (CSS variables OKLCH, fonte Inter, sidebar compacta, badges de severidade coloridos). Integração com hooks tRPC e componentes shadcn/ui. |
-| **Back-end** | Margefson | Implementação completa da API tRPC com Express: routers de autenticação (bcryptjs, JWT), incidentes, administração e exportação de relatórios. Validação de entradas com Joi (incluindo regras robustas de complexidade de senha), controle de acesso por papel (user/admin), 8 requisitos de segurança (helmet, CORS, rate limiting, IDOR), integração com serviços Flask internos e suite de 191 testes Vitest (incluindo testes de consistência do design system SOC Portal, CRUD de categorias, recomendações de segurança contextualizadas e classificação automática por Machine Learning). |
+| **Back-end** | Margefson | Implementação completa da API tRPC com Express: routers de autenticação (bcryptjs, JWT), incidentes, administração e exportação de relatórios. Validação de entradas com Joi (incluindo regras robustas de complexidade de senha), controle de acesso por papel (user/admin), 8 requisitos de segurança (helmet, CORS, rate limiting, IDOR), integração com serviços Flask internos e suite de 200 testes Vitest (incluindo testes de consistência do design system SOC Portal, CRUD de categorias, recomendações de segurança contextualizadas e classificação automática por Machine Learning). |
 | **Banco de Dados** | Nattan | Modelagem do schema relacional com Drizzle ORM: definição das tabelas `users` e `incidents`, tipos enumerados para categoria e nível de risco, configuração das migrações automáticas e implementação dos helpers de consulta em `server/db.ts`. |
 | **Classificador ML** | Josias e Keven | Construção do pipeline de classificação: pré-processamento do dataset de 100 amostras, vetorização TF-IDF (5.000 features, bigramas) e classificador Multinomial Naive Bayes. Servidor Flask de classificação (porta 5001) e servidor Flask de geração de relatórios PDF com ReportLab (porta 5002). |
 
 ---
 
-*Manual atualizado em Abril de 2026 — Versão 3.0. Para suporte técnico, consulte o repositório: https://github.com/margefson/incident_security_system*
+## 14. Correções de Bugs (v5.0)
+
+### BUG-001: Erro ao Criar Categoria sem Descrição
+
+**Sintoma:** Ao criar uma nova categoria deixando o campo "Descrição" em branco, o sistema exibia a mensagem `Failed query: insert into categories` com os parâmetros incorretos.
+
+**Causa:** O frontend enviava `description: undefined` quando o campo estava vazio. O tRPC/Zod omitia o campo do objeto, e o Drizzle ORM gerava um SQL com parâmetros na ordem errada (o nome era inserido duas vezes).
+
+**Correção:** O frontend agora envia `description: ""` (string vazia) explicitamente quando o campo está em branco, garantindo que o INSERT SQL receba sempre os parâmetros na ordem correta.
+
+### BUG-002: Rota /admin/users Retornava 404
+
+**Sintoma:** Ao acessar o menu "Usuários" no painel de administração, o sistema exibia a página de erro 404 "Page Not Found".
+
+**Causa:** A página `AdminUsers.tsx` não havia sido criada e a rota `/admin/users` não estava registrada no `App.tsx`.
+
+**Correção:** Foi criada a página `AdminUsers.tsx` com listagem completa de usuários (nome, e-mail, papel, data de criação) e funcionalidade de promoção/rebaixamento de papel (admin/user). A rota foi registrada no `App.tsx` e o link "Usuários" foi adicionado ao menu lateral do `DashboardLayout`.
+
+---
+
+*Manual atualizado em Abril de 2026 — Versão 5.0. Para suporte técnico, consulte o repositório: https://github.com/margefson/incident_security_system*

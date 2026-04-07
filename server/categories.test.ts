@@ -326,3 +326,89 @@ describe("Categories CRUD", () => {
     });
   });
 });
+
+// ─── Bug Regression Tests ────────────────────────────────────────────────────
+describe("regressão de bugs corrigidos", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  // BUG FIX: INSERT categories falhava quando description era undefined
+  // O frontend agora passa string vazia ("") em vez de undefined
+  describe("BUG-001: INSERT category com description vazia", () => {
+    it("cria categoria com description como string vazia (não undefined)", async () => {
+      const mockCat = { id: 10, name: "Engenharia Social", description: "", color: "#22d3ee", isActive: true, createdAt: new Date(), updatedAt: new Date() };
+      vi.mocked(db.createCategory).mockResolvedValue(mockCat);
+      const caller = appRouter.createCaller(makeAdminCtx());
+      // Simula o que o frontend agora envia: description como "" (não undefined)
+      const result = await caller.categories.create({ name: "Engenharia Social", description: "", color: "#22d3ee" });
+      expect(result).toBeDefined();
+      expect(result.name).toBe("Engenharia Social");
+      // Verifica que createCategory foi chamado com string vazia
+      expect(vi.mocked(db.createCategory)).toHaveBeenCalledWith("Engenharia Social", "", "#22d3ee");
+    });
+
+    it("cria categoria sem description (campo omitido) - usa default do schema", async () => {
+      const mockCat = { id: 11, name: "Ransomware", description: null, color: "#f87171", isActive: true, createdAt: new Date(), updatedAt: new Date() };
+      vi.mocked(db.createCategory).mockResolvedValue(mockCat);
+      const caller = appRouter.createCaller(makeAdminCtx());
+      const result = await caller.categories.create({ name: "Ransomware", color: "#f87171" });
+      expect(result).toBeDefined();
+      expect(result.name).toBe("Ransomware");
+    });
+
+    it("não permite criar categoria com nome duplicado (erro do DB)", async () => {
+      vi.mocked(db.createCategory).mockRejectedValue(new Error("Duplicate entry 'Phishing'"));
+      const caller = appRouter.createCaller(makeAdminCtx());
+      await expect(caller.categories.create({ name: "Phishing" }))
+        .rejects.toThrow();
+    });
+  });
+
+  // BUG FIX: Rota /admin/users retornava 404 (página não existia)
+  // A página AdminUsers.tsx foi criada e registrada no App.tsx
+  describe("BUG-002: admin.listUsers e admin.updateUserRole", () => {
+    it("admin.listUsers: retorna lista de usuários para admin", async () => {
+      const mockUsers = [
+        { id: 1, name: "Admin User", email: "admin@test.com", role: "admin" as const, loginMethod: "email", isActive: true, createdAt: new Date(), lastSignedIn: new Date() },
+        { id: 2, name: "Regular User", email: "user@test.com", role: "user" as const, loginMethod: "email", isActive: true, createdAt: new Date(), lastSignedIn: new Date() },
+      ];
+      vi.mocked(db.getAllUsers).mockResolvedValue(mockUsers);
+      const caller = appRouter.createCaller(makeAdminCtx());
+      const result = await caller.admin.listUsers();
+      expect(result).toHaveLength(2);
+      expect(result[0].role).toBe("admin");
+      expect(result[1].role).toBe("user");
+    });
+
+    it("admin.listUsers: bloqueia acesso de usuário comum (FORBIDDEN)", async () => {
+      const caller = appRouter.createCaller(makeUserCtx());
+      await expect(caller.admin.listUsers()).rejects.toThrow();
+    });
+
+    it("admin.listUsers: bloqueia acesso anônimo (UNAUTHORIZED)", async () => {
+      const caller = appRouter.createCaller(makeAnonCtx());
+      await expect(caller.admin.listUsers()).rejects.toThrow();
+    });
+
+    it("admin.updateUserRole: promove usuário para admin", async () => {
+      vi.mocked(db.updateUserRole).mockResolvedValue(undefined);
+      const caller = appRouter.createCaller(makeAdminCtx());
+      const result = await caller.admin.updateUserRole({ userId: 2, role: "admin" });
+      expect(result).toEqual({ success: true });
+    });
+
+    it("admin.updateUserRole: não permite admin alterar seu próprio perfil (BAD_REQUEST)", async () => {
+      const caller = appRouter.createCaller(makeAdminCtx());
+      // makeAdminCtx() usa id: 1
+      await expect(caller.admin.updateUserRole({ userId: 1, role: "user" }))
+        .rejects.toThrow();
+    });
+
+    it("admin.updateUserRole: bloqueia usuário comum (FORBIDDEN)", async () => {
+      const caller = appRouter.createCaller(makeUserCtx());
+      await expect(caller.admin.updateUserRole({ userId: 3, role: "admin" }))
+        .rejects.toThrow();
+    });
+  });
+});

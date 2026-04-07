@@ -4,7 +4,7 @@ import { useAuth } from "@/_core/hooks/useAuth";
 import { toast } from "sonner";
 import {
   LayoutDashboard, AlertTriangle, PlusCircle, BarChart2,
-  Shield, ShieldAlert, LogOut, User, Tag, ChevronRight, Brain
+  Shield, ShieldAlert, LogOut, User, Tag, ChevronRight, Brain, Users
 } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
@@ -28,6 +28,7 @@ const adminItems = [
   { path: "/admin",            label: "Painel Admin",  icon: ShieldAlert },
   { path: "/admin/categories", label: "Categorias",    icon: Tag },
   { path: "/admin/ml",         label: "Machine Learning", icon: Brain },
+  { path: "/admin/users",       label: "Usuários",         icon: Users },
 ];
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {

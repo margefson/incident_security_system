@@ -274,7 +274,7 @@ export default function AdminCategories() {
               Cancelar
             </Button>
             <Button
-              onClick={() => createMutation.mutate({ name: formName, description: formDesc || undefined, color: formColor })}
+              onClick={() => createMutation.mutate({ name: formName, description: formDesc.trim() || "", color: formColor })}
               disabled={createMutation.isPending || !formName.trim()}
               className="font-mono"
             >
@@ -340,7 +340,7 @@ export default function AdminCategories() {
               onClick={() => editTarget && updateMutation.mutate({
                 id: editTarget.id,
                 name: formName,
-                description: formDesc || undefined,
+                description: formDesc.trim() || "",
                 color: formColor,
               })}
               disabled={updateMutation.isPending || !formName.trim()}
