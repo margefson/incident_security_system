@@ -1,4 +1,5 @@
 import { TRPCError } from "@trpc/server";
+import { generatePdfBuffer, type IncidentRow } from "./pdf";
 import { z } from "zod/v4";
 import { COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
@@ -23,6 +24,9 @@ import {
   updateIncidentStatus,
   updateIncidentNotes,
   getIncidentStatusStats,
+  searchIncidents,
+  addIncidentHistory,
+  getIncidentHistory,
 } from "./db";
 import { registerSchema, loginSchema, createIncidentSchema, validateJoi } from "./validation";
 import bcrypt from "bcryptjs";
@@ -298,13 +302,26 @@ const incidentsRouter = router({
     .input(z.object({
       id: z.number(),
       status: z.enum(["open", "in_progress", "resolved"]),
+      comment: z.string().max(500).optional(),
     }))
     .mutation(async ({ input, ctx }) => {
       const incident = await getIncidentById(input.id);
       if (!incident || (incident.userId !== ctx.user.id && ctx.user.role !== "admin")) {
         throw new TRPCError({ code: "NOT_FOUND", message: "Incidente não encontrado" });
       }
-      return updateIncidentStatus(input.id, ctx.user.id, input.status, ctx.user.role === "admin");
+      const current = await getIncidentById(input.id);
+      if (!current) throw new TRPCError({ code: "NOT_FOUND", message: "Incidente não encontrado" });
+      await updateIncidentStatus(input.id, ctx.user.id, input.status, ctx.user.role === "admin");
+      // Record history entry
+      await addIncidentHistory({
+        incidentId: input.id,
+        userId: ctx.user.id,
+        action: "status_changed",
+        fromValue: current.status,
+        toValue: input.status,
+        comment: input.comment ?? null,
+      });
+      return { success: true };
     }),
   updateNotes: protectedProcedure
     .input(z.object({
@@ -316,11 +333,51 @@ const incidentsRouter = router({
       if (!incident || (incident.userId !== ctx.user.id && ctx.user.role !== "admin")) {
         throw new TRPCError({ code: "NOT_FOUND", message: "Incidente não encontrado" });
       }
-      return updateIncidentNotes(input.id, ctx.user.id, input.notes, ctx.user.role === "admin");
+      const current = await getIncidentById(input.id);
+      if (!current) throw new TRPCError({ code: "NOT_FOUND", message: "Incidente não encontrado" });
+      await updateIncidentNotes(input.id, ctx.user.id, input.notes, ctx.user.role === "admin");
+      // Record history entry
+      await addIncidentHistory({
+        incidentId: input.id,
+        userId: ctx.user.id,
+        action: "notes_updated",
+        fromValue: current.notes ?? null,
+        toValue: input.notes,
+      });
+      return { success: true };
     }),
   statusStats: protectedProcedure.query(async ({ ctx }) => {
     return getIncidentStatusStats(ctx.user.id);
   }),
+  history: protectedProcedure
+    .input(z.object({ id: z.number().int().positive() }))
+    .query(async ({ input, ctx }) => {
+      // Verify ownership or admin
+      const inc = await getIncidentById(input.id);
+      if (!inc) throw new TRPCError({ code: "NOT_FOUND", message: "Incidente não encontrado" });
+      if (inc.userId !== ctx.user.id && ctx.user.role !== "admin") {
+        throw new TRPCError({ code: "FORBIDDEN", message: "Acesso negado" });
+      }
+      return getIncidentHistory(input.id);
+    }),
+  search: protectedProcedure
+    .input(z.object({
+      query: z.string().min(1).max(200),
+      category: z.string().optional(),
+      riskLevel: z.string().optional(),
+      adminMode: z.boolean().optional().default(false),
+      limit: z.number().int().min(1).max(200).optional().default(50),
+    }))
+    .query(async ({ input, ctx }) => {
+      const isAdmin = input.adminMode && ctx.user.role === "admin";
+      return searchIncidents({
+        query: input.query,
+        userId: isAdmin ? undefined : ctx.user.id,
+        category: input.category,
+        riskLevel: input.riskLevel,
+        limit: input.limit,
+      });
+    }),
 });
 // ─── Categories Router ────────────────────────────────────────────────────────────
 const categoriesRouter = router({
@@ -495,30 +552,29 @@ const reportsRouter = router({
         });
       }
 
-      // Call Python PDF service
-      const payload = {
-        incidents,
+        // Try Python PDF service first, fall back to Node.js PDFKit
+      const pdfPayload = {
+        incidents: incidents as IncidentRow[],
         userName: ctx.user.name ?? "Usuário",
         userEmail: ctx.user.email ?? "",
         isAdmin: input.adminMode && ctx.user.role === "admin",
       };
-
-      const response = await fetch("http://localhost:5002/generate-pdf", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-        signal: AbortSignal.timeout(30000),
-      });
-
-      if (!response.ok) {
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Falha ao gerar PDF",
+      let pdfBuffer: Buffer;
+      try {
+        const response = await fetch("http://localhost:5002/generate-pdf", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(pdfPayload),
+          signal: AbortSignal.timeout(8000),
         });
+        if (!response.ok) throw new Error(`Flask PDF error: ${response.status}`);
+        pdfBuffer = Buffer.from(await response.arrayBuffer());
+      } catch {
+        // Fallback: generate PDF with Node.js PDFKit (works without Python)
+        console.log("[PDF] Flask unavailable, using Node.js PDFKit fallback");
+        pdfBuffer = await generatePdfBuffer(pdfPayload);
       }
-
-      const pdfBuffer = await response.arrayBuffer();
-      const base64 = Buffer.from(pdfBuffer).toString("base64");
+      const base64 = pdfBuffer.toString("base64");
       return {
         base64,
         filename: `relatorio_incidentes_${new Date().toISOString().slice(0, 10)}.pdf`,

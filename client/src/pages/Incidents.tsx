@@ -1,20 +1,47 @@
 /**
- * Incidents.tsx — Listagem de incidentes com filtros avançados
- * Filtros: busca textual, categoria, nível de risco, período de data
- * Exportação: CSV
+ * Incidents.tsx — Listagem de incidentes com busca de texto completo e filtros avançados
+ *
+ * Funcionalidades:
+ *  - Busca de texto completo (título + descrição) com destaque visual dos termos
+ *  - Filtros avançados: categoria, nível de risco, período de data
+ *  - Contador de filtros ativos com botão de limpeza rápida
+ *  - Exportação CSV dos incidentes filtrados
+ *  - Integração com endpoint backend incidents.search para buscas robustas
  */
-
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
 import DashboardLayout from "@/components/DashboardLayout";
 import {
-  PlusCircle, Search, AlertTriangle, Filter, Download, X,
+  PlusCircle, Search, AlertTriangle, Filter, Download, X, Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
+
+/** Destaca as ocorrências de `term` dentro de `text` */
+function HighlightText({ text, term }: { text: string; term: string }) {
+  if (!term.trim()) return <span>{text}</span>;
+  const escaped = term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const parts = text.split(new RegExp(`(${escaped})`, "gi"));
+  return (
+    <span>
+      {parts.map((part, i) =>
+        part.toLowerCase() === term.toLowerCase() ? (
+          <mark
+            key={i}
+            className="bg-yellow-400/30 text-yellow-200 rounded px-0.5 not-italic font-semibold"
+          >
+            {part}
+          </mark>
+        ) : (
+          <span key={i}>{part}</span>
+        )
+      )}
+    </span>
+  );
+}
 
 const SEV: Record<string, string> = {
   critical: "text-red-400 bg-red-400/10 border-red-400/30",
@@ -33,63 +60,100 @@ const CAT_LABELS: Record<string, string> = {
   brute_force: "Força Bruta",
   ddos: "DDoS",
   vazamento_de_dados: "Vazamento",
+  engenharia_social: "Eng. Social",
   unknown: "Desconhecido",
 };
 
 export default function Incidents() {
   const [, navigate] = useLocation();
   const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("");
   const [riskFilter, setRiskFilter] = useState("");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const [showFilters, setShowFilters] = useState(false);
 
-  const { data: incidents, isLoading } = trpc.incidents.list.useQuery();
+  // Debounce the search input (300ms)
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearch(search), 300);
+    return () => clearTimeout(timer);
+  }, [search]);
 
+  // Load all incidents (for local filtering when no search term)
+  const { data: allIncidents, isLoading: loadingAll } = trpc.incidents.list.useQuery();
+
+  // Backend full-text search (activated when debouncedSearch has >= 2 chars)
+  const searchEnabled = debouncedSearch.trim().length >= 2;
+  const { data: searchResults, isFetching: searchFetching } = trpc.incidents.search.useQuery(
+    {
+      query: debouncedSearch,
+      category: categoryFilter || undefined,
+      riskLevel: riskFilter || undefined,
+      limit: 100,
+    },
+    { enabled: searchEnabled }
+  );
+
+  const isLoading = loadingAll || (searchEnabled && searchFetching);
+
+  // Determine which dataset to use
+  const baseData = useMemo(() => {
+    if (searchEnabled && searchResults) return searchResults;
+    return allIncidents ?? [];
+  }, [searchEnabled, searchResults, allIncidents]);
+
+  // Apply local filters (date range) on top of base data
   const filtered = useMemo(() => {
-    if (!incidents) return [];
-    return incidents.filter((inc) => {
-      const matchSearch =
-        !search ||
-        inc.title.toLowerCase().includes(search.toLowerCase()) ||
-        inc.description.toLowerCase().includes(search.toLowerCase());
-      const matchCat = !categoryFilter || inc.category === categoryFilter;
-      const matchRisk = !riskFilter || inc.riskLevel === riskFilter;
+    return baseData.filter((inc) => {
+      const matchCat = searchEnabled ? true : (!categoryFilter || inc.category === categoryFilter);
+      const matchRisk = searchEnabled ? true : (!riskFilter || inc.riskLevel === riskFilter);
       const incDate = new Date(inc.createdAt);
       const matchFrom = !dateFrom || incDate >= new Date(dateFrom);
       const matchTo = !dateTo || incDate <= new Date(dateTo + "T23:59:59");
-      return matchSearch && matchCat && matchRisk && matchFrom && matchTo;
+      const matchLocalSearch = searchEnabled
+        ? true
+        : (!search ||
+            inc.title.toLowerCase().includes(search.toLowerCase()) ||
+            (inc.description ?? "").toLowerCase().includes(search.toLowerCase()));
+      return matchCat && matchRisk && matchFrom && matchTo && matchLocalSearch;
     });
-  }, [incidents, search, categoryFilter, riskFilter, dateFrom, dateTo]);
+  }, [baseData, search, searchEnabled, categoryFilter, riskFilter, dateFrom, dateTo]);
 
   const categories = useMemo(
-    () => Array.from(new Set((incidents?.map((i) => i.category).filter(Boolean) ?? []) as string[])),
-    [incidents]
+    () => Array.from(new Set((allIncidents?.map((i) => i.category).filter(Boolean) ?? []) as string[])),
+    [allIncidents]
   );
 
   const activeFilters = [categoryFilter, riskFilter, dateFrom, dateTo].filter(Boolean).length;
 
-  const clearFilters = () => {
+  const clearFilters = useCallback(() => {
     setCategoryFilter("");
     setRiskFilter("");
     setDateFrom("");
     setDateTo("");
-  };
+  }, []);
+
+  const clearAll = useCallback(() => {
+    setSearch("");
+    setDebouncedSearch("");
+    clearFilters();
+  }, [clearFilters]);
 
   const exportCSV = () => {
     if (!filtered.length) {
       toast.error("Nenhum incidente para exportar");
       return;
     }
-    const header = ["ID", "Título", "Descrição", "Categoria", "Risco", "Confiança (%)", "Data"];
+    const header = ["ID", "Título", "Descrição", "Categoria", "Risco", "Confiança (%)", "Status", "Data"];
     const rows = filtered.map((inc) => [
       inc.id,
       `"${inc.title.replace(/"/g, '""')}"`,
-      `"${inc.description.replace(/"/g, '""')}"`,
+      `"${(inc.description ?? "").replace(/"/g, '""')}"`,
       CAT_LABELS[inc.category ?? ""] ?? inc.category ?? "—",
       SEV_LABELS[inc.riskLevel ?? ""] ?? inc.riskLevel ?? "—",
       inc.confidence != null ? Math.round(inc.confidence * 100) : "—",
+      (inc as Record<string, unknown>).status ?? "open",
       new Date(inc.createdAt).toLocaleDateString("pt-BR"),
     ]);
     const csv = [header, ...rows].map((r) => r.join(";")).join("\n");
@@ -111,8 +175,14 @@ export default function Incidents() {
           <div>
             <h1 className="soc-page-title">Incidentes</h1>
             <p className="soc-page-sub">
-              {filtered.length} de {incidents?.length ?? 0} incidente(s)
-              {activeFilters > 0 && ` · ${activeFilters} filtro(s) ativo(s)`}
+              {isLoading ? "Carregando..." : (
+                <>
+                  {filtered.length} incidente(s)
+                  {searchEnabled && ` encontrado(s) para "${debouncedSearch}"`}
+                  {!searchEnabled && allIncidents && ` de ${allIncidents.length} total`}
+                  {activeFilters > 0 && ` · ${activeFilters} filtro(s) ativo(s)`}
+                </>
+              )}
             </p>
           </div>
           <div className="flex items-center gap-2">
@@ -139,41 +209,67 @@ export default function Incidents() {
         {/* Barra de busca e filtros */}
         <div className="space-y-3">
           <div className="flex gap-3">
-            <div className="relative flex-1 max-w-sm">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            {/* Campo de busca de texto completo */}
+            <div className="relative flex-1 max-w-md">
+              {isLoading && searchEnabled ? (
+                <Loader2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-primary animate-spin" />
+              ) : (
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              )}
               <Input
-                placeholder="Buscar incidentes..."
+                placeholder="Buscar em título e descrição..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="pl-9 bg-input border-border font-mono text-sm"
+                className="pl-9 pr-8 bg-input border-border font-mono text-sm"
               />
+              {search && (
+                <button
+                  onClick={() => { setSearch(""); setDebouncedSearch(""); }}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              )}
             </div>
             <Button
               variant="outline"
               size="sm"
-              onClick={() => setShowFilters(!showFilters)}
-              className={`gap-2 font-mono text-xs border-border ${showFilters ? "bg-primary/10 border-primary/30 text-primary" : ""}`}
+              onClick={() => setShowFilters((v) => !v)}
+              className={`gap-2 font-mono text-xs border-border relative ${showFilters ? "border-primary/50 text-primary" : ""}`}
             >
               <Filter className="w-3.5 h-3.5" />
               Filtros
               {activeFilters > 0 && (
-                <Badge className="ml-1 h-4 w-4 p-0 flex items-center justify-center text-xs bg-primary text-primary-foreground rounded-full">
+                <span className="absolute -top-1.5 -right-1.5 bg-primary text-primary-foreground text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center font-mono">
                   {activeFilters}
-                </Badge>
+                </span>
               )}
             </Button>
-            {activeFilters > 0 && (
+            {(search || activeFilters > 0) && (
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={clearFilters}
-                className="gap-1 font-mono text-xs text-muted-foreground hover:text-foreground"
+                onClick={clearAll}
+                className="gap-2 font-mono text-xs text-muted-foreground hover:text-foreground"
               >
                 <X className="w-3.5 h-3.5" />
                 Limpar
               </Button>
             )}
           </div>
+
+          {/* Indicador de busca ativa */}
+          {searchEnabled && (
+            <div className="flex items-center gap-2 text-xs font-mono text-primary bg-primary/5 border border-primary/20 rounded-lg px-3 py-2">
+              <Search className="w-3.5 h-3.5 flex-shrink-0" />
+              <span>
+                Busca de texto completo ativa:{" "}
+                <strong className="text-primary">"{debouncedSearch}"</strong>
+                {searchFetching && " — buscando..."}
+                {!searchFetching && searchResults && ` — ${searchResults.length} resultado(s)`}
+              </span>
+            </div>
+          )}
 
           {/* Painel de filtros avançados */}
           {showFilters && (
@@ -245,7 +341,8 @@ export default function Incidents() {
               {isLoading ? (
                 <tr>
                   <td colSpan={5} className="text-center py-12 text-muted-foreground font-mono text-sm">
-                    Carregando...
+                    <Loader2 className="w-5 h-5 animate-spin mx-auto mb-2 text-primary" />
+                    {searchEnabled ? `Buscando "${debouncedSearch}"...` : "Carregando..."}
                   </td>
                 </tr>
               ) : filtered.length === 0 ? (
@@ -253,16 +350,20 @@ export default function Incidents() {
                   <td colSpan={5} className="text-center py-12">
                     <AlertTriangle className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
                     <p className="text-muted-foreground text-sm font-mono">
-                      {activeFilters > 0 ? "Nenhum incidente encontrado com os filtros aplicados" : "Nenhum incidente registrado"}
+                      {searchEnabled
+                        ? `Nenhum resultado para "${debouncedSearch}"`
+                        : activeFilters > 0
+                        ? "Nenhum incidente encontrado com os filtros aplicados"
+                        : "Nenhum incidente registrado"}
                     </p>
-                    {activeFilters > 0 && (
+                    {(search || activeFilters > 0) && (
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={clearFilters}
+                        onClick={clearAll}
                         className="mt-2 font-mono text-xs text-primary"
                       >
-                        Limpar filtros
+                        Limpar busca e filtros
                       </Button>
                     )}
                   </td>
@@ -275,8 +376,12 @@ export default function Incidents() {
                     onClick={() => navigate(`/incidents/${inc.id}`)}
                   >
                     <td className="px-4 py-3">
-                      <p className="font-medium text-foreground text-sm truncate max-w-xs">{inc.title}</p>
-                      <p className="text-xs text-muted-foreground truncate max-w-xs mt-0.5">{inc.description}</p>
+                      <p className="font-medium text-foreground text-sm truncate max-w-xs">
+                        <HighlightText text={inc.title} term={debouncedSearch} />
+                      </p>
+                      <p className="text-xs text-muted-foreground truncate max-w-xs mt-0.5">
+                        <HighlightText text={inc.description ?? ""} term={debouncedSearch} />
+                      </p>
                     </td>
                     <td className="px-4 py-3">
                       <span className="text-xs px-2 py-0.5 rounded border font-mono capitalize text-primary bg-primary/10 border-primary/30">

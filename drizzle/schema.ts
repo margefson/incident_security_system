@@ -39,6 +39,7 @@ export const incidents = mysqlTable("incidents", {
     "brute_force",
     "ddos",
     "vazamento_de_dados",
+    "engenharia_social",
     "unknown",
   ])
     .default("unknown")
@@ -68,3 +69,23 @@ export const categories = mysqlTable("categories", {
 });
 export type Category = typeof categories.$inferSelect;
 export type InsertCategory = typeof categories.$inferInsert;
+
+// ─── Incident History ────────────────────────────────────────────────────────
+export const incidentHistory = mysqlTable("incident_history", {
+  id: int("id").autoincrement().primaryKey(),
+  incidentId: int("incidentId").notNull(),
+  userId: int("userId").notNull(),           // who made the change
+  action: mysqlEnum("action", [
+    "status_changed",
+    "notes_updated",
+    "category_changed",
+    "risk_changed",
+    "created",
+  ]).notNull(),
+  fromValue: varchar("fromValue", { length: 255 }),  // previous value
+  toValue: varchar("toValue", { length: 255 }),      // new value
+  comment: text("comment"),                          // optional free-text note
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+export type IncidentHistory = typeof incidentHistory.$inferSelect;
+export type InsertIncidentHistory = typeof incidentHistory.$inferInsert;

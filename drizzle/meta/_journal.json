@@ -43,6 +43,13 @@
       "when": 1775588460741,
       "tag": "0005_chief_zeigeist",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "5",
+      "when": 1775600670296,
+      "tag": "0006_easy_dagger",
+      "breakpoints": true
     }
   ]
 }

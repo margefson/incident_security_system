@@ -1,6 +1,6 @@
-import { eq, desc, and, sql } from "drizzle-orm";
+import { eq, desc, and, or, like, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { users, incidents, categories, InsertUser, InsertIncident, Incident } from "../drizzle/schema";
+import { users, incidents, categories, incidentHistory, InsertUser, InsertIncident, Incident } from "../drizzle/schema";
 import { ENV } from "./_core/env";
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -336,4 +336,92 @@ export async function getIncidentStatusStats(userId: number) {
     result[row.status as keyof typeof result] = Number(row.count);
   }
   return result;
+}
+
+// ─── Full-text Search ────────────────────────────────────────────────────────
+export async function searchIncidents(params: {
+  query: string;
+  userId?: number;  // undefined = admin search across all users
+  category?: string;
+  riskLevel?: string;
+  limit?: number;
+}) {
+  const db = await getDb();
+  if (!db) return [];
+  const { query, userId, category, riskLevel, limit = 50 } = params;
+  const searchTerm = `%${query}%`;
+  const conditions = [];
+  // Text match: title OR description
+  conditions.push(
+    or(
+      like(incidents.title, searchTerm),
+      like(incidents.description, searchTerm)
+    )
+  );
+  if (userId !== undefined) conditions.push(eq(incidents.userId, userId));
+  if (category) conditions.push(eq(incidents.category, category as Incident["category"]));
+  if (riskLevel) conditions.push(eq(incidents.riskLevel, riskLevel as Incident["riskLevel"]));
+  return db
+    .select({
+      id: incidents.id,
+      userId: incidents.userId,
+      title: incidents.title,
+      description: incidents.description,
+      category: incidents.category,
+      riskLevel: incidents.riskLevel,
+      confidence: incidents.confidence,
+      status: incidents.status,
+      notes: incidents.notes,
+      resolvedAt: incidents.resolvedAt,
+      createdAt: incidents.createdAt,
+      updatedAt: incidents.updatedAt,
+      userName: users.name,
+    })
+    .from(incidents)
+    .leftJoin(users, eq(incidents.userId, users.id))
+    .where(and(...conditions))
+    .orderBy(desc(incidents.createdAt))
+    .limit(limit);
+}
+
+// ─── Incident History helpers ────────────────────────────────────────────────
+export async function addIncidentHistory(entry: {
+  incidentId: number;
+  userId: number;
+  action: "status_changed" | "notes_updated" | "category_changed" | "risk_changed" | "created";
+  fromValue?: string | null;
+  toValue?: string | null;
+  comment?: string | null;
+}) {
+  const db = await getDb();
+  if (!db) return;
+  await db.insert(incidentHistory).values({
+    incidentId: entry.incidentId,
+    userId: entry.userId,
+    action: entry.action,
+    fromValue: entry.fromValue ?? null,
+    toValue: entry.toValue ?? null,
+    comment: entry.comment ?? null,
+  });
+}
+
+export async function getIncidentHistory(incidentId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db
+    .select({
+      id: incidentHistory.id,
+      incidentId: incidentHistory.incidentId,
+      userId: incidentHistory.userId,
+      action: incidentHistory.action,
+      fromValue: incidentHistory.fromValue,
+      toValue: incidentHistory.toValue,
+      comment: incidentHistory.comment,
+      createdAt: incidentHistory.createdAt,
+      userName: users.name,
+    })
+    .from(incidentHistory)
+    .leftJoin(users, eq(incidentHistory.userId, users.id))
+    .where(eq(incidentHistory.incidentId, incidentId))
+    .orderBy(desc(incidentHistory.createdAt));
 }

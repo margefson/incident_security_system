@@ -238,3 +238,40 @@
 - [x] README.md atualizado: diagrama PNG, seção de acompanhamento, badge 261 testes
 - [x] manual_usuario.md atualizado: seções 6.4, 6.5, 6.6 (status, notas, timeline)
 - [x] PDFs dos manuais regenerados
+
+## Sessão 4 — PDF, Busca, Histórico, Testes e Manuais
+
+- [ ] Corrigir erro de exportação PDF (fetch failed) — verificar URL do servidor Flask e fallback
+- [ ] Busca de texto completo nos incidentes (título + descrição) com destaque visual
+- [ ] Tabela incident_history — registrar todas as alterações de status com timestamp e usuário
+- [ ] Exibir histórico de alterações na página de detalhe do incidente
+- [ ] Testes individuais para busca de texto (FTS-1 a FTS-N)
+- [ ] Testes individuais para histórico de status (IH-1 a IH-N)
+- [ ] Testes individuais para exportação PDF corrigida
+- [ ] README atualizado com novas funcionalidades
+- [ ] Manuais PDF atualizados
+- [ ] Commit no GitHub
+
+## Sessao 4 - PDF, Busca, Historico, Testes e Manuais
+
+- [ ] Corrigir erro de exportacao PDF (fetch failed)
+- [ ] Busca de texto completo nos incidentes (titulo + descricao) com destaque visual
+- [ ] Tabela incident_history - registrar todas as alteracoes de status
+- [ ] Exibir historico de alteracoes na pagina de detalhe do incidente
+- [ ] Testes individuais para busca de texto (FTS-1 a FTS-N)
+- [ ] Testes individuais para historico de status (IH-1 a IH-N)
+- [ ] Testes individuais para exportacao PDF corrigida
+- [ ] README atualizado com novas funcionalidades
+- [ ] Manuais PDF atualizados
+- [ ] Commit no GitHub
+
+## Sessão 4 — PDF, Busca, Histórico (Abr 2026)
+- [x] Corrigir exportação PDF (fetch failed) — implementar PDFKit nativo como fallback sem Flask
+- [x] Implementar busca de texto completo com destaque visual nos incidentes
+- [x] Criar tabela incident_history para histórico detalhado de alterações de status
+- [x] Adicionar campo de comentário ao alterar status (registrado no histórico)
+- [x] Atualizar IncidentDetail com timeline dinâmica usando dados reais do banco
+- [x] Adicionar 35 testes individuais (S4-1 a S4-8) — session4.test.ts
+- [x] Atualizar README com busca, histórico, badge 296 testes
+- [x] Atualizar manual do usuário (seções 5.3, 6.4, 6.5, 6.6)
+- [x] Regenerar PDFs dos manuais

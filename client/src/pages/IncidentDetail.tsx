@@ -6,10 +6,11 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import {
   ArrowLeft, Trash2, Calendar, Tag, AlertTriangle, Activity,
-  Shield, ClipboardList, CheckCircle2, Clock, Loader2, Save,
+  Shield, ClipboardList, CheckCircle2, Clock, Loader2, Save, History, User,
 } from "lucide-react";
 
 const SEV: Record<string, string> = {
@@ -82,12 +83,19 @@ export default function IncidentDetail() {
   const { data: incident, isLoading } = trpc.incidents.getById.useQuery({ id });
   const [notes, setNotes] = useState<string>("");
   const [notesInitialized, setNotesInitialized] = useState(false);
+  const [statusComment, setStatusComment] = useState("");
 
   // Initialize notes from incident data
   if (incident && !notesInitialized) {
     setNotes(incident.notes ?? "");
     setNotesInitialized(true);
   }
+
+  // Fetch incident history from backend
+  const { data: historyEntries, refetch: refetchHistory } = trpc.incidents.history.useQuery(
+    { id },
+    { enabled: !!incident }
+  );
 
   const deleteMutation = trpc.incidents.delete.useMutation({
     onSuccess: () => {
@@ -104,6 +112,8 @@ export default function IncidentDetail() {
       utils.incidents.getById.invalidate({ id });
       utils.incidents.list.invalidate();
       utils.incidents.statusStats.invalidate();
+      utils.incidents.history.invalidate({ id });
+      setStatusComment("");
     },
     onError: (e) => toast.error("Erro ao atualizar status: " + e.message),
   });
@@ -112,6 +122,7 @@ export default function IncidentDetail() {
     onSuccess: () => {
       toast.success("Notas salvas com sucesso.");
       utils.incidents.getById.invalidate({ id });
+      utils.incidents.history.invalidate({ id });
     },
     onError: (e) => toast.error("Erro ao salvar notas: " + e.message),
   });
@@ -209,7 +220,7 @@ export default function IncidentDetail() {
                 return (
                   <button
                     key={s}
-                    onClick={() => updateStatusMutation.mutate({ id, status: s })}
+                    onClick={() => updateStatusMutation.mutate({ id, status: s, comment: statusComment || undefined })}
                     disabled={isActive || updateStatusMutation.isPending}
                     className={`flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg border font-mono transition-all
                       ${isActive ? cfg.cls + " cursor-default" : "text-muted-foreground border-border hover:border-primary/50 hover:text-foreground bg-transparent"}
@@ -222,9 +233,18 @@ export default function IncidentDetail() {
                 );
               })}
             </div>
-            <p className="text-xs text-muted-foreground font-mono mt-3">
-              Clique em um status para atualizar o acompanhamento deste incidente.
-            </p>
+            <div className="mt-3 space-y-2">
+              <Input
+                value={statusComment}
+                onChange={(e) => setStatusComment(e.target.value)}
+                placeholder="Comentário opcional sobre a mudança de status..."
+                className="bg-background border-border font-mono text-xs h-8"
+                maxLength={500}
+              />
+              <p className="text-xs text-muted-foreground font-mono">
+                Selecione um status acima para registrar a alteração. O comentário será salvo no histórico.
+              </p>
+            </div>
           </CardContent>
         </Card>
 
@@ -263,12 +283,15 @@ export default function IncidentDetail() {
           </CardContent>
         </Card>
 
-        {/* ── Timeline de Acompanhamento ────────────────────────────────────── */}
-        <Card className="bg-card border-border" data-testid="timeline-section">
+        {/* ── Histórico Detalhado de Alterações ────────────────────────────── */}
+        <Card className="bg-card border-border" data-testid="history-section">
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-mono font-semibold text-foreground flex items-center gap-2">
-              <Clock className="w-4 h-4 text-primary" />
-              Timeline de Acompanhamento
+              <History className="w-4 h-4 text-primary" />
+              Histórico de Alterações
+              {historyEntries && historyEntries.length > 0 && (
+                <span className="ml-auto text-xs text-muted-foreground font-mono">{historyEntries.length} evento(s)</span>
+              )}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -276,7 +299,7 @@ export default function IncidentDetail() {
               {/* Linha vertical */}
               <div className="absolute left-1.5 top-2 bottom-2 w-px bg-border" />
 
-              {/* Evento: Registro */}
+              {/* Evento de criação (sempre presente) */}
               <div className="relative flex items-start gap-3">
                 <div className="absolute -left-[3px] w-3 h-3 rounded-full bg-primary border-2 border-background mt-0.5" />
                 <div className="ml-4">
@@ -285,7 +308,9 @@ export default function IncidentDetail() {
                     {new Date(incident.createdAt).toLocaleString("pt-BR")}
                   </p>
                   <p className="text-xs text-muted-foreground mt-0.5">
-                    Classificado como <span className="text-primary font-mono">{incident.category?.replace(/_/g, " ") ?? "desconhecido"}</span> com risco{" "}
+                    Categoria:{" "}
+                    <span className="text-primary font-mono">{incident.category?.replace(/_/g, " ") ?? "desconhecido"}</span>
+                    {" · "}Risco:{" "}
                     <Badge variant="outline" className={`text-[10px] font-mono px-1.5 py-0 ${SEV[incident.riskLevel ?? "low"]}`}>
                       {incident.riskLevel ?? "low"}
                     </Badge>
@@ -293,39 +318,63 @@ export default function IncidentDetail() {
                 </div>
               </div>
 
-              {/* Evento: Em Andamento (se aplicável) */}
-              {(currentStatus === "in_progress" || currentStatus === "resolved") && (
-                <div className="relative flex items-start gap-3">
-                  <div className="absolute -left-[3px] w-3 h-3 rounded-full bg-blue-400 border-2 border-background mt-0.5" />
-                  <div className="ml-4">
-                    <p className="text-xs font-mono font-semibold text-blue-400">Investigação Iniciada</p>
-                    <p className="text-xs font-mono text-muted-foreground">
-                      Status alterado para <span className="text-blue-400">Em Andamento</span>
-                    </p>
-                  </div>
-                </div>
-              )}
-
-              {/* Evento: Resolução */}
-              {currentStatus === "resolved" && incident.resolvedAt && (
-                <div className="relative flex items-start gap-3">
-                  <div className="absolute -left-[3px] w-3 h-3 rounded-full bg-emerald-400 border-2 border-background mt-0.5" />
-                  <div className="ml-4">
-                    <p className="text-xs font-mono font-semibold text-emerald-400">Incidente Resolvido</p>
-                    <p className="text-xs font-mono text-muted-foreground">
-                      {new Date(incident.resolvedAt).toLocaleString("pt-BR")}
-                    </p>
-                  </div>
-                </div>
-              )}
-
-              {/* Estado atual (se ainda em aberto) */}
-              {currentStatus === "open" && (
+              {/* Entradas do histórico do backend */}
+              {historyEntries && historyEntries.length > 0 ? (
+                [...historyEntries].reverse().map((entry) => {
+                  const actionColors: Record<string, string> = {
+                    status_changed: "bg-blue-400",
+                    notes_updated: "bg-purple-400",
+                    category_changed: "bg-orange-400",
+                    risk_changed: "bg-red-400",
+                    created: "bg-primary",
+                  };
+                  const actionLabels: Record<string, string> = {
+                    status_changed: "Status Alterado",
+                    notes_updated: "Notas Atualizadas",
+                    category_changed: "Categoria Alterada",
+                    risk_changed: "Risco Alterado",
+                    created: "Criado",
+                  };
+                  const dotColor = actionColors[entry.action] ?? "bg-muted-foreground";
+                  return (
+                    <div key={entry.id} className="relative flex items-start gap-3">
+                      <div className={`absolute -left-[3px] w-3 h-3 rounded-full ${dotColor} border-2 border-background mt-0.5`} />
+                      <div className="ml-4 flex-1">
+                        <div className="flex items-center gap-2">
+                          <p className="text-xs font-mono font-semibold text-foreground">
+                            {actionLabels[entry.action] ?? entry.action}
+                          </p>
+                          {entry.userName && (
+                            <span className="flex items-center gap-1 text-[10px] text-muted-foreground font-mono">
+                              <User className="w-2.5 h-2.5" />{entry.userName}
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-xs font-mono text-muted-foreground">
+                          {new Date(entry.createdAt).toLocaleString("pt-BR")}
+                        </p>
+                        {entry.fromValue && entry.toValue && (
+                          <p className="text-xs text-muted-foreground mt-0.5">
+                            <span className="line-through opacity-60 font-mono">{entry.fromValue}</span>
+                            {" → "}
+                            <span className="text-foreground font-mono font-semibold">{entry.toValue}</span>
+                          </p>
+                        )}
+                        {entry.comment && (
+                          <p className="text-xs text-muted-foreground mt-1 italic">
+                            "{entry.comment}"
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })
+              ) : (
                 <div className="relative flex items-start gap-3">
                   <div className="absolute -left-[3px] w-3 h-3 rounded-full bg-yellow-400 border-2 border-background mt-0.5 animate-pulse" />
                   <div className="ml-4">
-                    <p className="text-xs font-mono font-semibold text-yellow-400">Aguardando Investigação</p>
-                    <p className="text-xs font-mono text-muted-foreground">Incidente em aberto — nenhuma ação registrada ainda.</p>
+                    <p className="text-xs font-mono font-semibold text-yellow-400">Aguardando Ações</p>
+                    <p className="text-xs font-mono text-muted-foreground">Nenhuma alteração registrada ainda.</p>
                   </div>
                 </div>
               )}

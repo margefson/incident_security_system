@@ -5,7 +5,7 @@
 ![Python](https://img.shields.io/badge/Python-3.11-3776AB?style=flat-square&logo=python)
 ![MySQL](https://img.shields.io/badge/MySQL-8.x-4479A1?style=flat-square&logo=mysql)
 ![ML Accuracy](https://img.shields.io/badge/ML%20Accuracy-97%25-brightgreen?style=flat-square)
-![Tests](https://img.shields.io/badge/Tests-261%20passing-brightgreen?style=flat-square)
+![Tests](https://img.shields.io/badge/Tests-296%20passing-brightgreen?style=flat-square)
 ![License](https://img.shields.io/badge/License-MIT-blue?style=flat-square)
 
 Plataforma de gerenciamento de incidentes de segurança cibernética com classificação automática por Machine Learning (TF-IDF + Naive Bayes), painel de administração global, **CRUD de categorias de incidentes (exclusivo para administradores)**, exportação de relatórios em PDF, notificações automáticas de risco crítico e interface SOC Portal — design profissional dark com tipografia Inter, sidebar compacta, badges coloridos por severidade e tabelas operacionais.
@@ -200,7 +200,9 @@ Node.js recebe via tRPC incidents.create
 - Listagem paginada dos incidentes do usuário autenticado
 - **Filtros avançados**: categoria, nível de risco, data inicial e data final
 - Contador de filtros ativos com botão de limpeza rápida
-- Busca por texto no título e descrição
+- **Busca de texto completo**: campo de busca em tempo real com destaque visual (`<mark>`) nos termos encontrados no título e descrição
+- Busca integrada ao backend via procedure `incidents.search` (LIKE em título + descrição + categoria)
+- Indicador de modo busca com contador de resultados encontrados
 - Ordenação por data (mais recente primeiro)
 - **Exportação CSV** com BOM UTF-8, aspas escapadas e labels legíveis
 - Exportação PDF com filtros aplicados
@@ -212,12 +214,14 @@ Node.js recebe via tRPC incidents.create
 - Análise de risco com recomendações específicas
 - Opção de exclusão do incidente
 
-### Acompanhamento de Incidentes (Status, Notas e Timeline)
+### Acompanhamento de Incidentes (Status, Notas e Histórico)
 - **Status de acompanhamento**: cada incidente possui um dos três estados — `Em Aberto`, `Em Andamento` ou `Resolvido`
 - Alteração de status com um clique diretamente na página de detalhe
+- **Comentário opcional** ao alterar status — registrado automaticamente no histórico
 - Campo `resolvedAt` preenchido automaticamente ao resolver; zerado ao reabrir
 - **Notas de acompanhamento**: campo de texto livre (até 5.000 caracteres) para registrar observações, ações tomadas, evidências coletadas
-- **Timeline visual**: linha do tempo com os eventos do incidente (registro, investigação iniciada, resolução)
+- **Histórico detalhado de alterações** (`incident_history`): cada mudança de status, nota ou categoria é registrada com timestamp, usuário responsável, valor anterior e novo valor
+- Timeline dinâmica com dados reais do banco — exibe todas as alterações em ordem cronológica reversa
 - Contadores de status no perfil do usuário (`/profile`): Em Aberto e Resolvidos com dados reais
 
 ### Análise de Risco
@@ -338,7 +342,8 @@ incident_security_system/
 │   ├── recommendations.test.ts    # 27 testes de recomendações
 │   ├── security.test.ts           # 34 testes de segurança
 │   ├── advanced_features.test.ts  # 33 testes de funcionalidades avançadas
-│   └── followup.test.ts           # 28 testes de acompanhamento (FU-1 a FU-6)
+│   ├── followup.test.ts           # 28 testes de acompanhamento (FU-1 a FU-6)
+│   └── session4.test.ts           # 35 testes de PDF, busca e histórico (S4-1 a S4-8)
 ├── shared/
 │   └── const.ts                   # Constantes compartilhadas
 ├── todo.md                        # Rastreamento de funcionalidades
@@ -515,7 +520,7 @@ Abra o navegador em: **http://localhost:3000**
 pnpm dev          # Inicia servidor de desenvolvimento (Node.js + Vite HMR)
 pnpm build        # Build de produção (frontend + backend)
 pnpm start        # Inicia servidor de produção
-pnpm test         # Executa 28 testes Vitest
+pnpm test         # Executa 296 testes Vitest (9 arquivos)
 pnpm db:push      # Gera e executa migrações Drizzle
 pnpm check        # Verificação TypeScript sem emissão
 pnpm format       # Formata código com Prettier
@@ -651,7 +656,7 @@ Saída esperada:
 ✓ server/categories.test.ts (21 tests)
 ✓ server/recommendations.test.ts (27 tests)
 ✓ server/ml.test.ts (29 tests)
-Tests: 200 passed
+Tests: 296 passed
 ```
 
 ### Cobertura dos Testes
