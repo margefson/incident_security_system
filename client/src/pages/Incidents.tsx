@@ -1,187 +1,109 @@
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
-import { Plus, Search, Filter, Eye, Trash2, ChevronRight } from "lucide-react";
-import ExportPdfButton from "@/components/ExportPdfButton";
-import { toast } from "sonner";
+import DashboardLayout from "@/components/DashboardLayout";
+import { PlusCircle, Search, AlertTriangle } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 
-const CATEGORY_LABELS: Record<string, string> = {
-  phishing: "Phishing", malware: "Malware", brute_force: "Brute Force",
-  ddos: "DDoS", vazamento_de_dados: "Vazamento de Dados", unknown: "Desconhecido",
+const SEV: Record<string, string> = {
+  critical: "text-red-400 bg-red-400/10 border-red-400/30",
+  high:     "text-orange-400 bg-orange-400/10 border-orange-400/30",
+  medium:   "text-yellow-400 bg-yellow-400/10 border-yellow-400/30",
+  low:      "text-emerald-400 bg-emerald-400/10 border-emerald-400/30",
 };
-const CAT_COLORS: Record<string, string> = {
-  phishing: "#3b82f6", malware: "#ef4444", brute_force: "#f97316",
-  ddos: "#a855f7", vazamento_de_dados: "#ec4899", unknown: "#64748b",
-};
-const RISK_CONFIG: Record<string, { label: string; color: string }> = {
-  critical: { label: "Crítico", color: "#ef4444" },
-  high:     { label: "Alto",    color: "#f97316" },
-  medium:   { label: "Médio",   color: "#eab308" },
-  low:      { label: "Baixo",   color: "#22c55e" },
-};
-
-function RiskBadge({ risk }: { risk: string }) {
-  const cfg = RISK_CONFIG[risk] ?? { label: risk, color: "#94a3b8" };
-  return (
-    <span style={{
-      display: "inline-flex", alignItems: "center", padding: "2px 8px",
-      borderRadius: 4, fontSize: "0.72rem", fontWeight: 600,
-      color: cfg.color, background: `${cfg.color}1a`, border: `1px solid ${cfg.color}40`,
-    }}>{cfg.label}</span>
-  );
-}
-
-function CategoryBadge({ cat }: { cat: string }) {
-  const color = CAT_COLORS[cat] ?? "#64748b";
-  return (
-    <span style={{
-      display: "inline-flex", alignItems: "center", padding: "2px 8px",
-      borderRadius: 4, fontSize: "0.72rem", fontWeight: 500,
-      color, background: `${color}18`, border: `1px solid ${color}30`,
-    }}>{CATEGORY_LABELS[cat] ?? cat}</span>
-  );
-}
 
 export default function Incidents() {
   const [, navigate] = useLocation();
   const [search, setSearch] = useState("");
-  const [filterCategory, setFilterCategory] = useState("");
-  const [filterRisk, setFilterRisk] = useState("");
-  const utils = trpc.useUtils();
+  const [categoryFilter, setCategoryFilter] = useState("");
+  const { data: incidents, isLoading } = trpc.incidents.list.useQuery();
 
-  const { data: incidents = [], isLoading } = trpc.incidents.list.useQuery();
+  const filtered = incidents?.filter(inc => {
+    const matchSearch = !search || inc.title.toLowerCase().includes(search.toLowerCase()) || inc.description.toLowerCase().includes(search.toLowerCase());
+    const matchCat = !categoryFilter || inc.category === categoryFilter;
+    return matchSearch && matchCat;
+  }) ?? [];
 
-  const deleteMutation = trpc.incidents.delete.useMutation({
-    onSuccess: () => {
-      toast.success("Incidente removido com sucesso.");
-      utils.incidents.list.invalidate();
-      utils.incidents.stats.invalidate();
-    },
-    onError: (e) => toast.error(e.message),
-  });
-
-  const filtered = useMemo(() => incidents.filter((inc) => {
-    const matchSearch = !search ||
-      inc.title.toLowerCase().includes(search.toLowerCase()) ||
-      inc.description.toLowerCase().includes(search.toLowerCase());
-    const matchCat = !filterCategory || inc.category === filterCategory;
-    const matchRisk = !filterRisk || inc.riskLevel === filterRisk;
-    return matchSearch && matchCat && matchRisk;
-  }), [incidents, search, filterCategory, filterRisk]);
+  const categories = Array.from(new Set((incidents?.map(i => i.category).filter(Boolean) ?? []) as string[]));
 
   return (
-    <div className="soc-page">
-      {/* Header */}
-      <div className="soc-page-header">
-        <div>
-          <h1 className="soc-page-title">Incidentes</h1>
-          <p className="soc-page-sub">
-            {isLoading ? "Carregando..." : `${incidents.length} incidente${incidents.length !== 1 ? "s" : ""} registrado${incidents.length !== 1 ? "s" : ""}`}
-          </p>
+    <DashboardLayout>
+      <div className="space-y-5">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-xl font-bold text-foreground font-mono">Incidentes</h1>
+            <p className="text-sm text-muted-foreground mt-0.5">{incidents?.length ?? 0} incidente(s) registrado(s)</p>
+          </div>
+          <Button onClick={() => navigate("/incidents/new")} className="gap-2 font-mono text-xs">
+            <PlusCircle className="w-4 h-4" /> Novo Incidente
+          </Button>
         </div>
-        <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
-          <ExportPdfButton category={filterCategory || undefined} riskLevel={filterRisk || undefined} label="Exportar PDF" />
-          <button className="soc-btn soc-btn-primary" onClick={() => navigate("/incidents/new")}>
-            <Plus size={14} />Novo Incidente
-          </button>
-        </div>
-      </div>
 
-      {/* Filters */}
-      <div className="soc-card" style={{ marginBottom: "1rem" }}>
-        <div style={{ padding: "0.75rem 1rem", display: "flex", gap: "0.75rem", flexWrap: "wrap", alignItems: "center" }}>
-          <div style={{ position: "relative", flex: "1 1 200px", minWidth: 180 }}>
-            <Search size={13} style={{ position: "absolute", left: "0.625rem", top: "50%", transform: "translateY(-50%)", color: "oklch(0.45 0.010 240)" }} />
-            <input
-              type="text" className="soc-input" placeholder="Buscar por título ou descrição..."
-              value={search} onChange={(e) => setSearch(e.target.value)}
-              style={{ paddingLeft: "2rem", width: "100%" }}
-            />
+        <div className="flex gap-3">
+          <div className="relative flex-1 max-w-sm">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input placeholder="Buscar incidentes..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9 bg-input border-border font-mono text-sm" />
           </div>
-          <div style={{ position: "relative" }}>
-            <Filter size={12} style={{ position: "absolute", left: "0.625rem", top: "50%", transform: "translateY(-50%)", color: "oklch(0.45 0.010 240)", pointerEvents: "none" }} />
-            <select className="soc-input soc-select" value={filterCategory} onChange={(e) => setFilterCategory(e.target.value)} style={{ paddingLeft: "2rem", minWidth: 160 }}>
-              <option value="">Todas as categorias</option>
-              {Object.entries(CATEGORY_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
-            </select>
-          </div>
-          <select className="soc-input soc-select" value={filterRisk} onChange={(e) => setFilterRisk(e.target.value)} style={{ minWidth: 140 }}>
-            <option value="">Todos os riscos</option>
-            {Object.entries(RISK_CONFIG).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
+          <select value={categoryFilter} onChange={e => setCategoryFilter(e.target.value)} className="bg-input border border-border text-foreground rounded-md px-3 py-2 text-sm font-mono cursor-pointer">
+            <option value="">Todas as categorias</option>
+            {categories.map(c => <option key={c} value={c}>{c?.replace("_", " ")}</option>)}
           </select>
-          {(search || filterCategory || filterRisk) && (
-            <button className="soc-btn" onClick={() => { setSearch(""); setFilterCategory(""); setFilterRisk(""); }} style={{ fontSize: "0.78rem" }}>
-              Limpar filtros
-            </button>
-          )}
         </div>
-      </div>
 
-      {/* Table */}
-      <div className="soc-card">
-        <div style={{ overflowX: "auto" }}>
-          {isLoading ? (
-            <div className="soc-empty" style={{ padding: "3rem" }}>Carregando incidentes...</div>
-          ) : filtered.length === 0 ? (
-            <div className="soc-empty" style={{ padding: "3rem" }}>
-              {incidents.length === 0 ? (
-                <>Nenhum incidente registrado. <button className="soc-link" onClick={() => navigate("/incidents/new")}>Registrar primeiro incidente</button></>
-              ) : "Nenhum incidente corresponde aos filtros aplicados."}
-            </div>
-          ) : (
-            <table className="soc-table">
-              <thead>
+        <div className="bg-card border border-border rounded-xl overflow-hidden">
+          <table className="soc-table w-full text-sm">
+            <thead>
+              <tr className="border-b border-border bg-muted/30">
+                <th className="text-left px-4 py-3 text-xs font-mono text-muted-foreground uppercase tracking-wider">Título</th>
+                <th className="text-left px-4 py-3 text-xs font-mono text-muted-foreground uppercase tracking-wider">Categoria</th>
+                <th className="text-left px-4 py-3 text-xs font-mono text-muted-foreground uppercase tracking-wider">Risco</th>
+                <th className="text-left px-4 py-3 text-xs font-mono text-muted-foreground uppercase tracking-wider">Confiança</th>
+                <th className="text-left px-4 py-3 text-xs font-mono text-muted-foreground uppercase tracking-wider">Data</th>
+              </tr>
+            </thead>
+            <tbody>
+              {isLoading ? (
+                <tr><td colSpan={5} className="text-center py-12 text-muted-foreground">Carregando...</td></tr>
+              ) : filtered.length === 0 ? (
                 <tr>
-                  <th style={{ width: 90 }}>ID</th>
-                  <th>Título</th>
-                  <th style={{ width: 160 }}>Categoria</th>
-                  <th style={{ width: 100 }}>Risco</th>
-                  <th style={{ width: 80 }}>Conf.</th>
-                  <th style={{ width: 100 }}>Data</th>
-                  <th style={{ width: 80 }}>Ações</th>
+                  <td colSpan={5} className="text-center py-12">
+                    <AlertTriangle className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
+                    <p className="text-muted-foreground text-sm">Nenhum incidente encontrado</p>
+                  </td>
                 </tr>
-              </thead>
-              <tbody>
-                {filtered.map((inc) => (
-                  <tr key={inc.id}>
-                    <td><span className="soc-id">INC-{String(inc.id).padStart(3, "0")}</span></td>
-                    <td style={{ cursor: "pointer" }} onClick={() => navigate(`/incidents/${inc.id}`)}>
-                      <div style={{ fontWeight: 500, color: "oklch(0.88 0.008 240)", marginBottom: "0.1rem" }}>{inc.title}</div>
-                      <div style={{ fontSize: "0.72rem", color: "oklch(0.45 0.010 240)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: 280 }}>
-                        {inc.description}
-                      </div>
-                    </td>
-                    <td>{inc.category ? <CategoryBadge cat={inc.category} /> : <span style={{ color: "oklch(0.38 0.008 240)" }}>—</span>}</td>
-                    <td>{inc.riskLevel ? <RiskBadge risk={inc.riskLevel} /> : <span style={{ color: "oklch(0.38 0.008 240)" }}>—</span>}</td>
-                    <td style={{ fontSize: "0.75rem", color: "oklch(0.55 0.010 240)" }}>
-                      {inc.confidence ? `${Math.round(inc.confidence * 100)}%` : "—"}
-                    </td>
-                    <td style={{ fontSize: "0.75rem", color: "oklch(0.48 0.010 240)" }}>
+              ) : filtered.map(inc => (
+                <tr key={inc.id} className="border-b border-border/50 hover:bg-muted/20 transition-colors cursor-pointer" onClick={() => navigate(`/incidents/${inc.id}`)}>
+                  <td className="px-4 py-3">
+                    <p className="font-medium text-foreground text-sm truncate max-w-xs">{inc.title}</p>
+                    <p className="text-xs text-muted-foreground truncate max-w-xs mt-0.5">{inc.description}</p>
+                  </td>
+                  <td className="px-4 py-3">
+                    <span className="text-xs px-2 py-0.5 rounded border font-mono capitalize text-primary bg-primary/10 border-primary/30">
+                      {inc.category?.replace("_", " ") ?? "—"}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3">
+                    <span className={`text-xs px-2 py-0.5 rounded border font-mono ${SEV[inc.riskLevel ?? "low"] ?? SEV.low}`}>
+                      {inc.riskLevel ?? "—"}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3">
+                    <span className="text-xs font-mono text-muted-foreground">
+                      {inc.confidence != null ? `${Math.round(inc.confidence * 100)}%` : "—"}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3">
+                    <span className="text-xs font-mono text-muted-foreground">
                       {new Date(inc.createdAt).toLocaleDateString("pt-BR")}
-                    </td>
-                    <td>
-                      <div style={{ display: "flex", gap: "0.25rem" }}>
-                        <button className="soc-icon-btn" title="Ver detalhes" onClick={() => navigate(`/incidents/${inc.id}`)}>
-                          <Eye size={13} />
-                        </button>
-                        <button className="soc-icon-btn soc-icon-btn-danger" title="Excluir"
-                          onClick={() => { if (confirm("Remover este incidente?")) deleteMutation.mutate({ id: inc.id }); }}>
-                          <Trash2 size={13} />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
-        {filtered.length > 0 && (
-          <div style={{ padding: "0.625rem 1rem", borderTop: "1px solid oklch(0.16 0.008 240)", fontSize: "0.75rem", color: "oklch(0.45 0.010 240)" }}>
-            Exibindo {filtered.length} de {incidents.length} incidente{incidents.length !== 1 ? "s" : ""}
-          </div>
-        )}
       </div>
-    </div>
+    </DashboardLayout>
   );
 }

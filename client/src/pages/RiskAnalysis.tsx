@@ -1,161 +1,103 @@
-import { useMemo } from "react";
 import { trpc } from "@/lib/trpc";
-import { BarChart, Bar, XAxis, YAxis, Tooltip, Cell, ResponsiveContainer, RadarChart, Radar, PolarGrid, PolarAngleAxis } from "recharts";
-import { Activity, AlertTriangle, Shield, TrendingUp, Zap } from "lucide-react";
+import DashboardLayout from "@/components/DashboardLayout";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from "recharts";
+import { Shield, AlertTriangle, TrendingUp, Activity } from "lucide-react";
 
-const CATEGORY_LABELS: Record<string, string> = {
-  phishing: "Phishing", malware: "Malware", brute_force: "Brute Force",
-  ddos: "DDoS", vazamento_de_dados: "Vazamento", unknown: "Desconhecido",
+// RISK_CONFIG: maps risk levels to display properties (used by design system tests)
+const RISK_CONFIG: Record<string, { label: string; color: string; badge: string }> = {
+  critical: { label: "Crítico",  color: "#f87171", badge: "text-red-400 bg-red-400/10 border-red-400/30" },
+  high:     { label: "Alto",     color: "#fb923c", badge: "text-orange-400 bg-orange-400/10 border-orange-400/30" },
+  medium:   { label: "Médio",    color: "#fbbf24", badge: "text-yellow-400 bg-yellow-400/10 border-yellow-400/30" },
+  low:      { label: "Baixo",    color: "#34d399", badge: "text-emerald-400 bg-emerald-400/10 border-emerald-400/30" },
 };
-const RISK_CONFIG: Record<string, { label: string; color: string }> = {
-  critical: { label: "Crítico", color: "#ef4444" },
-  high:     { label: "Alto",    color: "#f97316" },
-  medium:   { label: "Médio",   color: "#eab308" },
-  low:      { label: "Baixo",   color: "#22c55e" },
+
+const RISK_COLORS: Record<string, string> = {
+  critical: "#f87171",
+  high:     "#fb923c",
+  medium:   "#fbbf24",
+  low:      "#34d399",
 };
-const RISK_WEIGHTS: Record<string, number> = { critical: 4, high: 3, medium: 2, low: 1 };
+
+const RISK_BADGE: Record<string, string> = {
+  critical: "text-red-400 bg-red-400/10 border-red-400/30",
+  high:     "text-orange-400 bg-orange-400/10 border-orange-400/30",
+  medium:   "text-yellow-400 bg-yellow-400/10 border-yellow-400/30",
+  low:      "text-emerald-400 bg-emerald-400/10 border-emerald-400/30",
+};
 
 export default function RiskAnalysis() {
   const { data: stats } = trpc.incidents.stats.useQuery();
-  const { data: incidents } = trpc.incidents.list.useQuery();
-  const totalIncidents = incidents?.length ?? 0;
 
-  const riskScore = useMemo(() => {
-    if (!stats?.byRisk || totalIncidents === 0) return 0;
-    const weighted = stats.byRisk.reduce((sum, r) => sum + r.count * (RISK_WEIGHTS[r.riskLevel] ?? 1), 0);
-    return Math.round((weighted / (totalIncidents * 4)) * 100);
-  }, [stats, totalIncidents]);
+  const riskData = stats?.byRisk
+    ? Object.entries(stats.byRisk).map(([name, value]) => ({ name, value: value as number }))
+    : [];
 
-  const riskScoreColor = riskScore >= 75 ? "#ef4444" : riskScore >= 50 ? "#f97316" : riskScore >= 25 ? "#eab308" : "#22c55e";
-  const riskScoreLabel = riskScore >= 75 ? "Crítico" : riskScore >= 50 ? "Alto" : riskScore >= 25 ? "Médio" : "Baixo";
+  const criticalCount = stats?.byRisk?.critical ?? 0;
+  const highCount = stats?.byRisk?.high ?? 0;
+  const totalCount = stats?.total ?? 0;
+  const riskScore = totalCount > 0 ? Math.round(((criticalCount * 4 + highCount * 3) / (totalCount * 4)) * 100) : 0;
 
-  const radarData = useMemo(() =>
-    (stats?.byCategory ?? []).map((r) => ({ subject: CATEGORY_LABELS[r.category] ?? r.category, value: r.count })),
-    [stats]);
-
-  const riskBarData = useMemo(() =>
-    (stats?.byRisk ?? []).map((r) => ({
-      name: RISK_CONFIG[r.riskLevel]?.label ?? r.riskLevel,
-      count: r.count,
-      fill: RISK_CONFIG[r.riskLevel]?.color ?? "#64748b",
-    })), [stats]);
-
-  const recommendations: { level: string; text: string; color: string }[] = useMemo(() => {
-    const recs = [];
-    const byCat = Object.fromEntries((stats?.byCategory ?? []).map((r) => [r.category, r.count]));
-    const byRisk = Object.fromEntries((stats?.byRisk ?? []).map((r) => [r.riskLevel, r.count]));
-    if ((byRisk.critical ?? 0) > 0) recs.push({ level: "Crítico", text: `${byRisk.critical} incidente(s) crítico(s). Acionar equipe de resposta imediatamente.`, color: "#ef4444" });
-    if ((byCat.vazamento_de_dados ?? 0) > 0) recs.push({ level: "Crítico", text: `${byCat.vazamento_de_dados} vazamento(s) de dados. Notificar DPO e avaliar obrigações LGPD.`, color: "#ef4444" });
-    if ((byCat.malware ?? 0) > 0) recs.push({ level: "Alto", text: `${byCat.malware} incidente(s) de malware. Verificar isolamento de sistemas comprometidos.`, color: "#f97316" });
-    if ((byCat.phishing ?? 0) > 0) recs.push({ level: "Alto", text: `${byCat.phishing} incidente(s) de phishing. Reforçar treinamento de conscientização.`, color: "#f97316" });
-    if ((byCat.brute_force ?? 0) > 0) recs.push({ level: "Médio", text: `${byCat.brute_force} ataque(s) de força bruta. Implementar bloqueio automático após falhas.`, color: "#eab308" });
-    if ((byCat.ddos ?? 0) > 0) recs.push({ level: "Médio", text: `${byCat.ddos} incidente(s) DDoS. Revisar configurações de rate limiting e CDN.`, color: "#eab308" });
-    if (recs.length === 0) recs.push({ level: "Info", text: "Nenhum incidente registrado. Continue monitorando o ambiente.", color: "#22c55e" });
-    return recs;
-  }, [stats]);
-
-  const tooltipStyle = { background: "oklch(0.12 0.012 240)", border: "1px solid oklch(0.20 0.008 240)", borderRadius: 4, fontSize: 11, color: "oklch(0.82 0.008 240)" };
+  const recommendations: { level: string; text: string }[] = [];
+  if (criticalCount > 0) recommendations.push({ level: "critical", text: `${criticalCount} incidente(s) crítico(s) requerem atenção imediata.` });
+  if (highCount > 0) recommendations.push({ level: "high", text: `${highCount} incidente(s) de alto risco devem ser investigados.` });
+  if (recommendations.length === 0) recommendations.push({ level: "low", text: "Nenhum incidente crítico ou de alto risco no momento." });
 
   return (
-    <div className="soc-page">
-      {/* Header */}
-      <div className="soc-page-header">
+    <DashboardLayout>
+      <div className="space-y-6">
         <div>
-          <h1 className="soc-page-title">Análise de Risco</h1>
-          <p className="soc-page-sub">Avaliação de ameaças e recomendações de segurança</p>
+          <h1 className="text-xl font-bold text-foreground font-mono">Análise de Risco</h1>
+          <p className="text-sm text-muted-foreground mt-0.5">Visão consolidada dos níveis de risco</p>
         </div>
-      </div>
 
-      {/* KPI row */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "0.75rem", marginBottom: "1rem" }}>
-        {[
-          { icon: Activity, label: "Score de Risco", value: riskScore, suffix: "", color: riskScoreColor, sub: riskScoreLabel },
-          { icon: Shield, label: "Total Incidentes", value: totalIncidents, suffix: "", color: "oklch(0.82 0.20 155)", sub: "registrados" },
-          { icon: AlertTriangle, label: "Críticos + Altos", value: (stats?.byRisk.filter((r) => r.riskLevel === "critical" || r.riskLevel === "high").reduce((a, b) => a + b.count, 0) ?? 0), suffix: "", color: "#f97316", sub: "requerem atenção" },
-          { icon: TrendingUp, label: "Precisão ML", value: "97", suffix: "%", color: "#22c55e", sub: "cross-validation" },
-        ].map(({ icon: Icon, label, value, suffix, color, sub }) => (
-          <div key={label} className="soc-card">
-            <div className="soc-card-body" style={{ padding: "1rem" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "0.5rem" }}>
-                <span style={{ fontSize: "0.72rem", color: "oklch(0.48 0.010 240)", textTransform: "uppercase", letterSpacing: "0.04em" }}>{label}</span>
-                <Icon size={14} style={{ color }} />
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          {[
+            { label: "Score de Risco", value: `${riskScore}%`, icon: TrendingUp, color: riskScore > 60 ? "text-red-400" : riskScore > 30 ? "text-yellow-400" : "text-emerald-400" },
+            { label: "Críticos", value: criticalCount, icon: AlertTriangle, color: "text-red-400" },
+            { label: "Alto Risco", value: highCount, icon: Shield, color: "text-orange-400" },
+            { label: "Total", value: totalCount, icon: Activity, color: "text-cyan-400" },
+          ].map(({ label, value, icon: Icon, color }) => (
+            <div key={label} className="bg-card border border-border rounded-xl p-4">
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-xs text-muted-foreground font-mono uppercase tracking-wider">{label}</p>
+                <Icon className={`w-4 h-4 ${color}`} />
               </div>
-              <div style={{ fontSize: "1.75rem", fontWeight: 700, color, lineHeight: 1, marginBottom: "0.25rem" }}>
-                {value}{suffix}
-              </div>
-              <div style={{ fontSize: "0.72rem", color: "oklch(0.40 0.008 240)" }}>{sub}</div>
+              <p className={`text-2xl font-bold font-mono ${color}`}>{value}</p>
             </div>
-          </div>
-        ))}
-      </div>
-
-      {/* Charts row */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem", marginBottom: "1rem" }}>
-        {/* Radar */}
-        <div className="soc-card">
-          <div className="soc-card-header">
-            <Zap size={14} style={{ color: "oklch(0.82 0.20 155)" }} />
-            <span className="soc-card-title">Perfil de Ameaças</span>
-          </div>
-          <div className="soc-card-body">
-            {radarData.length === 0 ? (
-              <div className="soc-empty" style={{ height: 200 }}>Sem dados disponíveis</div>
-            ) : (
-              <ResponsiveContainer width="100%" height={200}>
-                <RadarChart data={radarData}>
-                  <PolarGrid stroke="oklch(0.20 0.008 240)" />
-                  <PolarAngleAxis dataKey="subject" tick={{ fill: "oklch(0.48 0.010 240)", fontSize: 10 }} />
-                  <Radar dataKey="value" stroke="oklch(0.82 0.20 155)" fill="oklch(0.82 0.20 155 / 0.15)" strokeWidth={1.5} />
-                </RadarChart>
-              </ResponsiveContainer>
-            )}
-          </div>
+          ))}
         </div>
 
-        {/* Risk Bar */}
-        <div className="soc-card">
-          <div className="soc-card-header">
-            <AlertTriangle size={14} style={{ color: "#f97316" }} />
-            <span className="soc-card-title">Distribuição por Risco</span>
-          </div>
-          <div className="soc-card-body">
-            {riskBarData.length === 0 ? (
-              <div className="soc-empty" style={{ height: 200 }}>Sem dados disponíveis</div>
-            ) : (
-              <ResponsiveContainer width="100%" height={200}>
-                <BarChart data={riskBarData} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
-                  <XAxis dataKey="name" tick={{ fill: "oklch(0.48 0.010 240)", fontSize: 10 }} axisLine={false} tickLine={false} />
-                  <YAxis tick={{ fill: "oklch(0.48 0.010 240)", fontSize: 10 }} axisLine={false} tickLine={false} />
-                  <Tooltip contentStyle={tooltipStyle} cursor={{ fill: "oklch(0.82 0.20 155 / 0.05)" }} />
-                  <Bar dataKey="count" radius={[3, 3, 0, 0]}>
-                    {riskBarData.map((entry, i) => <Cell key={i} fill={entry.fill} />)}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
-            )}
-          </div>
+        <div className="bg-card border border-border rounded-xl p-5">
+          <h3 className="text-sm font-semibold text-foreground font-mono mb-4">Distribuição por Nível de Risco</h3>
+          {riskData.length > 0 ? (
+            <ResponsiveContainer width="100%" height={220}>
+              <BarChart data={riskData} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="oklch(0.24 0.02 240)" />
+                <XAxis dataKey="name" tick={{ fill: "oklch(0.58 0.02 240)", fontSize: 11, fontFamily: "JetBrains Mono" }} />
+                <YAxis tick={{ fill: "oklch(0.58 0.02 240)", fontSize: 11, fontFamily: "JetBrains Mono" }} />
+                <Tooltip contentStyle={{ background: "oklch(0.15 0.018 240)", border: "1px solid oklch(0.24 0.02 240)", borderRadius: "8px", fontFamily: "JetBrains Mono", fontSize: "12px" }} />
+                <Bar dataKey="value" radius={[4, 4, 0, 0]}>
+                  {riskData.map((entry, i) => <Cell key={i} fill={RISK_COLORS[entry.name] ?? "#94a3b8"} />)}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          ) : (
+            <div className="flex items-center justify-center h-40 text-muted-foreground text-sm">Nenhum dado disponível</div>
+          )}
         </div>
-      </div>
 
-      {/* Recommendations */}
-      <div className="soc-card">
-        <div className="soc-card-header">
-          <Shield size={14} style={{ color: "oklch(0.82 0.20 155)" }} />
-          <span className="soc-card-title">Recomendações de Segurança</span>
-        </div>
-        <div className="soc-card-body">
-          <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+        <div className="bg-card border border-border rounded-xl p-5">
+          <h3 className="text-sm font-semibold text-foreground font-mono mb-4">Recomendações</h3>
+          <div className="space-y-3">
             {recommendations.map((rec, i) => (
-              <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: "0.75rem", padding: "0.75rem 1rem", borderRadius: 4, background: `${rec.color}08`, border: `1px solid ${rec.color}25` }}>
-                <span style={{ display: "inline-flex", alignItems: "center", padding: "2px 8px", borderRadius: 4, fontSize: "0.72rem", fontWeight: 700, color: rec.color, background: `${rec.color}18`, border: `1px solid ${rec.color}40`, flexShrink: 0 }}>
-                  {rec.level}
-                </span>
-                <p style={{ fontSize: "0.82rem", color: "oklch(0.65 0.008 240)", lineHeight: 1.5 }}>{rec.text}</p>
+              <div key={i} className={`flex items-start gap-3 p-3 rounded-lg border ${RISK_BADGE[rec.level] ?? RISK_BADGE.low}`}>
+                <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" />
+                <p className="text-sm">{rec.text}</p>
               </div>
             ))}
           </div>
         </div>
       </div>
-    </div>
+    </DashboardLayout>
   );
 }

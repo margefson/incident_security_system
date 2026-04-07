@@ -219,14 +219,19 @@ const incidentsRouter = router({
     }),
 
   stats: protectedProcedure.query(async ({ ctx }) => {
-    const [byCategory, byRisk] = await Promise.all([
+    const [byCategoryRaw, byRiskRaw, allIncidents] = await Promise.all([
       getIncidentStatsByUser(ctx.user.id),
       getIncidentRiskStatsByUser(ctx.user.id),
+      getIncidentsByUser(ctx.user.id),
     ]);
-    return {
-      byCategory: byCategory.map((r) => ({ category: r.category, count: Number(r.count) })),
-      byRisk: byRisk.map((r) => ({ riskLevel: r.riskLevel, count: Number(r.count) })),
-    };
+    const byCategory: Record<string, number> = {};
+    for (const r of byCategoryRaw) byCategory[r.category] = Number(r.count);
+    const byRisk: Record<string, number> = {};
+    for (const r of byRiskRaw) byRisk[r.riskLevel] = Number(r.count);
+    const total = allIncidents.length;
+    const oneWeekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+    const thisWeek = allIncidents.filter(i => new Date(i.createdAt).getTime() > oneWeekAgo).length;
+    return { byCategory, byRisk, total, thisWeek };
   }),
 
   globalStats: protectedProcedure.query(async ({ ctx }) => {
@@ -235,6 +240,41 @@ const incidentsRouter = router({
     }
     return getGlobalStats();
   }),
+  classify: protectedProcedure
+    .input(z.object({ description: z.string() }))
+    .mutation(async ({ input }) => {
+      const result = await classifyIncident("", input.description);
+      const riskLevel = CATEGORY_RISK[result.category] ?? "medium";
+      return { category: result.category, riskLevel, confidence: result.confidence };
+    }),
+});
+// ─── Categories Router ────────────────────────────────────────────────────────────
+const categoriesRouter = router({
+  list: publicProcedure.query(async () => {
+    const { listCategories } = await import("./db");
+    return listCategories();
+  }),
+  create: protectedProcedure
+    .input(z.object({ name: z.string().min(2).max(100), description: z.string().optional(), color: z.string().optional() }))
+    .mutation(async ({ input, ctx }) => {
+      if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
+      const { createCategory } = await import("./db");
+      return createCategory(input.name, input.description, input.color);
+    }),
+  update: protectedProcedure
+    .input(z.object({ id: z.number(), name: z.string().min(2).max(100).optional(), description: z.string().optional(), color: z.string().optional(), isActive: z.boolean().optional() }))
+    .mutation(async ({ input, ctx }) => {
+      if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
+      const { updateCategory } = await import("./db");
+      return updateCategory(input.id, { name: input.name, description: input.description, color: input.color, isActive: input.isActive });
+    }),
+  delete: protectedProcedure
+    .input(z.object({ id: z.number() }))
+    .mutation(async ({ input, ctx }) => {
+      if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
+      const { deleteCategory } = await import("./db");
+      return deleteCategory(input.id);
+    }),
 });
 // ─── Admin Router ───────────────────────────────────────────────────────────
 const adminProcedure = protectedProcedure.use(({ ctx, next }) => {
@@ -364,6 +404,7 @@ export const appRouter = router({
   system: systemRouter,
   auth: authRouter,
   incidents: incidentsRouter,
+  categories: categoriesRouter,
   admin: adminRouter,
   reports: reportsRouter,
 });

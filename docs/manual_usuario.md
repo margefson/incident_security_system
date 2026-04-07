@@ -516,6 +516,30 @@ O painel exibe quatro KPIs consolidados de todo o sistema: total de incidentes r
 
 O botão **"Exportar Relatório Global"** gera um relatório PDF com todos os incidentes do sistema, incluindo a coluna de usuário responsável por cada registro. Este relatório é útil para auditorias e apresentações de gestão.
 
+### 13.6 Gestão de Categorias de Incidentes
+
+A tela de gestão de categorias está disponível em `/admin/categories` e é acessível apenas por administradores. Ela permite criar, editar e desativar as categorias utilizadas na classificação de incidentes.
+
+**Categorias padrão pré-cadastradas:**
+
+| Categoria | Descrição | Cor Padrão |
+|---|---|---|
+| Phishing | Ataques de engenharia social por e-mail ou link falso | Vermelho (`#f87171`) |
+| Malware | Vírus, ransomware, trojans e código malicioso | Laranja (`#fb923c`) |
+| Força Bruta | Tentativas repetidas de login ou quebra de senha | Amarelo (`#fbbf24`) |
+| DDoS | Ataques de negação de serviço distribuído | Roxo (`#a78bfa`) |
+| Vazamento de Dados | Exposição não autorizada de dados sensíveis | Rosa (`#f472b6`) |
+
+**Operações disponíveis:**
+
+**Criar nova categoria:** Clique em **"Nova Categoria"**, preencha o nome (obrigatório, 2 a 100 caracteres), descrição (opcional) e cor de identificação visual (opcional). Confirme com **"Criar"**.
+
+**Editar categoria existente:** Clique no ícone de lápis ao lado da categoria desejada. Altere os campos necessários e confirme com **"Salvar"**. É possível ativar ou desativar a categoria pelo campo **"Ativa"**.
+
+**Excluir categoria:** Clique no ícone de lixeira. A exclusão é lógica (soft delete): a categoria é marcada como inativa, mas o histórico de incidentes associados é preservado.
+
+> **Nota:** Categorias inativas não aparecem nas opções de filtro e classificação de novos incidentes, mas os incidentes já registrados com essa categoria permanecem inalterados.
+
 ---
 
 ## 14. Exportação de Relatórios PDF
@@ -626,7 +650,7 @@ O sistema foi desenvolvido de forma colaborativa por uma equipe de cinco integra
 | Área | Integrante(s) | Responsabilidades |
 |---|---|---|
 | **Front-end** | Nattan e Keven | Desenvolvimento de todas as interfaces React: páginas de login, registro, dashboard, listagem de incidentes, formulário de novo incidente, detalhe do incidente, análise de risco e painel de administração. Implementação do design system SOC Portal (CSS variables OKLCH, fonte Inter, sidebar compacta, badges de severidade coloridos). Integração com hooks tRPC e componentes shadcn/ui. |
-| **Back-end** | Margefson | Implementação completa da API tRPC com Express: routers de autenticação (bcryptjs, JWT), incidentes, administração e exportação de relatórios. Validação de entradas com Joi (incluindo regras robustas de complexidade de senha), controle de acesso por papel (user/admin), 8 requisitos de segurança (helmet, CORS, rate limiting, IDOR), integração com serviços Flask internos e suite de 114 testes Vitest (incluindo testes de consistência do design system SOC Portal). |
+| **Back-end** | Margefson | Implementação completa da API tRPC com Express: routers de autenticação (bcryptjs, JWT), incidentes, administração e exportação de relatórios. Validação de entradas com Joi (incluindo regras robustas de complexidade de senha), controle de acesso por papel (user/admin), 8 requisitos de segurança (helmet, CORS, rate limiting, IDOR), integração com serviços Flask internos e suite de 135 testes Vitest (incluindo testes de consistência do design system SOC Portal e CRUD de categorias). |
 | **Banco de Dados** | Nattan | Modelagem do schema relacional com Drizzle ORM: definição das tabelas `users` e `incidents`, tipos enumerados para categoria e nível de risco, configuração das migrações automáticas e implementação dos helpers de consulta em `server/db.ts`. |
 | **Classificador ML** | Josias e Keven | Construção do pipeline de classificação: pré-processamento do dataset de 100 amostras, vetorização TF-IDF (5.000 features, bigramas) e classificador Multinomial Naive Bayes. Servidor Flask de classificação (porta 5001) e servidor Flask de geração de relatórios PDF com ReportLab (porta 5002). |
 

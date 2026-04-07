@@ -15,6 +15,13 @@
       "when": 1775516322946,
       "tag": "0001_nice_darkstar",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1775579270720,
+      "tag": "0002_pale_expediter",
+      "breakpoints": true
     }
   ]
 }

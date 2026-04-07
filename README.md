@@ -5,10 +5,10 @@
 ![Python](https://img.shields.io/badge/Python-3.11-3776AB?style=flat-square&logo=python)
 ![MySQL](https://img.shields.io/badge/MySQL-8.x-4479A1?style=flat-square&logo=mysql)
 ![ML Accuracy](https://img.shields.io/badge/ML%20Accuracy-97%25-brightgreen?style=flat-square)
-![Tests](https://img.shields.io/badge/Tests-114%20passing-brightgreen?style=flat-square)
+![Tests](https://img.shields.io/badge/Tests-135%20passing-brightgreen?style=flat-square)
 ![License](https://img.shields.io/badge/License-MIT-blue?style=flat-square)
 
-Plataforma de gerenciamento de incidentes de segurança cibernética com classificação automática por Machine Learning (TF-IDF + Naive Bayes), painel de administração global, exportação de relatórios em PDF, notificações automáticas de risco crítico e interface SOC Portal — design profissional dark com tipografia Inter, sidebar compacta, badges coloridos por severidade e tabelas operacionais.
+Plataforma de gerenciamento de incidentes de segurança cibernética com classificação automática por Machine Learning (TF-IDF + Naive Bayes), painel de administração global, **CRUD de categorias de incidentes (exclusivo para administradores)**, exportação de relatórios em PDF, notificações automáticas de risco crítico e interface SOC Portal — design profissional dark com tipografia Inter, sidebar compacta, badges coloridos por severidade e tabelas operacionais.
 
 ---
 
@@ -209,6 +209,15 @@ Node.js recebe via tRPC incidents.create
 - Promoção/rebaixamento de usuários (user ↔ admin)
 - KPIs globais: total de incidentes, usuários, críticos, categorias ativas
 - Exportação PDF global (modo admin)
+
+### Gestão de Categorias de Incidentes (`/admin/categories`)
+- Acesso exclusivo para usuários com `role === "admin"`
+- Listagem de todas as categorias cadastradas com nome, descrição, cor e status (ativa/inativa)
+- Criação de novas categorias com nome (obrigatório), descrição e cor personalizados
+- Edição de categorias existentes (nome, descrição, cor, status ativo/inativo)
+- Exclusão lógica (soft delete) de categorias — o histórico de incidentes é preservado
+- Categorias padrão pré-cadastradas: Phishing, Malware, Força Bruta, DDoS, Vazamento de Dados
+- Administradores podem criar categorias adicionais conforme necessidade operacional
 
 ### Exportação de Relatórios PDF
 - Relatório personalizado com dados do usuário e timestamp
@@ -600,7 +609,8 @@ Saída esperada:
 ✓ server/incidents.test.ts (79 tests)
 ✓ server/auth.logout.test.ts (1 test)
 ✓ server/security.test.ts (34 tests)
-Tests: 114 passed
+✓ server/categories.test.ts (21 tests)
+Tests: 135 passed
 ```
 
 ### Cobertura dos Testes
@@ -632,8 +642,14 @@ Tests: 114 passed
 
 | **7.1 Design System SOC Portal** | `incidents.test.ts` | 10 | Componentes exportados, classes CSS, campos de formulário, restrição de acesso admin |
 | **7.2 Consistência CSS SOC Portal** | `incidents.test.ts` | 5 | soc-card, soc-btn-primary, aliases de subtitle, fonte Inter, badges, soc-table |
+| **Categories CRUD — list** | `categories.test.ts` | 2 | Listagem pública, retorno de array com campos corretos |
+| **Categories CRUD — create** | `categories.test.ts` | 5 | Admin cria com/sem campos opcionais, FORBIDDEN para user, UNAUTHORIZED para anônimo, validação de nome |
+| **Categories CRUD — update** | `categories.test.ts` | 5 | Admin atualiza campos parciais, desativa categoria, FORBIDDEN para user, UNAUTHORIZED para anônimo |
+| **Categories CRUD — delete** | `categories.test.ts` | 3 | Admin exclui (soft delete), FORBIDDEN para user, UNAUTHORIZED para anônimo |
+| **Categories CRUD — RBAC** | `categories.test.ts` | 4 | list público, create/update/delete apenas admin |
+| **Categories CRUD — DB helpers** | `categories.test.ts` | 2 | listCategories e createCategory chamam funções corretas |
 
-**Total: 114 testes passando em 3 arquivos**
+**Total: 135 testes passando em 4 arquivos**
 
 ---
 

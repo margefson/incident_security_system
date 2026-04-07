@@ -535,7 +535,7 @@ Todos os scripts são executados na raiz do projeto com `pnpm <script>`:
 | `dev` | `pnpm dev` | Inicia o servidor de desenvolvimento (Node.js + Vite HMR) |
 | `build` | `pnpm build` | Compila o frontend (Vite) e o backend (esbuild) para produção |
 | `start` | `pnpm start` | Inicia o servidor em modo produção (requer `build` antes) |
-| `test` | `pnpm test` | Executa todos os testes Vitest (**99 testes** em 3 arquivos) |
+| `test` | `pnpm test` | Executa todos os testes Vitest (**135 testes** em 4 arquivos) |
 | `db:push` | `pnpm db:push` | Gera e aplica migrações do schema Drizzle no banco |
 | `check` | `pnpm check` | Verifica erros de TypeScript sem compilar |
 | `format` | `pnpm format` | Formata todos os arquivos com Prettier |
@@ -583,9 +583,10 @@ incident_security_system/
 │   ├── routers.ts              # Procedures tRPC (auth + incidents + admin + reports)
 │   ├── db.ts                   # Helpers de acesso ao banco (Drizzle)
 │   ├── validation.ts           # Schemas Joi de validação
-│   ├── incidents.test.ts       # Testes Vitest (49 testes: auth, incidentes, admin, PDF, notif.)
+│   ├── incidents.test.ts       # Testes Vitest (79 testes: auth, incidentes, admin, PDF, notif., design system)
 │   ├── auth.logout.test.ts     # Teste de logout com cookie sameSite:lax (1 teste)
 │   ├── security.test.ts        # Testes dos 8 requisitos de segurança (34 testes)
+│   ├── categories.test.ts      # Testes CRUD de categorias e RBAC (21 testes)
 │   ├── security.ts             # Middlewares: rate-limit, CORS, helmet
 │   └── _core/                  # Infraestrutura do framework
 │       ├── index.ts            # Servidor Express principal
@@ -807,7 +808,7 @@ O sistema foi desenvolvido de forma colaborativa por uma equipe de cinco integra
 | Área | Integrante(s) | Artefatos sob Responsabilidade |
 |---|---|---|
 | **Front-end** | Nattan e Keven | `client/src/pages/`, `client/src/components/CyberLayout.tsx`, `client/src/components/ExportPdfButton.tsx`, `client/src/index.css`, `client/index.html` |
-| **Back-end** | Margefson | `server/routers.ts`, `server/db.ts`, `server/validation.ts`, `server/security.ts` (rate-limit, CORS, helmet), `server/incidents.test.ts` (49 testes), `server/auth.logout.test.ts` (1 teste), `server/security.test.ts` (34 testes — requisitos 6.1 a 6.8) |
+| **Back-end** | Margefson | `server/routers.ts`, `server/db.ts`, `server/validation.ts`, `server/security.ts` (rate-limit, CORS, helmet), `server/incidents.test.ts` (79 testes), `server/auth.logout.test.ts` (1 teste), `server/security.test.ts` (34 testes — requisitos 6.1 a 6.8), `server/categories.test.ts` (21 testes — CRUD de categorias e RBAC) |
 | **Banco de Dados** | Nattan | `drizzle/schema.ts`, `drizzle.config.ts`, migrações em `drizzle/migrations/`, helpers de consulta em `server/db.ts` |
 | **Classificador ML** | Josias e Keven | `ml/train_model.py`, `ml/classifier_server.py`, `ml/pdf_server.py`, `ml/model/`, `ml/metrics.json`, `ml/incidentes_cybersecurity_100.xlsx` |
 

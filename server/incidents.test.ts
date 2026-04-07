@@ -311,12 +311,14 @@ describe("incidents.stats", () => {
       { riskLevel: "critical" as const, count: 2 },
     ]);
 
+    vi.mocked(db.getIncidentsByUser).mockResolvedValue([]);
     const caller = appRouter.createCaller(createAuthContext({ id: 1 }));
     const result = await caller.incidents.stats();
 
-    expect(result.byCategory).toHaveLength(2);
-    expect(result.byRisk).toHaveLength(2);
-    expect(result.byCategory[0]).toMatchObject({ category: "phishing", count: 3 });
+    // New format: byCategory and byRisk are Record<string, number>
+    expect(result.byCategory).toMatchObject({ phishing: 3, malware: 2 });
+    expect(result.byRisk).toMatchObject({ high: 3, critical: 2 });
+    expect(result.total).toBe(0);
   });
 });
 

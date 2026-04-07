@@ -1,6 +1,6 @@
 import { eq, desc, and, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { users, incidents, InsertUser, InsertIncident, Incident } from "../drizzle/schema";
+import { users, incidents, categories, InsertUser, InsertIncident, Incident } from "../drizzle/schema";
 import { ENV } from "./_core/env";
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -239,6 +239,32 @@ export async function updateUserRole(userId: number, role: "user" | "admin") {
   await db.update(users).set({ role }).where(eq(users.id, userId));
 }
 
+// ─── Categories CRUD ────────────────────────────────────────────────────────────
+export async function listCategories() {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(categories).where(eq(categories.isActive, true)).orderBy(categories.name);
+}
+export async function createCategory(name: string, description?: string, color?: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.insert(categories).values({ name, description: description ?? null, color: color ?? "#22d3ee" });
+  const result = await db.select().from(categories).where(eq(categories.name, name)).limit(1);
+  return result[0];
+}
+export async function updateCategory(id: number, data: { name?: string; description?: string; color?: string; isActive?: boolean }) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(categories).set({ ...data }).where(eq(categories.id, id));
+  const result = await db.select().from(categories).where(eq(categories.id, id)).limit(1);
+  return result[0];
+}
+export async function deleteCategory(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(categories).set({ isActive: false }).where(eq(categories.id, id));
+  return { success: true };
+}
 export async function getGlobalStats() {
   const db = await getDb();
   if (!db) return { totalIncidents: 0, totalUsers: 0, byCategory: [], byRisk: [] };

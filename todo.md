@@ -135,3 +135,58 @@
 - [x] Atualizar README com novo design SOC Portal
 - [x] Atualizar manuais PDF com novo design SOC Portal
 - [x] Commitar no GitHub
+
+## Redesign Frontend (Estilo v2x_security_system) + CRUD de Categorias
+- [ ] Reverter CSS global para o tema do v2x_security_system (OKLCH dark theme, fontes Inter+JetBrains Mono)
+- [ ] Adaptar DashboardLayout para o estilo v2x (sidebar com SidebarProvider, ícones, font-mono)
+- [ ] Redesenhar Login no estilo v2x (card dark, ícone Shield, blur decorativo)
+- [ ] Redesenhar Register no estilo v2x (card dark, ícone Shield)
+- [ ] Redesenhar Dashboard no estilo v2x (StatCards, gráficos AreaChart/PieChart, eventos recentes)
+- [ ] Redesenhar Incidents no estilo v2x (tabela operacional, badges coloridos)
+- [ ] Redesenhar NewIncident no estilo v2x (formulário clean)
+- [ ] Redesenhar IncidentDetail no estilo v2x
+- [ ] Redesenhar RiskAnalysis no estilo v2x
+- [ ] Redesenhar Admin no estilo v2x
+- [ ] Atualizar index.html com fontes Google (Inter + JetBrains Mono)
+- [ ] Schema: adicionar tabela `categories` (id, name, description, isActive, createdAt, updatedAt)
+- [ ] Backend: procedures categories.list, categories.create, categories.update, categories.delete (adminProcedure)
+- [ ] Backend: seed das 5 categorias padrão (Phishing, Malware, Força Bruta, DDoS, Vazamento)
+- [ ] Frontend: página Categories.tsx (CRUD admin) com listagem, criação, edição e exclusão
+- [ ] Frontend: rota /admin/categories protegida por role admin
+- [ ] Frontend: usar categorias dinâmicas no formulário NewIncident (select com categorias do banco)
+- [ ] Testes: casos de teste individuais para CRUD de categorias (create, list, update, delete, acesso negado para user)
+- [ ] Atualizar README com CRUD de categorias
+- [ ] Atualizar Manual do Usuário com CRUD de categorias
+- [ ] Atualizar Manual de Implantação com CRUD de categorias
+- [ ] Gerar PDFs atualizados
+- [ ] Commitar no GitHub
+
+## Redesign Frontend (Estilo v2x_security_system)
+- [x] Reverter CSS global para tema dark OKLCH (Inter + JetBrains Mono)
+- [x] Reescrever Login.tsx no estilo v2x
+- [x] Reescrever Register.tsx com checklist de senha
+- [x] Reescrever DashboardLayout.tsx com sidebar SidebarProvider
+- [x] Reescrever Dashboard.tsx com cards e gráficos
+- [x] Reescrever Incidents.tsx com tabela soc-table
+- [x] Reescrever RiskAnalysis.tsx com RISK_CONFIG e RISK_BADGE
+- [x] Reescrever IncidentDetail.tsx
+- [x] Reescrever NewIncident.tsx
+- [x] Reescrever Admin.tsx
+- [x] Adicionar classes soc-* ao index.css (design system)
+
+## CRUD de Categorias (Admin Only)
+- [x] Adicionar tabela categories ao schema Drizzle
+- [x] Rodar migração pnpm db:push
+- [x] Adicionar helpers CRUD ao server/db.ts
+- [x] Adicionar categoriesRouter ao server/routers.ts (RBAC admin)
+- [x] Criar página AdminCategories.tsx
+- [x] Adicionar rota /admin/categories no App.tsx
+- [x] Popular banco com 5 categorias padrão (seed)
+- [x] Criar server/categories.test.ts (21 testes)
+- [x] Todos os 135 testes passando
+
+## Manuais e README
+- [x] Atualizar README.md (135 testes, CRUD categorias)
+- [x] Atualizar manual_usuario.md (seção 13.6 categorias)
+- [x] Atualizar manual_implantacao.md (135 testes, categories.test.ts)
+- [x] Gerar PDFs atualizados
