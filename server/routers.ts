@@ -231,9 +231,52 @@ const incidentsRouter = router({
     const total = allIncidents.length;
     const oneWeekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
     const thisWeek = allIncidents.filter(i => new Date(i.createdAt).getTime() > oneWeekAgo).length;
-    return { byCategory, byRisk, total, thisWeek };
+     // Recomendações contextualizadas por categoria (seção 7.5)
+    const CATEGORY_RECOMMENDATIONS: Record<string, { title: string; description: string; priority: string; action: string }> = {
+      malware: {
+        title: "Isolamento de Sistemas Comprometidos",
+        description: "Incidentes de malware detectados. Verifique e isole imediatamente os sistemas comprometidos para evitar a propação lateral.",
+        priority: "critical",
+        action: "Isolar sistema, executar varredura completa e restaurar a partir de backup limpo.",
+      },
+      vazamento_de_dados: {
+        title: "Notificação ao DPO e Avaliação LGPD",
+        description: "Vazamento de dados identificado. É obrigatório notificar o Encarregado de Dados (DPO) e avaliar as obrigações previstas na LGPD (Art. 48).",
+        priority: "critical",
+        action: "Notificar DPO em até 72h, registrar o incidente e avaliar notificação à ANPD e aos titulares afetados.",
+      },
+      phishing: {
+        title: "Reforço de Treinamento de Conscientização",
+        description: "Ataques de phishing registrados. Reforce o treinamento de conscientização dos colaboradores e implemente filtros de e-mail mais rigorosos.",
+        priority: "high",
+        action: "Realizar campanha de phishing simulado, atualizar treinamentos e habilitar MFA em todas as contas.",
+      },
+      brute_force: {
+        title: "Bloqueio Automático após Falhas de Login",
+        description: "Tentativas de força bruta detectadas. Implemente bloqueio automático de contas após múltiplas falhas consecutivas de autenticação.",
+        priority: "high",
+        action: "Configurar lockout após 5 tentativas, habilitar CAPTCHA e revisar política de senhas.",
+      },
+      ddos: {
+        title: "Revisão de Rate Limiting e CDN",
+        description: "Ataques DDoS identificados. Revise as configurações de rate limiting, WAF e CDN para mitigar o impacto de futuros ataques.",
+        priority: "high",
+        action: "Ativar proteção DDoS no CDN, revisar regras de rate limiting e configurar auto-scaling.",
+      },
+    };
+    const recommendations = Object.entries(byCategory)
+      .filter(([cat, count]) => count > 0 && CATEGORY_RECOMMENDATIONS[cat])
+      .map(([cat, count]) => ({
+        category: cat,
+        count: count as number,
+        ...CATEGORY_RECOMMENDATIONS[cat],
+      }))
+      .sort((a, b) => {
+        const order = { critical: 0, high: 1, medium: 2, low: 3 };
+        return (order[a.priority as keyof typeof order] ?? 9) - (order[b.priority as keyof typeof order] ?? 9);
+      });
+    return { byCategory, byRisk, total, thisWeek, recommendations };
   }),
-
   globalStats: protectedProcedure.query(async ({ ctx }) => {
     if (ctx.user.role !== "admin") {
       throw new TRPCError({ code: "FORBIDDEN", message: "Apenas administradores" });

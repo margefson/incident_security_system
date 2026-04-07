@@ -255,13 +255,24 @@ Um gráfico de barras verticais exibe a contagem de incidentes por nível de ris
 
 ### 7.5 Recomendações de Segurança
 
-Com base nos incidentes registrados, o sistema gera automaticamente recomendações contextualizadas. Exemplos:
+Com base nos incidentes registrados, o sistema gera automaticamente recomendações contextualizadas por categoria. Cada recomendação exibe o título da ação, uma descrição do risco, o nível de prioridade (Crítico ou Alto) e a ação específica recomendada para mitigação.
 
-- Incidentes de **malware** ativam a recomendação de verificar isolamento de sistemas comprometidos.
-- Incidentes de **vazamento de dados** ativam a recomendação de notificar o DPO e avaliar obrigações LGPD.
-- Incidentes de **phishing** ativam a recomendação de reforçar treinamento de conscientização.
-- Incidentes de **força bruta** ativam a recomendação de implementar bloqueio automático após falhas de login.
-- Incidentes de **DDoS** ativam a recomendação de revisar configurações de rate limiting e CDN.
+As recomendações aparecem em dois locais:
+
+1. **Tela de Análise de Risco** (`/risk`): Painel consolidado com todas as recomendações ativas, ordenadas por prioridade (crítico antes de alto). Exibe a contagem de incidentes de cada categoria e a ação recomendada.
+2. **Detalhe do Incidente** (`/incidents/:id`): Ao abrir um incidente específico, o sistema exibe automaticamente a recomendação correspondente à categoria daquele incidente.
+
+A tabela a seguir descreve as recomendações implementadas para cada categoria:
+
+| Categoria | Título da Recomendação | Prioridade | Ação Recomendada |
+|---|---|---|---|
+| **Malware** | Isolamento de Sistemas Comprometidos | Crítica | Isolar o sistema afetado da rede, executar varredura completa com antivírus atualizado e restaurar a partir de backup limpo. |
+| **Vazamento de Dados** | Notificação ao DPO e Avaliação LGPD | Crítica | Notificar o DPO em até 72h, registrar o incidente, avaliar notificação à ANPD e comunicar os titulares afetados (LGPD Art. 48). |
+| **Phishing** | Reforço de Treinamento de Conscientização | Alta | Realizar campanha de phishing simulado, atualizar treinamentos de segurança e habilitar MFA em todas as contas corporativas. |
+| **Força Bruta** | Bloqueio Automático após Falhas de Login | Alta | Configurar lockout após 5 tentativas, habilitar CAPTCHA nos formulários de login e revisar a política de senhas. |
+| **DDoS** | Revisão de Rate Limiting e CDN | Alta | Ativar proteção DDoS no CDN, revisar regras de rate limiting e configurar auto-scaling para absorver picos de tráfego. |
+
+As recomendações são geradas dinamicamente: somente categorias com pelo menos um incidente registrado ativam sua respectiva recomendação. Quando não há incidentes em categorias reconhecidas, o sistema exibe recomendações genéricas baseadas no nível de risco (crítico/alto).
 
 ---
 
@@ -650,7 +661,7 @@ O sistema foi desenvolvido de forma colaborativa por uma equipe de cinco integra
 | Área | Integrante(s) | Responsabilidades |
 |---|---|---|
 | **Front-end** | Nattan e Keven | Desenvolvimento de todas as interfaces React: páginas de login, registro, dashboard, listagem de incidentes, formulário de novo incidente, detalhe do incidente, análise de risco e painel de administração. Implementação do design system SOC Portal (CSS variables OKLCH, fonte Inter, sidebar compacta, badges de severidade coloridos). Integração com hooks tRPC e componentes shadcn/ui. |
-| **Back-end** | Margefson | Implementação completa da API tRPC com Express: routers de autenticação (bcryptjs, JWT), incidentes, administração e exportação de relatórios. Validação de entradas com Joi (incluindo regras robustas de complexidade de senha), controle de acesso por papel (user/admin), 8 requisitos de segurança (helmet, CORS, rate limiting, IDOR), integração com serviços Flask internos e suite de 135 testes Vitest (incluindo testes de consistência do design system SOC Portal e CRUD de categorias). |
+| **Back-end** | Margefson | Implementação completa da API tRPC com Express: routers de autenticação (bcryptjs, JWT), incidentes, administração e exportação de relatórios. Validação de entradas com Joi (incluindo regras robustas de complexidade de senha), controle de acesso por papel (user/admin), 8 requisitos de segurança (helmet, CORS, rate limiting, IDOR), integração com serviços Flask internos e suite de 162 testes Vitest (incluindo testes de consistência do design system SOC Portal, CRUD de categorias e recomendações de segurança contextualizadas). |
 | **Banco de Dados** | Nattan | Modelagem do schema relacional com Drizzle ORM: definição das tabelas `users` e `incidents`, tipos enumerados para categoria e nível de risco, configuração das migrações automáticas e implementação dos helpers de consulta em `server/db.ts`. |
 | **Classificador ML** | Josias e Keven | Construção do pipeline de classificação: pré-processamento do dataset de 100 amostras, vetorização TF-IDF (5.000 features, bigramas) e classificador Multinomial Naive Bayes. Servidor Flask de classificação (porta 5001) e servidor Flask de geração de relatórios PDF com ReportLab (porta 5002). |
 

@@ -535,7 +535,7 @@ Todos os scripts são executados na raiz do projeto com `pnpm <script>`:
 | `dev` | `pnpm dev` | Inicia o servidor de desenvolvimento (Node.js + Vite HMR) |
 | `build` | `pnpm build` | Compila o frontend (Vite) e o backend (esbuild) para produção |
 | `start` | `pnpm start` | Inicia o servidor em modo produção (requer `build` antes) |
-| `test` | `pnpm test` | Executa todos os testes Vitest (**135 testes** em 4 arquivos) |
+| `test` | `pnpm test` | Executa todos os testes Vitest (**162 testes** em 5 arquivos) |
 | `db:push` | `pnpm db:push` | Gera e aplica migrações do schema Drizzle no banco |
 | `check` | `pnpm check` | Verifica erros de TypeScript sem compilar |
 | `format` | `pnpm format` | Formata todos os arquivos com Prettier |
@@ -587,6 +587,7 @@ incident_security_system/
 │   ├── auth.logout.test.ts     # Teste de logout com cookie sameSite:lax (1 teste)
 │   ├── security.test.ts        # Testes dos 8 requisitos de segurança (34 testes)
 │   ├── categories.test.ts      # Testes CRUD de categorias e RBAC (21 testes)
+│   ├── recommendations.test.ts # Testes recomendações de segurança contextualizadas (27 testes)
 │   ├── security.ts             # Middlewares: rate-limit, CORS, helmet
 │   └── _core/                  # Infraestrutura do framework
 │       ├── index.ts            # Servidor Express principal

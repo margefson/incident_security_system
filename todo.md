@@ -158,8 +158,8 @@
 - [ ] Atualizar README com CRUD de categorias
 - [ ] Atualizar Manual do Usuário com CRUD de categorias
 - [ ] Atualizar Manual de Implantação com CRUD de categorias
-- [ ] Gerar PDFs atualizados
-- [ ] Commitar no GitHub
+- [x] Gerar PDFs atualizados
+- [x] Commitar no GitHub
 
 ## Redesign Frontend (Estilo v2x_security_system)
 - [x] Reverter CSS global para tema dark OKLCH (Inter + JetBrains Mono)
@@ -190,3 +190,20 @@
 - [x] Atualizar manual_usuario.md (seção 13.6 categorias)
 - [x] Atualizar manual_implantacao.md (135 testes, categories.test.ts)
 - [x] Gerar PDFs atualizados
+
+## Recomendações de Segurança Contextualizadas (Seção 7.5)
+- [x] Verificar estado atual das recomendações no RiskAnalysis.tsx e IncidentDetail.tsx
+- [x] Backend: procedure incidents.recommendations retornando recomendações por categoria
+- [x] Frontend RiskAnalysis: exibir recomendações contextualizadas por categoria ativa
+- [x] Frontend IncidentDetail: exibir recomendação específica da categoria do incidente
+- [x] Recomendação Malware: verificar isolamento de sistemas comprometidos
+- [x] Recomendação Vazamento: notificar DPO e avaliar obrigações LGPD
+- [x] Recomendação Phishing: reforçar treinamento de conscientização
+- [x] Recomendação Força Bruta: implementar bloqueio automático após falhas de login
+- [x] Recomendação DDoS: revisar configurações de rate limiting e CDN
+- [x] Testes individuais para cada recomendação por categoria
+- [x] Atualizar README com seção 7.5
+- [x] Atualizar Manual do Usuário com seção 7.5
+- [x] Atualizar Manual de Implantação com seção 7.5
+- [x] Gerar PDFs atualizados
+- [x] Commitar no GitHub
