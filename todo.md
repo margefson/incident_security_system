@@ -74,15 +74,15 @@
 - [x] Commitar no GitHub
 
 ## Novas Funcionalidades (Fase 2)
-- [ ] Painel de administração (/admin) com listagem global e reclassificação manual
-- [ ] Exportação de relatórios em PDF via tRPC (incidents.exportPdf)
-- [ ] Notificações automáticas de risco crítico (notifyOwner)
-- [ ] Modernização do frontend (visual clássico + moderno)
-- [ ] Novos testes Vitest para admin, exportação e notificações
-- [ ] Atualizar README.md com novas funcionalidades
-- [ ] Atualizar Manual do Usuário (PDF)
-- [ ] Atualizar Manual de Implantação (PDF)
-- [ ] Commit final no GitHub
+- [x] Painel de administração (/admin) com listagem global e reclassificação manual
+- [x] Exportação de relatórios em PDF via tRPC (incidents.exportPdf)
+- [x] Notificações automáticas de risco crítico (notifyOwner)
+- [x] Modernização do frontend (visual clássico + moderno)
+- [x] Novos testes Vitest para admin, exportação e notificações
+- [x] Atualizar README.md com novas funcionalidades
+- [x] Atualizar Manual do Usuário (PDF)
+- [x] Atualizar Manual de Implantação (PDF)
+- [x] Commit final no GitHub
 
 ## Divisão de Atividades do Grupo
 - [x] Adicionar divisão de atividades no README.md
@@ -102,17 +102,17 @@
 - [x] Commitar no GitHub
 
 ## Requisitos de Segurança Obrigatórios (6.1–6.8)
-- [ ] 6.1 Gerenciamento de segredos: verificar que nenhum segredo está hardcoded; documentar .env
-- [ ] 6.2 Hash de senha: confirmar bcrypt saltRounds=12, nunca texto puro
-- [ ] 6.3 Sessão segura: cookie httpOnly=true, secure=true em produção, sameSite="lax", saveUninitialized=false
-- [ ] 6.4 IDOR: retornar 404 (não 403) quando incidente não pertence ao usuário autenticado
-- [ ] 6.5 Rate limiting: 100 req/IP/15min global; 10 req/IP/15min em /api/trpc/auth.*
-- [ ] 6.6 CORS: aceitar apenas origem do frontend via variável de ambiente, com credentials
-- [ ] 6.7 Helmet: remover X-Powered-By, ativar X-Content-Type-Options e Strict-Transport-Security
-- [ ] 6.8 Timing attack: bcrypt.compare executado sempre no login, mesmo quando e-mail não existe
-- [ ] Testes Vitest individuais para cada requisito (6.1–6.8)
-- [ ] Atualizar README com seção de segurança detalhada
-- [ ] Atualizar Manual do Usuário com requisitos de segurança
-- [ ] Atualizar Manual de Implantação com requisitos de segurança
-- [ ] Gerar PDFs atualizados
-- [ ] Commitar no GitHub
+- [x] 6.1 Gerenciamento de segredos: verificar que nenhum segredo está hardcoded; documentar .env
+- [x] 6.2 Hash de senha: confirmar bcrypt saltRounds=12, nunca texto puro
+- [x] 6.3 Sessão segura: cookie httpOnly=true, secure=true em produção, sameSite="lax", saveUninitialized=false
+- [x] 6.4 IDOR: retornar 404 (não 403) quando incidente não pertence ao usuário autenticado
+- [x] 6.5 Rate limiting: 100 req/IP/15min global; 10 req/IP/15min em /api/trpc/auth.*
+- [x] 6.6 CORS: aceitar apenas origem do frontend via variável de ambiente, com credentials
+- [x] 6.7 Helmet: remover X-Powered-By, ativar X-Content-Type-Options e Strict-Transport-Security
+- [x] 6.8 Timing attack: bcrypt.compare executado sempre no login, mesmo quando e-mail não existe
+- [x] Testes Vitest individuais para cada requisito (6.1–6.8) — 34 testes no security.test.ts
+- [x] Atualizar README com seção de segurança detalhada
+- [x] Atualizar Manual do Usuário com requisitos de segurança
+- [x] Atualizar Manual de Implantação com requisitos de segurança
+- [x] Gerar PDFs atualizados
+- [x] Commitar no GitHub
