@@ -52,7 +52,7 @@ export default function Register() {
             <span className="absolute top-0 left-0 w-3 h-3" style={{ borderTop: "1px solid oklch(0.65 0.32 0 / 0.7)", borderLeft: "1px solid oklch(0.65 0.32 0 / 0.7)" }} />
             <span className="absolute bottom-0 right-0 w-3 h-3" style={{ borderBottom: "1px solid oklch(0.65 0.32 0 / 0.7)", borderRight: "1px solid oklch(0.65 0.32 0 / 0.7)" }} />
           </div>
-          <h1 className="text-2xl font-bold font-mono neon-text-pink tracking-wider">NOVO<span className="neon-text-cyan">_OPERADOR</span></h1>
+          <h1 className="text-2xl font-bold neon-text-pink tracking-wider" style={{ fontFamily: "Orbitron, JetBrains Mono, monospace", letterSpacing: "0.08em" }}>NOVO<span className="neon-text-cyan">_OPERADOR</span></h1>
           <p className="text-sm mt-1 font-mono" style={{ color: "oklch(0.45 0.02 240)" }}>REGISTRO DE ACESSO AO SISTEMA</p>
         </div>
 

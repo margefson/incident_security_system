@@ -15,6 +15,11 @@ vi.mock("./db", () => ({
   getIncidentStatsByUser: vi.fn(),
   getIncidentRiskStatsByUser: vi.fn(),
   getGlobalStats: vi.fn(),
+  getAllIncidents: vi.fn(),
+  countAllIncidents: vi.fn(),
+  reclassifyIncident: vi.fn(),
+  getAllUsers: vi.fn(),
+  updateUserRole: vi.fn(),
 }));
 
 import * as db from "./db";
@@ -310,5 +315,178 @@ describe("incidents.stats", () => {
     expect(result.byCategory).toHaveLength(2);
     expect(result.byRisk).toHaveLength(2);
     expect(result.byCategory[0]).toMatchObject({ category: "phishing", count: 3 });
+  });
+});
+
+// ─── Admin Tests ──────────────────────────────────────────────────────────────
+vi.mock("./_core/notification", () => ({
+  notifyOwner: vi.fn().mockResolvedValue(true),
+}));
+
+// Mock fetch for ML and PDF services
+const fetchMock = vi.fn();
+vi.stubGlobal("fetch", fetchMock);
+
+describe("admin.listIncidents", () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it("permite que admin liste todos os incidentes", async () => {
+    const mockIncident = {
+      id: 1, userId: 1, title: "Inc Admin", description: "Desc",
+      category: "malware" as const, riskLevel: "critical" as const,
+      confidence: 0.95, createdAt: new Date(), updatedAt: new Date(),
+      userName: "Admin User", userEmail: "admin@example.com",
+    };
+    vi.mocked(db.getAllIncidents).mockResolvedValue([mockIncident]);
+    vi.mocked(db.countAllIncidents).mockResolvedValue(1);
+
+    const caller = appRouter.createCaller(createAuthContext({ id: 1, role: "admin" }));
+    const result = await caller.admin.listIncidents({ page: 1, limit: 20 });
+
+    expect(result.incidents).toHaveLength(1);
+    expect(result.total).toBe(1);
+    expect(result.incidents[0].title).toBe("Inc Admin");
+  });
+
+  it("bloqueia acesso de usuário comum ao painel admin", async () => {
+    const caller = appRouter.createCaller(createAuthContext({ id: 1, role: "user" }));
+    await expect(caller.admin.listIncidents({ page: 1, limit: 20 })).rejects.toThrow();
+  });
+});
+
+describe("admin.reclassify", () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it("permite que admin reclassifique incidente manualmente", async () => {
+    const reclassified = {
+      id: 5, userId: 2, title: "Inc", description: "Desc",
+      category: "malware" as const, riskLevel: "critical" as const,
+      confidence: 1.0, createdAt: new Date(), updatedAt: new Date(),
+    };
+    vi.mocked(db.reclassifyIncident).mockResolvedValue(reclassified);
+
+    const caller = appRouter.createCaller(createAuthContext({ id: 1, role: "admin" }));
+    const result = await caller.admin.reclassify({
+      id: 5,
+      category: "malware",
+      riskLevel: "critical",
+    });
+
+    expect(result.category).toBe("malware");
+    expect(result.riskLevel).toBe("critical");
+  });
+
+  it("bloqueia reclassificação por usuário comum", async () => {
+    const caller = appRouter.createCaller(createAuthContext({ id: 1, role: "user" }));
+    await expect(
+      caller.admin.reclassify({ id: 5, category: "malware", riskLevel: "critical" })
+    ).rejects.toThrow();
+  });
+});
+
+describe("admin.stats", () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it("retorna estatísticas globais para admin", async () => {
+    vi.mocked(db.getGlobalStats).mockResolvedValue({
+      totalIncidents: 42,
+      totalUsers: 8,
+      byCategory: [{ category: "phishing" as const, count: 15 }],
+      byRisk: [{ riskLevel: "high" as const, count: 20 }],
+      topUsers: [{ userId: 1, userName: "Admin", count: 10 }],
+    });
+
+    const caller = appRouter.createCaller(createAuthContext({ id: 1, role: "admin" }));
+    const result = await caller.admin.stats();
+
+    expect(result.totalIncidents).toBe(42);
+    expect(result.totalUsers).toBe(8);
+    expect(result.byCategory[0]).toMatchObject({ category: "phishing", count: 15 });
+  });
+});
+
+describe("admin.updateUserRole", () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it("permite que admin promova usuário para admin", async () => {
+    vi.mocked(db.updateUserRole).mockResolvedValue(undefined);
+
+    const caller = appRouter.createCaller(createAuthContext({ id: 1, role: "admin" }));
+    const result = await caller.admin.updateUserRole({ userId: 2, role: "admin" });
+
+    expect(result.success).toBe(true);
+  });
+
+  it("bloqueia atualização de role por usuário comum", async () => {
+    const caller = appRouter.createCaller(createAuthContext({ id: 1, role: "user" }));
+    await expect(
+      caller.admin.updateUserRole({ userId: 2, role: "admin" })
+    ).rejects.toThrow();
+  });
+});
+
+describe("reports.exportPdf", () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it("exporta PDF com incidentes do usuário autenticado", async () => {
+    vi.mocked(db.getIncidentsByUser).mockResolvedValue([
+      {
+        id: 1, userId: 1, title: "Phishing Detectado", description: "Email suspeito",
+        category: "phishing" as const, riskLevel: "high" as const,
+        confidence: 0.9, createdAt: new Date(), updatedAt: new Date(),
+      },
+    ]);
+
+    fetchMock.mockResolvedValue({
+      ok: true,
+      arrayBuffer: async () => Buffer.from("PDF_CONTENT").buffer,
+    });
+
+    const caller = appRouter.createCaller(createAuthContext({ id: 1, name: "Test User", email: "test@example.com" }));
+    const result = await caller.reports.exportPdf({});
+
+    expect(result.incidentCount).toBe(1);
+    expect(result.mimeType).toBe("application/pdf");
+    expect(result.base64).toBeDefined();
+    expect(result.filename).toContain(".pdf");
+  });
+
+  it("requer autenticação para exportar PDF", async () => {
+    const caller = appRouter.createCaller(createPublicContext());
+    await expect(caller.reports.exportPdf({})).rejects.toThrow();
+  });
+});
+
+describe("incidents.create - notificação de risco crítico", () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it("cria incidente crítico e dispara notificação", async () => {
+    // Mock ML service returning malware (critical risk)
+    fetchMock.mockResolvedValue({
+      ok: true,
+      json: async () => ({ category: "malware", confidence: 0.97 }),
+    });
+
+    vi.mocked(db.createIncident).mockResolvedValue({
+      id: 10, userId: 1, title: "Malware Crítico", description: "Ransomware detectado no servidor",
+      category: "malware" as const, riskLevel: "critical" as const,
+      confidence: 0.97, createdAt: new Date(), updatedAt: new Date(),
+    });
+
+    const { notifyOwner } = await import("./_core/notification");
+
+    const caller = appRouter.createCaller(createAuthContext({ id: 1, name: "Test User", email: "test@example.com" }));
+    const result = await caller.incidents.create({
+      title: "Malware Crítico",
+      description: "Ransomware detectado no servidor de produção com criptografia de arquivos",
+    });
+
+    expect(result.category).toBe("malware");
+    expect(result.riskLevel).toBe("critical");
+    expect(notifyOwner).toHaveBeenCalledWith(
+      expect.objectContaining({
+        title: expect.stringContaining("CRÍTICO"),
+      })
+    );
   });
 });

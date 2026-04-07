@@ -72,3 +72,14 @@
 - [x] Atualizar Manual de Implantação (PDF)
 - [x] Atualizar README.md
 - [x] Commitar no GitHub
+
+## Novas Funcionalidades (Fase 2)
+- [ ] Painel de administração (/admin) com listagem global e reclassificação manual
+- [ ] Exportação de relatórios em PDF via tRPC (incidents.exportPdf)
+- [ ] Notificações automáticas de risco crítico (notifyOwner)
+- [ ] Modernização do frontend (visual clássico + moderno)
+- [ ] Novos testes Vitest para admin, exportação e notificações
+- [ ] Atualizar README.md com novas funcionalidades
+- [ ] Atualizar Manual do Usuário (PDF)
+- [ ] Atualizar Manual de Implantação (PDF)
+- [ ] Commit final no GitHub

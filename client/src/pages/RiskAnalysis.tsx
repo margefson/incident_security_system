@@ -104,7 +104,7 @@ export default function RiskAnalysis() {
           <Activity className="w-5 h-5 neon-text-pink" />
         </div>
         <div>
-          <h1 className="text-lg font-bold font-mono neon-text-pink tracking-wider">ANÁLISE DE RISCO</h1>
+          <h1 className="text-lg font-bold neon-text-pink tracking-wider" style={{ fontFamily: "Orbitron, JetBrains Mono, monospace", letterSpacing: "0.06em" }}>ANÁLISE DE RISCO</h1>
           <p className="font-mono text-xs" style={{ color: "oklch(0.45 0.02 240)" }}>Avaliação de ameaças e recomendações de segurança</p>
         </div>
       </div>

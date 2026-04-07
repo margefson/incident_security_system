@@ -1,6 +1,6 @@
 import { eq, desc, and, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { users, incidents, InsertUser, InsertIncident } from "../drizzle/schema";
+import { users, incidents, InsertUser, InsertIncident, Incident } from "../drizzle/schema";
 import { ENV } from "./_core/env";
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -152,6 +152,91 @@ export async function getIncidentRiskStatsByUser(userId: number) {
     .from(incidents)
     .where(eq(incidents.userId, userId))
     .groupBy(incidents.riskLevel);
+}
+
+// ─── Admin Helpers ────────────────────────────────────────────────────────
+export async function getAllIncidents(filters?: {
+  category?: string;
+  riskLevel?: string;
+  userId?: number;
+  limit?: number;
+  offset?: number;
+}) {
+  const db = await getDb();
+  if (!db) return [];
+  const conditions: ReturnType<typeof eq>[] = [];
+  if (filters?.category) conditions.push(eq(incidents.category, filters.category as Incident["category"]));
+  if (filters?.riskLevel) conditions.push(eq(incidents.riskLevel, filters.riskLevel as Incident["riskLevel"]));
+  if (filters?.userId) conditions.push(eq(incidents.userId, filters.userId));
+  const query = db
+    .select({
+      id: incidents.id,
+      userId: incidents.userId,
+      title: incidents.title,
+      description: incidents.description,
+      category: incidents.category,
+      riskLevel: incidents.riskLevel,
+      confidence: incidents.confidence,
+      createdAt: incidents.createdAt,
+      updatedAt: incidents.updatedAt,
+      userName: users.name,
+      userEmail: users.email,
+    })
+    .from(incidents)
+    .leftJoin(users, eq(incidents.userId, users.id))
+    .where(conditions.length > 0 ? and(...conditions) : undefined)
+    .orderBy(desc(incidents.createdAt))
+    .limit(filters?.limit ?? 100)
+    .offset(filters?.offset ?? 0);
+  return query;
+}
+
+export async function countAllIncidents(filters?: {
+  category?: string;
+  riskLevel?: string;
+  userId?: number;
+}) {
+  const db = await getDb();
+  if (!db) return 0;
+  const conditions: ReturnType<typeof eq>[] = [];
+  if (filters?.category) conditions.push(eq(incidents.category, filters.category as Incident["category"]));
+  if (filters?.riskLevel) conditions.push(eq(incidents.riskLevel, filters.riskLevel as Incident["riskLevel"]));
+  if (filters?.userId) conditions.push(eq(incidents.userId, filters.userId));
+  const result = await db
+    .select({ count: sql<number>`count(*)` })
+    .from(incidents)
+    .where(conditions.length > 0 ? and(...conditions) : undefined);
+  return Number(result[0]?.count ?? 0);
+}
+
+export async function reclassifyIncident(id: number, category: Incident["category"], riskLevel: Incident["riskLevel"]) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(incidents)
+    .set({ category, riskLevel, confidence: 1.0 })
+    .where(eq(incidents.id, id));
+  const result = await db.select().from(incidents).where(eq(incidents.id, id)).limit(1);
+  return result[0];
+}
+
+export async function getAllUsers() {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select({
+    id: users.id,
+    name: users.name,
+    email: users.email,
+    role: users.role,
+    isActive: users.isActive,
+    createdAt: users.createdAt,
+    lastSignedIn: users.lastSignedIn,
+  }).from(users).orderBy(desc(users.createdAt));
+}
+
+export async function updateUserRole(userId: number, role: "user" | "admin") {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(users).set({ role }).where(eq(users.id, userId));
 }
 
 export async function getGlobalStats() {

@@ -15,11 +15,17 @@ import {
   getIncidentStatsByUser,
   getUserByEmail,
   upsertUser,
+  getAllIncidents,
+  countAllIncidents,
+  reclassifyIncident,
+  getAllUsers,
+  updateUserRole,
 } from "./db";
 import { registerSchema, loginSchema, createIncidentSchema, validateJoi } from "./validation";
 import bcrypt from "bcryptjs";
 import { v4 as uuidv4 } from "uuid";
 import { sdk } from "./_core/sdk";
+import { notifyOwner } from "./_core/notification";
 
 // ─── Risk Level Mapping ────────────────────────────────────────────────────
 const CATEGORY_RISK: Record<string, "critical" | "high" | "medium" | "low"> = {
@@ -161,6 +167,24 @@ const incidentsRouter = router({
         riskLevel,
         confidence,
       });
+
+      // ⚠️ Notificar administrador em caso de risco crítico
+      if (riskLevel === "critical") {
+        notifyOwner({
+          title: `⚠️ Incidente CRÍTICO registrado`,
+          content: [
+            `**Usuário:** ${ctx.user.name ?? ctx.user.email ?? ctx.user.openId}`,
+            `**Título:** ${validated.title}`,
+            `**Categoria:** ${category}`,
+            `**Nível de Risco:** CRÍTICO`,
+            `**Confiança do ML:** ${Math.round(confidence * 100)}%`,
+            `**Data/Hora:** ${new Date().toLocaleString("pt-BR")}`,
+          ].join("\n"),
+        }).catch((err) =>
+          console.warn("[Notification] Failed to notify owner:", err)
+        );
+      }
+
       return incident;
     }),
 
@@ -209,12 +233,136 @@ const incidentsRouter = router({
     return getGlobalStats();
   }),
 });
+// ─── Admin Router ───────────────────────────────────────────────────────────
+const adminProcedure = protectedProcedure.use(({ ctx, next }) => {
+  if (ctx.user.role !== "admin") {
+    throw new TRPCError({ code: "FORBIDDEN", message: "Acesso restrito a administradores" });
+  }
+  return next({ ctx });
+});
 
-// ─── App Router ────────────────────────────────────────────────────────────
+const adminRouter = router({
+  // List all incidents with optional filters and pagination
+  listIncidents: adminProcedure
+    .input(z.object({
+      category: z.string().optional(),
+      riskLevel: z.string().optional(),
+      userId: z.number().optional(),
+      limit: z.number().min(1).max(500).default(100),
+      offset: z.number().min(0).default(0),
+    }))
+    .query(async ({ input }) => {
+      const [rows, total] = await Promise.all([
+        getAllIncidents(input),
+        countAllIncidents(input),
+      ]);
+      return { incidents: rows, total };
+    }),
+
+  // Reclassify an incident manually
+  reclassify: adminProcedure
+    .input(z.object({
+      id: z.number(),
+      category: z.enum(["phishing", "malware", "brute_force", "ddos", "vazamento_de_dados", "unknown"]),
+      riskLevel: z.enum(["critical", "high", "medium", "low"]),
+    }))
+    .mutation(async ({ input }) => {
+      const updated = await reclassifyIncident(input.id, input.category, input.riskLevel);
+      if (!updated) throw new TRPCError({ code: "NOT_FOUND", message: "Incidente não encontrado" });
+      return updated;
+    }),
+
+  // List all users
+  listUsers: adminProcedure.query(async () => {
+    return getAllUsers();
+  }),
+
+  // Promote or demote a user
+  updateUserRole: adminProcedure
+    .input(z.object({
+      userId: z.number(),
+      role: z.enum(["user", "admin"]),
+    }))
+    .mutation(async ({ input, ctx }) => {
+      if (input.userId === ctx.user.id) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Você não pode alterar seu próprio perfil" });
+      }
+      await updateUserRole(input.userId, input.role);
+      return { success: true };
+    }),
+
+  // Global stats
+  stats: adminProcedure.query(async () => {
+    return getGlobalStats();
+  }),
+});
+
+// ─── Reports Router ───────────────────────────────────────────────────────
+const reportsRouter = router({
+  exportPdf: protectedProcedure
+    .input(z.object({
+      category: z.string().optional(),
+      riskLevel: z.string().optional(),
+      adminMode: z.boolean().optional().default(false),
+    }))
+    .mutation(async ({ input, ctx }) => {
+      // Collect incidents
+      let incidents: Array<Record<string, unknown>>;
+      if (input.adminMode && ctx.user.role === "admin") {
+        incidents = await getAllIncidents({
+          category: input.category,
+          riskLevel: input.riskLevel,
+          limit: 500,
+        });
+      } else {
+        const rows = await getIncidentsByUser(ctx.user.id);
+        incidents = rows.filter((r) => {
+          if (input.category && r.category !== input.category) return false;
+          if (input.riskLevel && r.riskLevel !== input.riskLevel) return false;
+          return true;
+        });
+      }
+
+      // Call Python PDF service
+      const payload = {
+        incidents,
+        userName: ctx.user.name ?? "Usuário",
+        userEmail: ctx.user.email ?? "",
+        isAdmin: input.adminMode && ctx.user.role === "admin",
+      };
+
+      const response = await fetch("http://localhost:5002/generate-pdf", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+        signal: AbortSignal.timeout(30000),
+      });
+
+      if (!response.ok) {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Falha ao gerar PDF",
+        });
+      }
+
+      const pdfBuffer = await response.arrayBuffer();
+      const base64 = Buffer.from(pdfBuffer).toString("base64");
+      return {
+        base64,
+        filename: `relatorio_incidentes_${new Date().toISOString().slice(0, 10)}.pdf`,
+        mimeType: "application/pdf",
+        incidentCount: incidents.length,
+      };
+    }),
+});
+
+// ─── App Router ────────────────────────────────────────────────────────
 export const appRouter = router({
   system: systemRouter,
   auth: authRouter,
   incidents: incidentsRouter,
+  admin: adminRouter,
+  reports: reportsRouter,
 });
 
 export type AppRouter = typeof appRouter;

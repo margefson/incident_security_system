@@ -32,7 +32,7 @@ export default function Home() {
         </div>
 
         {/* Title */}
-        <h1 className="text-4xl font-bold font-mono mb-2 tracking-wider">
+        <h1 className="text-4xl font-bold mb-2 tracking-wider" style={{ fontFamily: "Orbitron, JetBrains Mono, monospace", letterSpacing: "0.08em" }}>
           <span className="neon-text-cyan">INCIDENT</span>
           <span className="neon-text-pink">_SYS</span>
         </h1>
@@ -51,7 +51,7 @@ export default function Home() {
             { icon: Lock, title: "Segurança Total", desc: "Autenticação bcrypt, JWT, controle de acesso individual por usuário", color: "oklch(0.65 0.32 0)" },
             { icon: Activity, title: "Análise de Risco", desc: "Score de risco automático, recomendações e dashboard em tempo real", color: "oklch(0.75 0.25 145)" },
           ].map(({ icon: Icon, title, desc, color }) => (
-            <div key={title} className="p-4 rounded text-left" style={{ background: "oklch(0.09 0.012 240)", border: "1px solid oklch(0.22 0.03 240)" }}>
+            <div key={title} className="cyber-card p-4 text-left">
               <div className="flex items-center gap-2 mb-2">
                 <Icon className="w-4 h-4" style={{ color }} />
                 <span className="font-mono text-xs font-bold" style={{ color }}>{title.toUpperCase()}</span>

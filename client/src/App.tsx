@@ -12,6 +12,7 @@ import Incidents from "./pages/Incidents";
 import NewIncident from "./pages/NewIncident";
 import IncidentDetail from "./pages/IncidentDetail";
 import RiskAnalysis from "./pages/RiskAnalysis";
+import Admin from "./pages/Admin";
 
 function Router() {
   return (
@@ -24,6 +25,7 @@ function Router() {
       <Route path="/incidents/:id">{(params) => <IncidentDetail id={params.id} />}</Route>
       <Route path="/incidents" component={Incidents} />
       <Route path="/risk" component={RiskAnalysis} />
+      <Route path="/admin" component={Admin} />
       <Route path="/404" component={NotFound} />
       <Route component={NotFound} />
     </Switch>

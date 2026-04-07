@@ -2,6 +2,7 @@ import { useState, useMemo } from "react";
 import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { List, PlusCircle, Search, Trash2, Eye, Filter } from "lucide-react";
+import ExportPdfButton from "@/components/ExportPdfButton";
 import { toast } from "sonner";
 import CyberLayout from "@/components/CyberLayout";
 
@@ -73,13 +74,19 @@ export default function Incidents() {
             <List className="w-5 h-5 neon-text-cyan" />
           </div>
           <div>
-            <h1 className="text-lg font-bold font-mono neon-text-cyan tracking-wider">MEUS INCIDENTES</h1>
+            <h1 className="text-lg font-bold neon-text-cyan tracking-wider" style={{ fontFamily: "Orbitron, JetBrains Mono, monospace", letterSpacing: "0.06em" }}>MEUS INCIDENTES</h1>
             <p className="font-mono text-xs" style={{ color: "oklch(0.45 0.02 240)" }}>
               {filtered.length} de {incidents?.length ?? 0} registros
             </p>
           </div>
         </div>
-        <button
+        <div className="flex items-center gap-2">
+          <ExportPdfButton
+            category={filterCategory || undefined}
+            riskLevel={filterRisk || undefined}
+            label="PDF"
+          />
+          <button
           onClick={() => navigate("/incidents/new")}
           className="flex items-center gap-2 px-4 py-2 rounded font-mono text-sm font-bold tracking-wider uppercase transition-all duration-200"
           style={{ background: "oklch(0.85 0.2 195 / 0.12)", border: "1px solid oklch(0.85 0.2 195 / 0.5)", color: "oklch(0.85 0.2 195)" }}
@@ -89,6 +96,7 @@ export default function Incidents() {
           <PlusCircle className="w-4 h-4" />
           NOVO
         </button>
+        </div>
       </div>
 
       {/* Filters */}

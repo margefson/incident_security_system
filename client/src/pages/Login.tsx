@@ -54,7 +54,7 @@ export default function Login() {
             <span className="absolute top-0 left-0 w-3 h-3" style={{ borderTop: "1px solid oklch(0.85 0.2 195 / 0.7)", borderLeft: "1px solid oklch(0.85 0.2 195 / 0.7)" }} />
             <span className="absolute bottom-0 right-0 w-3 h-3" style={{ borderBottom: "1px solid oklch(0.85 0.2 195 / 0.7)", borderRight: "1px solid oklch(0.85 0.2 195 / 0.7)" }} />
           </div>
-          <h1 className="text-2xl font-bold font-mono neon-text-cyan tracking-wider">INCIDENT<span className="neon-text-pink">_SYS</span></h1>
+          <h1 className="text-2xl font-bold neon-text-cyan tracking-wider" style={{ fontFamily: "Orbitron, JetBrains Mono, monospace", letterSpacing: "0.08em" }}>INCIDENT<span className="neon-text-pink">_SYS</span></h1>
           <p className="text-sm mt-1 font-mono" style={{ color: "oklch(0.45 0.02 240)" }}>SISTEMA DE SEGURANÇA CIBERNÉTICA</p>
           <div className="mt-2 flex items-center justify-center gap-2">
             <div className="w-1.5 h-1.5 rounded-full neon-pulse" style={{ background: "oklch(0.75 0.25 145)" }} />

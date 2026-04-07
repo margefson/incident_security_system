@@ -97,7 +97,7 @@ export default function NewIncident() {
             <PlusCircle className="w-5 h-5 neon-text-cyan" />
           </div>
           <div>
-            <h1 className="text-lg font-bold font-mono neon-text-cyan tracking-wider">REGISTRAR INCIDENTE</h1>
+            <h1 className="text-lg font-bold neon-text-cyan tracking-wider" style={{ fontFamily: "Orbitron, JetBrains Mono, monospace", letterSpacing: "0.06em" }}>REGISTRAR INCIDENTE</h1>
             <p className="font-mono text-xs" style={{ color: "oklch(0.45 0.02 240)" }}>Classificação automática via TF-IDF + Naive Bayes</p>
           </div>
         </div>
