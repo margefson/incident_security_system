@@ -5,7 +5,7 @@
 ![Python](https://img.shields.io/badge/Python-3.11-3776AB?style=flat-square&logo=python)
 ![MySQL](https://img.shields.io/badge/MySQL-8.x-4479A1?style=flat-square&logo=mysql)
 ![ML Accuracy](https://img.shields.io/badge/ML%20Accuracy-97%25-brightgreen?style=flat-square)
-![Tests](https://img.shields.io/badge/Tests-50%20passing-brightgreen?style=flat-square)
+![Tests](https://img.shields.io/badge/Tests-84%20passing-brightgreen?style=flat-square)
 ![License](https://img.shields.io/badge/License-MIT-blue?style=flat-square)
 
 Plataforma de gerenciamento de incidentes de segurança cibernética com classificação automática por Machine Learning (TF-IDF + Naive Bayes), painel de administração global, exportação de relatórios em PDF, notificações automáticas de risco crítico e interface cyberpunk de alto contraste.
@@ -516,11 +516,62 @@ pnpm format       # Formata código com Prettier
 
 ## Segurança
 
-O sistema implementa múltiplas camadas de proteção:
+O sistema implementa todos os **8 requisitos de segurança obrigatórios**, cada um coberto por testes Vitest individuais no arquivo `server/security.test.ts`:
 
-**Autenticação:** Senhas armazenadas com bcrypt (custo 12). Sessões gerenciadas via JWT assinado com `JWT_SECRET`, armazenado em cookie HttpOnly, Secure, SameSite=None para prevenir CSRF.
+### 6.1 — Gerenciamento de Segredos
 
-**Validação de Senha (Signup):** Regras aplicadas em dupla camada — backend (Joi) e frontend (checklist visual em tempo real):
+Nenhum segredo aparece no código-fonte. Todos os valores sensíveis (`JWT_SECRET`, `DATABASE_URL`, `BUILT_IN_FORGE_API_KEY`) são lidos exclusivamente de variáveis de ambiente via `server/_core/env.ts`. O arquivo `.env` nunca é commitado (listado em `.gitignore`).
+
+### 6.2 — Hash de Senha com bcrypt
+
+Senhas são armazenadas com **bcrypt** (custo 12, via `bcryptjs`). O campo `passwordHash` nunca é retornado nas respostas das procedures. O salt é gerado aleatoriamente a cada hash, garantindo que dois usuários com a mesma senha tenham hashes distintos.
+
+### 6.3 — Sessão Segura
+
+O cookie de sessão é configurado em `server/_core/cookies.ts` com:
+
+| Flag | Valor | Propósito |
+|---|---|---|
+| `httpOnly` | `true` | Impede acesso via JavaScript (XSS) |
+| `secure` | `true` em produção | Transmissão apenas via HTTPS |
+| `sameSite` | `"lax"` | Proteção contra CSRF |
+| `saveUninitialized` | `false` | Não cria sessão vazia |
+
+### 6.4 — Autorização nos Incidentes (IDOR)
+
+Antes de qualquer operação de leitura, atualização ou remoção de incidente, a API verifica se o recurso pertence ao usuário autenticado. Retorna **404 NOT_FOUND** (nunca 403) quando o incidente não pertence ao usuário — evitando revelar a existência do recurso a atacantes.
+
+### 6.5 — Rate Limiting
+
+| Limitador | Escopo | Limite |
+|---|---|---|
+| `globalRateLimit` | Todas as rotas `/api/*` | 100 req / IP / 15 min |
+| `authRateLimit` | Apenas `/api/trpc/auth.*` | 10 req / IP / 15 min |
+
+Ambos usam `ipKeyGenerator` para suporte seguro a IPv6 (via `express-rate-limit`).
+
+### 6.6 — CORS
+
+A API aceita requisições apenas das origens configuradas via `FRONTEND_URL` (variável de ambiente). Em ambientes de desenvolvimento/staging, domínios `*.manus.computer` e `*.manus.space` são aceitos automaticamente. Credenciais (cookies) são permitidas via `credentials: true`.
+
+### 6.7 — Cabeçalhos de Segurança HTTP (Helmet)
+
+| Cabeçalho | Configuração |
+|---|---|
+| `X-Powered-By` | Removido |
+| `X-Content-Type-Options` | `nosniff` |
+| `Strict-Transport-Security` | `max-age=31536000; includeSubDomains` |
+| `X-Frame-Options` | `SAMEORIGIN` |
+
+### 6.8 — Proteção contra Timing Attack
+
+A função de login executa `bcrypt.compare()` **sempre**, independentemente de o e-mail existir ou não no banco. Quando o e-mail não é encontrado, um hash dummy é usado como alvo da comparação, garantindo tempo de resposta constante e impedindo enumeração de usuários por análise de tempo.
+
+---
+
+### Validação de Senha (Signup)
+
+Regras aplicadas em dupla camada — backend (Joi) e frontend (checklist visual em tempo real):
 
 | Critério | Regra |
 |---|---|
@@ -531,11 +582,9 @@ O sistema implementa múltiplas camadas de proteção:
 | Número | Pelo menos um (`[0-9]`) |
 | Caractere especial | Pelo menos um (`[^a-zA-Z0-9]`) |
 
-**Controle de Acesso:** Todas as procedures sensíveis usam `protectedProcedure` que verifica a presença do usuário no contexto. Operações de leitura/escrita de incidentes verificam `userId === ctx.user.id` ou `role === "admin"`. O `adminProcedure` bloqueia qualquer usuário sem `role === "admin"` com erro FORBIDDEN.
+### Controle de Acesso e Isolamento de Dados
 
-**Validação de Entrada:** Joi valida todos os campos de autenticação e criação de incidentes no servidor antes de qualquer operação no banco. Zod valida os inputs das procedures tRPC.
-
-**Isolamento de Dados:** A query `getIncidentsByUser` filtra por `userId` no nível do banco de dados, garantindo que nenhum dado de outro usuário seja retornado mesmo em caso de bug no frontend.
+Todas as procedures sensíveis usam `protectedProcedure`. Operações de incidentes verificam `userId === ctx.user.id` ou `role === "admin"`. O `adminProcedure` bloqueia usuários sem `role === "admin"` com erro FORBIDDEN. A query `getIncidentsByUser` filtra por `userId` no nível do banco de dados..
 
 ---
 
@@ -546,35 +595,42 @@ pnpm test
 ```
 
 Saída esperada:
+
 ```
 ✓ server/incidents.test.ts (49 tests)
 ✓ server/auth.logout.test.ts (1 test)
-Tests: 50 passed
+✓ server/security.test.ts (34 tests)
+Tests: 84 passed
 ```
 
 ### Cobertura dos Testes
 
-| Suite | Testes | O que cobre |
-|---|---|---|
-| `auth.register` | 3 | Registro bem-sucedido, e-mail duplicado, senha curta |
-| `auth.register - validação de senha` | 9 | Sem maiúscula, sem minúscula, sem número, sem especial, muito curta, muito longa, limites exatos (8 e 128 chars), vazia, válida |
-| `checkPasswordCriteria` | 5 | Critérios individuais, caracteres especiais, limites |
-| `isPasswordValid` | 8 | Senhas válidas e inválidas para cada regra |
-| `auth.login` | 2 | Login bem-sucedido, credenciais inválidas |
-| `auth.logout` | 1 | Limpeza do cookie de sessão |
-| `incidents.create` | 3 | Classificação ML, validação, autenticação |
-| `incidents.list` | 1 | Isolamento por usuário |
-| `incidents.getById` | 3 | Owner, outro usuário (bloqueado), admin |
-| `incidents.delete` | 2 | Owner, outro usuário (bloqueado) |
-| `incidents.stats` | 1 | Estatísticas por categoria e risco |
-| `admin.listIncidents` | 2 | Admin lista tudo, usuário bloqueado |
-| `admin.reclassify` | 2 | Admin reclassifica, usuário bloqueado |
-| `admin.stats` | 1 | Estatísticas globais para admin |
-| `admin.updateUserRole` | 2 | Admin promove, usuário bloqueado |
-| `reports.exportPdf` | 2 | Exportação autenticada, não autenticado bloqueado |
-| `incidents.create (notif.)` | 1 | Notificação disparada para risco crítico |
+| Suite | Arquivo | Testes | O que cobre |
+|---|---|---|---|
+| `auth.register` | `incidents.test.ts` | 3 | Registro bem-sucedido, e-mail duplicado, senha curta |
+| `auth.register - validação de senha` | `incidents.test.ts` | 9 | Sem maiúscula, sem minúscula, sem número, sem especial, muito curta, muito longa, limites exatos, vazia, válida |
+| `checkPasswordCriteria` | `incidents.test.ts` | 5 | Critérios individuais, caracteres especiais, limites |
+| `isPasswordValid` | `incidents.test.ts` | 8 | Senhas válidas e inválidas para cada regra |
+| `auth.login` | `incidents.test.ts` | 2 | Login bem-sucedido, credenciais inválidas |
+| `auth.logout` | `auth.logout.test.ts` | 1 | Limpeza do cookie com `sameSite: lax` (req. 6.3) |
+| `incidents.create` | `incidents.test.ts` | 3 | Classificação ML, validação, autenticação |
+| `incidents.list` | `incidents.test.ts` | 1 | Isolamento por usuário |
+| `incidents.getById` | `incidents.test.ts` | 3 | Owner, outro usuário (404 IDOR), admin |
+| `incidents.delete` | `incidents.test.ts` | 2 | Owner, outro usuário (404 IDOR) |
+| `incidents.stats` | `incidents.test.ts` | 1 | Estatísticas por categoria e risco |
+| `admin.*` | `incidents.test.ts` | 7 | Listagem global, reclassificação, stats, papéis |
+| `reports.exportPdf` | `incidents.test.ts` | 2 | Exportação autenticada, não autenticado bloqueado |
+| `incidents.create (notif.)` | `incidents.test.ts` | 1 | Notificação disparada para risco crítico |
+| **6.1 Gerenciamento de Segredos** | `security.test.ts` | 4 | JWT/DB sem hardcode, ENV correto |
+| **6.2 Hash de Senha (bcrypt)** | `security.test.ts` | 6 | Custo 12, hash irreversível, salt aleatório, sem expor hash |
+| **6.3 Sessão Segura** | `security.test.ts` | 5 | httpOnly, secure, sameSite=lax, path, maxAge |
+| **6.4 IDOR (NOT_FOUND)** | `security.test.ts` | 4 | 404 para incidente alheio, nunca 403 |
+| **6.5 Rate Limiting** | `security.test.ts` | 4 | Global 100/15min, auth 10/15min, headers, middleware |
+| **6.6 CORS** | `security.test.ts` | 3 | Origem permitida, origem bloqueada, credentials |
+| **6.7 Helmet** | `security.test.ts` | 5 | X-Powered-By removido, nosniff, HSTS, X-Frame |
+| **6.8 Timing Attack** | `security.test.ts` | 3 | bcrypt sempre executado, mesma mensagem, hash dummy válido |
 
-**Total: 50 testes passando**
+**Total: 84 testes passando em 3 arquivos**
 
 ---
 

@@ -253,7 +253,8 @@ describe("incidents.getById - controle de acesso", () => {
     vi.mocked(db.getIncidentById).mockResolvedValue(incident);
 
     const caller = appRouter.createCaller(createAuthContext({ id: 1, role: "user" }));
-    await expect(caller.incidents.getById({ id: 5 })).rejects.toThrow("Acesso negado");
+    // req. 6.4 (IDOR): deve retornar NOT_FOUND, nunca FORBIDDEN
+    await expect(caller.incidents.getById({ id: 5 })).rejects.toThrow("Incidente não encontrado");
   });
 
   it("admin pode acessar qualquer incidente", async () => {
@@ -294,7 +295,8 @@ describe("incidents.delete - controle de acesso", () => {
     });
 
     const caller = appRouter.createCaller(createAuthContext({ id: 1, role: "user" }));
-    await expect(caller.incidents.delete({ id: 2 })).rejects.toThrow("Acesso negado");
+    // req. 6.4 (IDOR): deve retornar NOT_FOUND, nunca FORBIDDEN
+    await expect(caller.incidents.delete({ id: 2 })).rejects.toThrow("Incidente não encontrado");
   });
 });
 

@@ -122,11 +122,13 @@ const authRouter = router({
     .mutation(async ({ input, ctx }) => {
       const validated = validateJoi<{ email: string; password: string }>(loginSchema, input);
       const user = await getUserByEmail(validated.email);
-      if (!user || !user.passwordHash) {
-        throw new TRPCError({ code: "UNAUTHORIZED", message: "Credenciais inválidas" });
-      }
-      const valid = await bcrypt.compare(validated.password, user.passwordHash);
-      if (!valid) {
+      // req. 6.8 (Timing Attack): always run bcrypt.compare regardless of whether
+      // the user exists, so response time is identical for valid and invalid emails.
+      // A dummy hash is used when the user is not found.
+      const DUMMY_HASH = "$2b$12$invalidhashfortimingneutralizationXXXXXXXXXXXXXXXXXXX";
+      const hashToCompare = user?.passwordHash ?? DUMMY_HASH;
+      const valid = await bcrypt.compare(validated.password, hashToCompare);
+      if (!user || !user.passwordHash || !valid) {
         throw new TRPCError({ code: "UNAUTHORIZED", message: "Credenciais inválidas" });
       }
       // Update lastSignedIn
@@ -196,9 +198,10 @@ const incidentsRouter = router({
     .input(z.object({ id: z.number() }))
     .query(async ({ input, ctx }) => {
       const incident = await getIncidentById(input.id);
-      if (!incident) throw new TRPCError({ code: "NOT_FOUND", message: "Incidente não encontrado" });
-      if (incident.userId !== ctx.user.id && ctx.user.role !== "admin") {
-        throw new TRPCError({ code: "FORBIDDEN", message: "Acesso negado" });
+      // req. 6.4 (IDOR): always return NOT_FOUND when incident doesn't belong to user
+      // Never return FORBIDDEN — that would confirm the resource exists (IDOR leak)
+      if (!incident || (incident.userId !== ctx.user.id && ctx.user.role !== "admin")) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Incidente não encontrado" });
       }
       return incident;
     }),
@@ -207,9 +210,9 @@ const incidentsRouter = router({
     .input(z.object({ id: z.number() }))
     .mutation(async ({ input, ctx }) => {
       const incident = await getIncidentById(input.id);
-      if (!incident) throw new TRPCError({ code: "NOT_FOUND", message: "Incidente não encontrado" });
-      if (incident.userId !== ctx.user.id && ctx.user.role !== "admin") {
-        throw new TRPCError({ code: "FORBIDDEN", message: "Acesso negado" });
+      // req. 6.4 (IDOR): always return NOT_FOUND — never reveal resource existence
+      if (!incident || (incident.userId !== ctx.user.id && ctx.user.role !== "admin")) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Incidente não encontrado" });
       }
       await deleteIncident(input.id, ctx.user.id);
       return { success: true };

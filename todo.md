@@ -100,3 +100,19 @@
 - [x] Atualizar Manual de Implantação com as regras de validação
 - [x] Gerar PDFs atualizados
 - [x] Commitar no GitHub
+
+## Requisitos de Segurança Obrigatórios (6.1–6.8)
+- [ ] 6.1 Gerenciamento de segredos: verificar que nenhum segredo está hardcoded; documentar .env
+- [ ] 6.2 Hash de senha: confirmar bcrypt saltRounds=12, nunca texto puro
+- [ ] 6.3 Sessão segura: cookie httpOnly=true, secure=true em produção, sameSite="lax", saveUninitialized=false
+- [ ] 6.4 IDOR: retornar 404 (não 403) quando incidente não pertence ao usuário autenticado
+- [ ] 6.5 Rate limiting: 100 req/IP/15min global; 10 req/IP/15min em /api/trpc/auth.*
+- [ ] 6.6 CORS: aceitar apenas origem do frontend via variável de ambiente, com credentials
+- [ ] 6.7 Helmet: remover X-Powered-By, ativar X-Content-Type-Options e Strict-Transport-Security
+- [ ] 6.8 Timing attack: bcrypt.compare executado sempre no login, mesmo quando e-mail não existe
+- [ ] Testes Vitest individuais para cada requisito (6.1–6.8)
+- [ ] Atualizar README com seção de segurança detalhada
+- [ ] Atualizar Manual do Usuário com requisitos de segurança
+- [ ] Atualizar Manual de Implantação com requisitos de segurança
+- [ ] Gerar PDFs atualizados
+- [ ] Commitar no GitHub
