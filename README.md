@@ -23,6 +23,7 @@ Plataforma de gerenciamento de incidentes de segurança cibernética com classif
 - [Como Rodar Localmente](#como-rodar-localmente)
 - [Variáveis de Ambiente](#variáveis-de-ambiente)
 - [Scripts Disponíveis](#scripts-disponíveis)
+- [Rotas da Aplicação](#rotas-da-aplicação)
 - [Referência de API tRPC](#referência-de-api-trpc)
 - [Segurança](#segurança)
 - [Testes](#testes)
@@ -528,42 +529,112 @@ pnpm format       # Formata código com Prettier
 
 ---
 
+## Rotas da Aplicação
+
+### Rotas Frontend (React / Wouter)
+
+Todas as rotas do frontend são gerenciadas pelo roteador **Wouter** em `client/src/App.tsx`. O sistema possui rotas públicas (acessíveis sem autenticação) e rotas protegidas (redirecionam para `/login` quando o usuário não está autenticado). As rotas administrativas exigem `role = "admin"` e exibem tela de acesso negado para usuários comuns.
+
+| Rota | Página / Componente | Acesso | Descrição |
+|---|---|---|---|
+| `/` | `Home` | Público | Página inicial (landing page). Redireciona para `/dashboard` se já autenticado |
+| `/login` | `Login` | Público | Formulário de autenticação com e-mail e senha. Inclui link "Esqueci minha senha" |
+| `/register` | `Register` | Público | Formulário de cadastro com checklist de força de senha em tempo real |
+| `/reset-password` | `ResetPassword` | Público | Redefinição de senha via token recebido por e-mail (parâmetro `?token=...`) |
+| `/dashboard` | `Dashboard` | Autenticado | Painel principal: KPIs, gráficos de categoria e risco, incidentes recentes |
+| `/incidents` | `Incidents` | Autenticado | Listagem paginada com filtros avançados, busca de texto e exportação CSV/PDF |
+| `/incidents/new` | `NewIncident` | Autenticado | Formulário de registro de novo incidente com classificação automática por ML |
+| `/incidents/:id` | `IncidentDetail` | Autenticado | Detalhe completo: metadados, status, notas, histórico de alterações e recomendações |
+| `/risk` | `RiskAnalysis` | Autenticado | Análise de risco: KPIs, gráfico por nível de risco e recomendações contextualizadas |
+| `/profile` | `Profile` | Autenticado | Perfil do usuário: dados pessoais, estatísticas e alteração de senha |
+| `/admin` | `Admin` | Admin | Hub administrativo: acesso às áreas de categorias, usuários e ML |
+| `/admin/categories` | `AdminCategories` | Admin | CRUD completo de categorias de incidentes |
+| `/admin/users` | `AdminUsers` | Admin | Gerenciamento de usuários: editar, excluir, alterar papel e resetar senha |
+| `/admin/ml` | `AdminML` | Admin | Painel de Machine Learning: métricas, dataset e retreinamento do modelo |
+| `/404` | `NotFound` | Público | Página de erro 404 (também exibida para rotas não mapeadas) |
+
+> **Comportamento de acesso:** Rotas autenticadas redirecionam para `/login` quando o usuário não possui sessão ativa. Rotas administrativas exibem tela de "Acesso Negado" para usuários com `role = "user"`.
+
+---
+
 ## Referência de API tRPC
+
+Todos os endpoints da API são expostos em `/api/trpc` via protocolo tRPC 11 com transporte HTTP e serialização superjson. As chamadas utilizam `credentials: "include"` para envio automático do cookie de sessão.
 
 ### Router `auth`
 
 | Procedure | Tipo | Acesso | Descrição |
 |---|---|---|---|
-| `auth.register` | mutation | público | Registra novo usuário com bcrypt |
-| `auth.login` | mutation | público | Autentica e cria sessão JWT |
-| `auth.logout` | mutation | público | Invalida cookie de sessão |
-| `auth.me` | query | público | Retorna usuário autenticado ou null |
+| `auth.me` | query | Público | Retorna o usuário da sessão atual ou `null` |
+| `auth.register` | mutation | Público | Registra novo usuário com hash bcrypt (custo 12) |
+| `auth.login` | mutation | Público | Autentica usuário e emite cookie de sessão JWT |
+| `auth.logout` | mutation | Público | Invalida o cookie de sessão |
+| `auth.requestPasswordReset` | mutation | Público | Gera token de reset (48 bytes, 10 min) e envia e-mail via Resend |
+| `auth.validateResetToken` | query | Público | Valida se o token de reset é válido, não utilizado e não expirado |
+| `auth.confirmPasswordReset` | mutation | Público | Redefine a senha usando o token válido (hash bcrypt custo 12) |
+| `auth.changePassword` | mutation | Autenticado | Altera senha do usuário autenticado (exige senha atual) |
+| `auth.clearMustChangePassword` | mutation | Autenticado | Remove a flag de troca obrigatória de senha |
 
 ### Router `incidents`
 
 | Procedure | Tipo | Acesso | Descrição |
 |---|---|---|---|
-| `incidents.create` | mutation | autenticado | Cria e classifica incidente via ML |
-| `incidents.list` | query | autenticado | Lista incidentes do usuário |
-| `incidents.getById` | query | autenticado | Detalhe de um incidente (owner ou admin) |
-| `incidents.delete` | mutation | autenticado | Remove incidente (owner ou admin) |
-| `incidents.stats` | query | autenticado | Estatísticas por categoria e risco |
+| `incidents.create` | mutation | Autenticado | Cria incidente com classificação automática via ML (ou fallback por palavras-chave) |
+| `incidents.list` | query | Autenticado | Lista incidentes do usuário com filtros opcionais (categoria, risco, datas) |
+| `incidents.getById` | query | Autenticado | Retorna detalhe de um incidente (dono ou admin) |
+| `incidents.delete` | mutation | Autenticado | Remove um incidente (dono ou admin) |
+| `incidents.stats` | query | Autenticado | Estatísticas por categoria, risco, total e recomendações contextualizadas |
+| `incidents.globalStats` | query | Admin | Estatísticas globais de todos os usuários |
+| `incidents.classify` | mutation | Autenticado | Classifica texto via ML sem criar incidente (pré-visualização) |
+| `incidents.updateStatus` | mutation | Autenticado | Altera status (`open` / `in_progress` / `resolved`) com comentário opcional |
+| `incidents.updateNotes` | mutation | Autenticado | Atualiza notas de acompanhamento do incidente |
+| `incidents.statusStats` | query | Autenticado | Contagem de incidentes por status do usuário |
+| `incidents.history` | query | Autenticado | Histórico de alterações de status e notas de um incidente |
+| `incidents.search` | query | Autenticado | Busca de texto completo em título, descrição e categoria |
+
+### Router `categories`
+
+| Procedure | Tipo | Acesso | Descrição |
+|---|---|---|---|
+| `categories.list` | query | Público | Lista todas as categorias ativas |
+| `categories.create` | mutation | Admin | Cria nova categoria de incidente |
+| `categories.update` | mutation | Admin | Atualiza nome, descrição, cor ou status de uma categoria |
+| `categories.delete` | mutation | Admin | Remove permanentemente uma categoria (hard delete) |
 
 ### Router `admin`
 
 | Procedure | Tipo | Acesso | Descrição |
 |---|---|---|---|
-| `admin.listIncidents` | query | admin | Lista todos os incidentes com paginação e filtros |
-| `admin.reclassify` | mutation | admin | Reclassifica manualmente um incidente |
-| `admin.listUsers` | query | admin | Lista todos os usuários do sistema |
-| `admin.updateUserRole` | mutation | admin | Promove ou rebaixa um usuário |
-| `admin.stats` | query | admin | Estatísticas globais do sistema |
+| `admin.listIncidents` | query | Admin | Lista todos os incidentes com filtros e paginação (até 500 por vez) |
+| `admin.reclassify` | mutation | Admin | Reclassifica manualmente categoria e nível de risco de um incidente |
+| `admin.listUsers` | query | Admin | Lista todos os usuários cadastrados |
+| `admin.updateUserRole` | mutation | Admin | Promove ou rebaixa papel de um usuário (`user` / `admin`) |
+| `admin.updateUser` | mutation | Admin | Edita nome e e-mail de um usuário |
+| `admin.deleteUser` | mutation | Admin | Remove permanentemente um usuário |
+| `admin.resetUserPassword` | mutation | Admin | Redefine senha de usuário para `Security2026@` (força troca no próximo login) |
+| `admin.stats` | query | Admin | Estatísticas globais do sistema (todos os usuários) |
+| `admin.getMLMetrics` | query | Admin | Métricas do modelo ML: acurácia, categorias, distribuição e data de atualização |
+| `admin.getDataset` | query | Admin | Retorna o dataset de treinamento em base64 com pré-visualização |
+| `admin.retrainModel` | mutation | Admin | Retreina o modelo ML com novas amostras e/ou incidentes do banco |
 
 ### Router `reports`
 
 | Procedure | Tipo | Acesso | Descrição |
 |---|---|---|---|
-| `reports.exportPdf` | mutation | autenticado | Exporta relatório PDF com filtros opcionais |
+| `reports.exportPdf` | mutation | Autenticado | Exporta relatório PDF com filtros opcionais; admin pode exportar todos os incidentes |
+
+### Rotas HTTP Internas (Flask — uso exclusivo do backend Node.js)
+
+Os servidores Flask não são acessíveis diretamente pelo navegador. São chamados internamente pelo servidor Node.js.
+
+| Endpoint | Porta | Método | Descrição |
+|---|---|---|---|
+| `POST /classify` | 5001 | POST | Classifica texto via TF-IDF + Naive Bayes |
+| `POST /retrain` | 5001 | POST | Retreina o modelo com novas amostras |
+| `POST /reload-model` | 5001 | POST | Recarrega o modelo em memória após retreinamento |
+| `GET /metrics` | 5001 | GET | Retorna métricas do modelo (acurácia, categorias, data) |
+| `GET /dataset` | 5001 | GET | Retorna o dataset em base64 com pré-visualização |
+| `POST /generate-pdf` | 5002 | POST | Gera relatório PDF com tema cyberpunk via ReportLab |
 
 ---
 

@@ -1,8 +1,8 @@
 # Manual de Implantação
 ## INCIDENT_SYS — Sistema Web Seguro para Registro e Classificação de Incidentes de Segurança Cibernética
 
-**Versão:** 2.1  
-**Data:** Abril de 2026 (Sessão 9 — Correção Reset de Senha)  
+**Versão:** 2.2  
+**Data:** Abril de 2026 (Sessão 10 — Documentação de Rotas)  
 **Repositório:** https://github.com/margefson/incident_security_system  
 **Modo de execução:** Desenvolvimento local (localhost)  
 **Equipe:** Nattan, Keven, Margefson, Josias
@@ -843,4 +843,122 @@ O sistema foi desenvolvido de forma colaborativa por uma equipe de cinco integra
 
 ---
 
-*Manual de Implantação gerado em Abril de 2026. Para suporte técnico, consulte o repositório: https://github.com/margefson/incident_security_system*
+## 17. Mapa Completo de Rotas da Aplicação
+
+Esta seção documenta todas as rotas do sistema, tanto as rotas do frontend React quanto os endpoints da API tRPC e dos servidores Flask internos. Esta referência é essencial para configuração de proxies reversos, firewalls e monitoramento de logs.
+
+### 17.1 Rotas Frontend (React / Wouter)
+
+O roteamento do frontend é gerenciado pelo **Wouter** em `client/src/App.tsx`. Todas as rotas são servidas pelo servidor Node.js (porta 3000) como Single Page Application (SPA). Em produção, o servidor deve redirecionar todas as rotas não-API para `index.html`.
+
+| Rota | Componente | Acesso | Descrição |
+|---|---|---|---|
+| `/` | `Home` | Público | Landing page. Redireciona para `/dashboard` se autenticado |
+| `/login` | `Login` | Público | Formulário de login com e-mail e senha |
+| `/register` | `Register` | Público | Formulário de cadastro com validação de senha |
+| `/reset-password?token=...` | `ResetPassword` | Público | Redefinição de senha via token (48 bytes, 10 min) |
+| `/dashboard` | `Dashboard` | Autenticado | Painel principal com KPIs e gráficos |
+| `/incidents` | `Incidents` | Autenticado | Listagem com filtros, busca e exportação |
+| `/incidents/new` | `NewIncident` | Autenticado | Formulário de novo incidente com classificação ML |
+| `/incidents/:id` | `IncidentDetail` | Autenticado | Detalhe, status, notas e histórico do incidente |
+| `/risk` | `RiskAnalysis` | Autenticado | Análise de risco e recomendações contextualizadas |
+| `/profile` | `Profile` | Autenticado | Perfil do usuário e alteração de senha |
+| `/admin` | `Admin` | Admin | Hub administrativo |
+| `/admin/categories` | `AdminCategories` | Admin | CRUD de categorias de incidentes |
+| `/admin/users` | `AdminUsers` | Admin | Gerenciamento de usuários |
+| `/admin/ml` | `AdminML` | Admin | Métricas ML, dataset e retreinamento |
+| `/404` | `NotFound` | Público | Página de erro 404 (também para rotas não mapeadas) |
+
+> **Configuração Nginx (SPA):** Adicione `try_files $uri $uri/ /index.html;` para que todas as rotas SPA sejam redirecionadas corretamente para o `index.html`.
+
+### 17.2 Endpoints da API tRPC
+
+Todos os endpoints tRPC são expostos sob o prefixo `/api/trpc`. O transporte usa serialização **superjson** e requer o cookie de sessão para rotas protegidas.
+
+**Base URL:** `https://<domínio>/api/trpc`
+
+#### Router `auth`
+
+| Endpoint | Tipo | Acesso | Descrição |
+|---|---|---|---|
+| `auth.me` | query | Público | Retorna usuário da sessão ou `null` |
+| `auth.register` | mutation | Público | Registra novo usuário (bcrypt custo 12) |
+| `auth.login` | mutation | Público | Autentica e emite cookie JWT |
+| `auth.logout` | mutation | Público | Invalida o cookie de sessão |
+| `auth.requestPasswordReset` | mutation | Público | Gera token de reset e envia e-mail via Resend |
+| `auth.validateResetToken` | query | Público | Valida token de reset |
+| `auth.confirmPasswordReset` | mutation | Público | Redefine senha com token válido |
+| `auth.changePassword` | mutation | Autenticado | Altera senha (exige senha atual) |
+| `auth.clearMustChangePassword` | mutation | Autenticado | Remove flag de troca obrigatória |
+
+#### Router `incidents`
+
+| Endpoint | Tipo | Acesso | Descrição |
+|---|---|---|---|
+| `incidents.create` | mutation | Autenticado | Cria incidente com classificação ML |
+| `incidents.list` | query | Autenticado | Lista incidentes do usuário com filtros |
+| `incidents.getById` | query | Autenticado | Detalhe de um incidente |
+| `incidents.delete` | mutation | Autenticado | Remove um incidente |
+| `incidents.stats` | query | Autenticado | Estatísticas e recomendações do usuário |
+| `incidents.globalStats` | query | Admin | Estatísticas globais de todos os usuários |
+| `incidents.classify` | mutation | Autenticado | Classifica texto sem criar incidente |
+| `incidents.updateStatus` | mutation | Autenticado | Altera status com comentário opcional |
+| `incidents.updateNotes` | mutation | Autenticado | Atualiza notas de acompanhamento |
+| `incidents.statusStats` | query | Autenticado | Contagem por status do usuário |
+| `incidents.history` | query | Autenticado | Histórico de alterações de um incidente |
+| `incidents.search` | query | Autenticado | Busca de texto completo |
+
+#### Router `categories`
+
+| Endpoint | Tipo | Acesso | Descrição |
+|---|---|---|---|
+| `categories.list` | query | Público | Lista todas as categorias ativas |
+| `categories.create` | mutation | Admin | Cria nova categoria |
+| `categories.update` | mutation | Admin | Atualiza dados de uma categoria |
+| `categories.delete` | mutation | Admin | Remove permanentemente uma categoria |
+
+#### Router `admin`
+
+| Endpoint | Tipo | Acesso | Descrição |
+|---|---|---|---|
+| `admin.listIncidents` | query | Admin | Lista todos os incidentes com paginação |
+| `admin.reclassify` | mutation | Admin | Reclassifica manualmente um incidente |
+| `admin.listUsers` | query | Admin | Lista todos os usuários |
+| `admin.updateUserRole` | mutation | Admin | Altera papel de um usuário |
+| `admin.updateUser` | mutation | Admin | Edita dados de um usuário |
+| `admin.deleteUser` | mutation | Admin | Remove um usuário permanentemente |
+| `admin.resetUserPassword` | mutation | Admin | Redefine senha para `Security2026@` |
+| `admin.stats` | query | Admin | Estatísticas globais do sistema |
+| `admin.getMLMetrics` | query | Admin | Métricas do modelo ML |
+| `admin.getDataset` | query | Admin | Dataset de treinamento em base64 |
+| `admin.retrainModel` | mutation | Admin | Retreina o modelo ML |
+
+#### Router `reports`
+
+| Endpoint | Tipo | Acesso | Descrição |
+|---|---|---|---|
+| `reports.exportPdf` | mutation | Autenticado | Exporta relatório PDF com filtros |
+
+### 17.3 Endpoints Flask Internos (uso exclusivo do backend Node.js)
+
+Os servidores Flask **não devem ser expostos publicamente**. Configure o firewall para bloquear as portas 5001 e 5002 ao tráfego externo.
+
+| Endpoint | Porta | Método | Descrição |
+|---|---|---|---|
+| `/classify` | 5001 | POST | Classifica texto via TF-IDF + Naive Bayes |
+| `/retrain` | 5001 | POST | Retreina o modelo com novas amostras |
+| `/reload-model` | 5001 | POST | Recarrega o modelo em memória após retreinamento |
+| `/metrics` | 5001 | GET | Métricas do modelo (acurácia, categorias, data) |
+| `/dataset` | 5001 | GET | Dataset em base64 com pré-visualização |
+| `/generate-pdf` | 5002 | POST | Gera relatório PDF via ReportLab |
+
+### 17.4 Rate Limiting por Rota
+
+| Escopo | Limite | Janela |
+|---|---|---|
+| Todas as rotas `/api/*` | 100 requisições por IP | 15 minutos |
+| Apenas `/api/trpc/auth.*` | 10 requisições por IP | 15 minutos |
+
+---
+
+*Manual de Implantação v2.2 — Atualizado em Abril de 2026 (Sessão 10 — Documentação de Rotas). Para suporte técnico, consulte o repositório: https://github.com/margefson/incident_security_system*

@@ -383,3 +383,12 @@
 - [x] 78 novos testes S9-1 a S9-10 (499 passando em 14 arquivos)
 - [x] Atualizar manuais v2.1 e README com a correção
 - [x] Commitar no GitHub
+
+## Sessão 10 — Documentação Completa de Rotas
+- [x] Levantar todas as rotas frontend (App.tsx)
+- [x] Levantar todas as procedures tRPC (routers.ts)
+- [x] Atualizar README com seção de rotas frontend e API tRPC
+- [x] Atualizar manual do usuário com seção de rotas
+- [x] Atualizar manual de implantação com seção de rotas e API
+- [x] Regenerar PDFs dos manuais v2.2
+- [x] Commitar no GitHub

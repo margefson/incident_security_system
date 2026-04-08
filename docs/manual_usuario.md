@@ -1,8 +1,8 @@
 # Manual do Usuário
 ## INCIDENT_SYS — Sistema Web Seguro para Registro e Classificação de Incidentes de Segurança Cibernética
 
-**Versão:** 2.1  
-**Data:** Abril de 2026 (Sessão 9 — Correção Reset de Senha)  
+**Versão:** 2.2  
+**Data:** Abril de 2026 (Sessão 10 — Documentação de Rotas)  
 **Repositório:** https://github.com/margefson/incident_security_system  
 **Equipe:** Nattan, Keven, Margefson, Josias
 
@@ -852,3 +852,56 @@ O modelo de Machine Learning foi retreinado com um dataset expandido de **2000 r
 ### Download do Dataset
 
 O arquivo `incidentes_cybersecurity_2000.xlsx` está disponível para download no painel de Machine Learning (perfil admin).
+
+
+---
+
+## Sessão 10 — Mapa Completo de Rotas da Aplicação
+
+Esta seção documenta todas as páginas acessíveis no sistema e como navegar entre elas.
+
+### Rotas Públicas (sem necessidade de login)
+
+As rotas públicas podem ser acessadas por qualquer visitante, mesmo sem conta cadastrada.
+
+| Endereço (URL) | Página | Descrição |
+|---|---|---|
+| `/` | Página Inicial | Landing page do sistema. Redireciona automaticamente para `/dashboard` se o usuário já estiver autenticado |
+| `/login` | Login | Formulário de autenticação com e-mail e senha. Contém o link "Esqueci minha senha" para recuperação de acesso |
+| `/register` | Cadastro | Formulário de criação de conta com checklist visual de força de senha em tempo real |
+| `/reset-password?token=...` | Redefinição de Senha | Página para criar nova senha usando o link recebido por e-mail (token de 48 bytes, válido por 10 minutos) |
+| `/404` | Página Não Encontrada | Exibida automaticamente para qualquer URL não reconhecida pelo sistema |
+
+### Rotas Autenticadas (requerem login)
+
+As rotas a seguir redirecionam para `/login` caso o usuário não possua sessão ativa.
+
+| Endereço (URL) | Página | Descrição |
+|---|---|---|
+| `/dashboard` | Painel de Controle | Visão geral com KPIs, gráficos de distribuição por categoria e risco, e lista dos incidentes mais recentes |
+| `/incidents` | Listagem de Incidentes | Tabela paginada com filtros avançados por categoria, nível de risco e período. Suporta busca de texto e exportação CSV/PDF |
+| `/incidents/new` | Novo Incidente | Formulário para registrar um incidente com classificação automática por Machine Learning |
+| `/incidents/:id` | Detalhe do Incidente | Página completa: metadados, status, notas, histórico de alterações e recomendações de segurança |
+| `/risk` | Análise de Risco | Painel analítico com KPIs de risco, gráfico por nível de risco e recomendações contextualizadas |
+| `/profile` | Perfil do Usuário | Dados pessoais, estatísticas individuais e seção para alteração de senha |
+
+### Rotas Administrativas (requerem papel `admin`)
+
+As rotas administrativas exibem "Acesso Negado" para usuários com papel `user`.
+
+| Endereço (URL) | Página | Descrição |
+|---|---|---|
+| `/admin` | Hub Administrativo | Página central com acesso rápido às três áreas de administração |
+| `/admin/categories` | Gerenciar Categorias | CRUD completo de categorias de incidentes: criar, editar, ativar/desativar e excluir |
+| `/admin/users` | Gerenciar Usuários | Listagem de todos os usuários com opções para editar, alterar papel, resetar senha e excluir |
+| `/admin/ml` | Machine Learning | Métricas do modelo, download do dataset, visualização online e retreinamento |
+
+### Navegação pelo Sistema
+
+O sistema utiliza uma barra lateral persistente em todas as páginas autenticadas. Os itens disponíveis dependem do papel do usuário:
+
+**Usuários comuns** visualizam: Dashboard, Incidentes, Novo Incidente, Análise de Risco.
+
+**Administradores** visualizam adicionalmente: Administração (com submenu para Categorias, Usuários e Machine Learning).
+
+O menu do perfil (canto superior direito da sidebar) oferece acesso à página de Perfil e à opção de Logout.
