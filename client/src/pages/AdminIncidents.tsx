@@ -163,6 +163,7 @@ export default function AdminIncidents() {
                       <th className="px-3 py-2 text-left text-muted-foreground font-medium">Título</th>
                       <th className="px-3 py-2 text-left text-muted-foreground font-medium">Categoria</th>
                       <th className="px-3 py-2 text-left text-muted-foreground font-medium">Risco</th>
+                      <th className="px-3 py-2 text-left text-muted-foreground font-medium">Confiança</th>
                       <th className="px-3 py-2 text-left text-muted-foreground font-medium">Status</th>
                       <th className="px-3 py-2 text-left text-muted-foreground font-medium">Data</th>
                       <th className="px-3 py-2 text-left text-muted-foreground font-medium"></th>
@@ -184,6 +185,16 @@ export default function AdminIncidents() {
                               {RISK_LABELS[incident.riskLevel as string] ?? incident.riskLevel as string}
                             </Badge>
                           ) : "—"}
+                        </td>
+                        <td className="px-3 py-2">
+                          {(incident as Record<string, unknown>).confidence !== undefined && (incident as Record<string, unknown>).confidence !== null ? (
+                            <span className={`font-mono font-semibold text-xs ${
+                              Number((incident as Record<string, unknown>).confidence) >= 0.85 ? "text-green-400" :
+                              Number((incident as Record<string, unknown>).confidence) >= 0.60 ? "text-yellow-400" : "text-red-400"
+                            }`}>
+                              {Math.round(Number((incident as Record<string, unknown>).confidence) * 100)}%
+                            </span>
+                          ) : <span className="text-muted-foreground">—</span>}
                         </td>
                         <td className="px-3 py-2">
                           <Badge variant="outline" className="text-xs border-muted-foreground/30 text-muted-foreground">

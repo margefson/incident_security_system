@@ -629,3 +629,35 @@ export async function getAllIncidentHistoryForExport() {
     .leftJoin(incidents, eq(incidentHistory.incidentId, incidents.id))
     .orderBy(desc(incidentHistory.createdAt));
 }
+
+// ─── Reclassificação ML em Massa ──────────────────────────────────────────────────────
+/**
+ * Atualiza categoria, riskLevel e confidence de um incidente após reclassificação pelo ML.
+ * Diferente de reclassifyIncident (admin manual), esta função preserva a confiança real do modelo.
+ */
+export async function updateIncidentML(
+  id: number,
+  category: Incident["category"],
+  riskLevel: Incident["riskLevel"],
+  confidence: number,
+) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(incidents)
+    .set({ category, riskLevel, confidence, updatedAt: new Date() })
+    .where(eq(incidents.id, id));
+}
+
+/**
+ * Retorna todos os incidentes (id + title + description) para reclassificação em massa.
+ * Sem paginação — usado apenas pelo processo de retreinamento automático.
+ */
+export async function getAllIncidentsForReclassify() {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select({
+    id: incidents.id,
+    title: incidents.title,
+    description: incidents.description,
+  }).from(incidents).orderBy(incidents.id);
+}

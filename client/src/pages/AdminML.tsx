@@ -3,7 +3,7 @@
  * Sessão 11: Separação Metodológica Dataset Treino / Avaliação
  *
  * Metodologia:
- *  - Dataset de TREINAMENTO: incidentes_cybersecurity_2000.xlsx (2000 amostras)
+ *  - Dataset de TREINAMENTO: dataset_cybersecurity_5000_amostras.xlsx (5000 amostras)
  *    → Usado para treinar o modelo TF-IDF + Naive Bayes
  *  - Dataset de AVALIAÇÃO: incidentes_cybersecurity_100.xlsx (100 amostras)
  *    → Conjunto independente para avaliar o modelo em produção
@@ -158,18 +158,18 @@ export default function AdminML() {
     },
   });
 
-  const DATASET_CDN_URL = "https://d2xsxph8kpxj0f.cloudfront.net/310519663148675640/KjT4emSwzjBHV8i56oSYsp/incidentes_cybersecurity_2000_90e4a061.xlsx";
+  const DATASET_CDN_URL = "https://d2xsxph8kpxj0f.cloudfront.net/310519663148675640/KjT4emSwzjBHV8i56oSYsp/incidentes_cybersecurity_2000_1070ebab.xlsx";
   const EVAL_DATASET_CDN_URL = "https://d2xsxph8kpxj0f.cloudfront.net/310519663148675640/KjT4emSwzjBHV8i56oSYsp/incidentes_cybersecurity_100_9671eb41.xlsx";
   const ONLINE_VIEWER_URL = `https://view.officeapps.live.com/op/view.aspx?src=${encodeURIComponent(DATASET_CDN_URL)}`;
 
   const handleDownloadDataset = () => {
     const a = document.createElement("a");
     a.href = DATASET_CDN_URL;
-    a.download = "incidentes_cybersecurity_2000.xlsx";
+    a.download = "dataset_cybersecurity_5000_amostras.xlsx";
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
-    toast.success("Download iniciado: incidentes_cybersecurity_2000.xlsx");
+    toast.success("Download iniciado: dataset_cybersecurity_5000_amostras.xlsx (5000 amostras)");
   };
 
   const handleDownloadEvalDataset = () => {
@@ -238,7 +238,7 @@ export default function AdminML() {
             <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-blue-500/10 border border-blue-500/20">
               <BookOpen className="w-3.5 h-3.5 text-blue-400" />
               <span className="text-xs font-mono text-blue-400 font-semibold">TREINO</span>
-              <button onClick={handleDownloadDataset} className="text-xs font-mono text-blue-300 hover:text-blue-200 underline underline-offset-2 cursor-pointer">incidentes_cybersecurity_2000.xlsx</button>
+              <button onClick={handleDownloadDataset} className="text-xs font-mono text-blue-300 hover:text-blue-200 underline underline-offset-2 cursor-pointer">dataset_cybersecurity_5000_amostras.xlsx</button>
               <Badge variant="outline" className="text-xs font-mono border-blue-500/30 text-blue-400 ml-1">
                 {trainingMetrics?.dataset_size ?? metrics?.dataset_size ?? "2000"} amostras
               </Badge>

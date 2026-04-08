@@ -35,6 +35,9 @@ const adminItems = [
   { path: "/admin/system-health",label: "Saúde do Sistema",  icon: Activity },
   { path: "/admin/ml-training",   label: "Treinamento ao Vivo", icon: MonitorPlay },
 ];
+const analystItems = [
+  { path: "/analyst/incidents", label: "Todos Incidentes", icon: List },
+];
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const [location, setLocation] = useLocation();
@@ -46,7 +49,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   if (loading) return <DashboardLayoutSkeleton />;
   if (!user) { window.location.href = "/login"; return null; }
 
-  const activeItem = [...menuItems, ...adminItems].find(
+  const activeItem = [...menuItems, ...adminItems, ...analystItems].find(
     (i) => location === i.path || (i.path !== "/dashboard" && location.startsWith(i.path))
   );
 
@@ -91,6 +94,31 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               <SidebarMenu className="px-2">
                 {adminItems.map(item => {
                   const isActive = location === item.path || (item.path !== "/admin" && location.startsWith(item.path));
+                  return (
+                    <SidebarMenuItem key={item.path}>
+                      <SidebarMenuButton
+                        isActive={isActive}
+                        onClick={() => setLocation(item.path)}
+                        tooltip={item.label}
+                        className="h-9 transition-all font-mono text-xs"
+                      >
+                        <item.icon className={`h-4 w-4 shrink-0 ${isActive ? "text-primary" : "text-muted-foreground"}`} />
+                        <span className={isActive ? "text-foreground font-medium" : "text-muted-foreground"}>{item.label}</span>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  );
+                })}
+              </SidebarMenu>
+            </>
+          )}
+          {user.role === "security-analyst" && (
+            <>
+              <div className="px-4 pt-3 pb-1">
+                <p className="text-xs font-mono text-muted-foreground/50 uppercase tracking-wider">Analista</p>
+              </div>
+              <SidebarMenu className="px-2">
+                {analystItems.map(item => {
+                  const isActive = location === item.path || location.startsWith(item.path);
                   return (
                     <SidebarMenuItem key={item.path}>
                       <SidebarMenuButton

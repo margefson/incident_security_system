@@ -44,6 +44,8 @@ import {
   countUnreadNotifications,
   getResolutionMetrics,
   getAllIncidentHistoryForExport,
+  updateIncidentML,
+  getAllIncidentsForReclassify,
 } from "./db";
 import { sendPasswordResetEmail } from "./email";
 import crypto from "crypto";
@@ -517,6 +519,34 @@ const incidentsRouter = router({
         limit: input.limit,
       });
     }),
+
+  // ─── Listagem global para analistas e admins ──────────────────────────────────────────────────────
+  // Analistas e admins podem ver TODOS os incidentes para atendimento e conclusão
+  listAll: analystProcedure
+    .input(z.object({
+      category: z.string().optional(),
+      riskLevel: z.string().optional(),
+      status: z.enum(["open", "in_progress", "resolved"]).optional(),
+      limit: z.number().min(1).max(500).default(100),
+      offset: z.number().min(0).default(0),
+    }))
+    .query(async ({ input }) => {
+      const [rows, total] = await Promise.all([
+        getAllIncidents({
+          category: input.category,
+          riskLevel: input.riskLevel,
+          limit: input.limit,
+          offset: input.offset,
+        }),
+        countAllIncidents({
+          category: input.category,
+          riskLevel: input.riskLevel,
+        }),
+      ]);
+      // Filtrar por status se solicitado (getAllIncidents não suporta filtro de status diretamente)
+      const filtered = input.status ? rows.filter(r => (r as { status?: string }).status === input.status) : rows;
+      return { incidents: filtered, total };
+    }),
 });
 // ─── Categories Router ────────────────────────────────────────────────────────────
 const categoriesRouter = router({
@@ -849,7 +879,45 @@ const adminRouter = router({
           const err = await response.json() as { error?: string };
           throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: err.error ?? "Upload falhou" });
         }
-        return await response.json() as { success: boolean; filename: string; total_samples: number; message: string };
+        const uploadResult = await response.json() as { success: boolean; filename: string; total_samples: number; message: string };
+        // ─── Retreinamento automático após upload ──────────────────────────────────────────────────────
+        let retrainResult: { message?: string } = {};
+        let reclassifiedCount = 0;
+        try {
+          // 1. Retreinar o modelo com o novo dataset
+          const retrainRes = await fetch(`${ML_URL}/retrain`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ samples: [] }),
+            signal: AbortSignal.timeout(120000), // 2 min para datasets grandes
+          });
+          if (retrainRes.ok) {
+            retrainResult = await retrainRes.json() as { message?: string };
+            // 2. Reclassificar todos os incidentes do banco
+            const allIncidents = await getAllIncidentsForReclassify();
+            for (const inc of allIncidents) {
+              try {
+                const clsRes = await fetch(`${ML_URL}/classify`, {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ title: inc.title, description: inc.description }),
+                  signal: AbortSignal.timeout(5000),
+                });
+                if (clsRes.ok) {
+                  const cls = await clsRes.json() as { category: string; confidence: number };
+                  const riskLevel = (CATEGORY_RISK[cls.category] ?? "medium") as "critical" | "high" | "medium" | "low";
+                  await updateIncidentML(inc.id, cls.category as "phishing" | "malware" | "brute_force" | "ddos" | "vazamento_de_dados" | "unknown", riskLevel, cls.confidence);
+                  reclassifiedCount++;
+                }
+              } catch { /* pular incidente individual se falhar */ }
+            }
+          }
+        } catch { /* retreinamento automático falhou, mas upload foi bem-sucedido */ }
+        return {
+          ...uploadResult,
+          message: `Dataset atualizado com ${uploadResult.total_samples} amostras. Modelo retreinado automaticamente. ${reclassifiedCount > 0 ? `${reclassifiedCount} incidente(s) reclassificado(s).` : ''}`.trim(),
+          reclassified: reclassifiedCount,
+        };
       } catch (e) {
         if (e instanceof TRPCError) throw e;
         const isConnErr = e instanceof Error && (e.message.includes('fetch') || e.message.includes('ECONNREFUSED') || e.message.includes('timeout'));

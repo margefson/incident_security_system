@@ -22,6 +22,7 @@ import AdminMLTraining from "./pages/AdminMLTraining";
 import Profile from "./pages/Profile";
 import ResetPassword from "./pages/ResetPassword";
 import ResolutionMetrics from "./pages/ResolutionMetrics";
+import AnalystIncidents from "./pages/AnalystIncidents";
 function Router() {
   return (
     <Switch>
@@ -43,6 +44,7 @@ function Router() {
       <Route path="/admin/ml-training" component={AdminMLTraining} />
       <Route path="/profile" component={Profile} />
       <Route path="/metrics" component={ResolutionMetrics} />
+      <Route path="/analyst/incidents" component={AnalystIncidents} />
       <Route path="/404" component={NotFound} />
       <Route component={NotFound} />
     </Switch>
