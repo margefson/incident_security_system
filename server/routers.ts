@@ -642,6 +642,13 @@ const adminRouter = router({
         message: string;
         metrics: Record<string, unknown>;
       };
+      // Após retreinamento via /retrain, recarregar o modelo no Flask
+      // para refletir o novo model.pkl gerado pelo train_model.py
+      try {
+        await fetch(`${ML_URL}/reload-model`, { method: "POST" });
+      } catch (_) {
+        // Não crítico: o modelo já foi retreinado, apenas o cache em memória não foi atualizado
+      }
       return data;
     }),
 });

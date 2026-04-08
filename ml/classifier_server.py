@@ -22,7 +22,7 @@ from flask import Flask, request, jsonify
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 MODEL_PATH = os.path.join(SCRIPT_DIR, "model.pkl")
 METRICS_PATH = os.path.join(SCRIPT_DIR, "metrics.json")
-DATASET_PATH = os.path.join(SCRIPT_DIR, "incidentes_cybersecurity_100.xlsx")
+DATASET_PATH = os.path.join(SCRIPT_DIR, "incidentes_cybersecurity_2000.xlsx")
 
 app = Flask(__name__)
 
@@ -47,10 +47,25 @@ RISK_MAP = {
     "phishing": "high",
     "malware": "critical",
     "brute_force": "high",
+    "brute force": "high",
     "ddos": "medium",
     "vazamento_de_dados": "critical",
+    "vazamento de dados": "critical",
     "unknown": "low",
 }
+
+@app.route("/reload-model", methods=["POST"])
+def reload_model():
+    """Recarrega o modelo e as métricas do disco sem reiniciar o servidor."""
+    global pipeline, metrics
+    try:
+        pipeline = joblib.load(MODEL_PATH)
+        with open(METRICS_PATH, "r", encoding="utf-8") as f:
+            metrics = json.load(f)
+        print(f"[Classifier] Modelo recarregado: {metrics.get('dataset_size')} amostras, {len(metrics.get('categories', []))} categorias")
+        return jsonify({"status": "ok", "message": "Modelo recarregado com sucesso", "dataset_size": metrics.get("dataset_size"), "categories": metrics.get("categories")})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 @app.route("/health", methods=["GET"])
 def health():
@@ -107,11 +122,11 @@ def get_dataset():
         wb = openpyxl.load_workbook(DATASET_PATH)
         ws = wb.active
 
-        # Ler cabeçalhos
-        headers = [cell.value for cell in ws[1]]
-        title_col = headers.index("title") if "title" in headers else 0
-        desc_col = headers.index("description") if "description" in headers else 1
-        cat_col = headers.index("category") if "category" in headers else 2
+        # Ler cabeçalhos (suporte a colunas em português e inglês)
+        headers = [str(cell.value).lower().strip() if cell.value else "" for cell in ws[1]]
+        title_col = next((i for i, h in enumerate(headers) if h in ("title", "titulo", "título")), 0)
+        desc_col = next((i for i, h in enumerate(headers) if h in ("description", "descricao", "descrição")), 1)
+        cat_col = next((i for i, h in enumerate(headers) if h in ("category", "categoria")), 2)
 
         # Preview: primeiras 10 linhas
         preview = []
@@ -135,7 +150,7 @@ def get_dataset():
             b64 = base64.b64encode(f.read()).decode("utf-8")
 
         return jsonify({
-            "filename": "incidentes_cybersecurity_100.xlsx",
+            "filename": "incidentes_cybersecurity_2000.xlsx",
             "base64": b64,
             "total_samples": total,
             "category_distribution": category_dist,
@@ -179,13 +194,13 @@ def retrain():
         from sklearn.naive_bayes import MultinomialNB
         from sklearn.model_selection import cross_val_score
 
-        # Carregar dataset existente
+        # Carregar dataset existente (suporte a colunas em português e inglês)
         wb = openpyxl.load_workbook(DATASET_PATH)
         ws = wb.active
-        headers = [cell.value for cell in ws[1]]
-        title_col = headers.index("title") if "title" in headers else 0
-        desc_col = headers.index("description") if "description" in headers else 1
-        cat_col = headers.index("category") if "category" in headers else 2
+        headers = [str(cell.value).lower().strip() if cell.value else "" for cell in ws[1]]
+        title_col = next((i for i, h in enumerate(headers) if h in ("title", "titulo", "título")), 0)
+        desc_col = next((i for i, h in enumerate(headers) if h in ("description", "descricao", "descrição")), 1)
+        cat_col = next((i for i, h in enumerate(headers) if h in ("category", "categoria")), 2)
 
         texts = []
         labels = []
@@ -195,9 +210,10 @@ def retrain():
             t = str(row[title_col]) if row[title_col] else ""
             d = str(row[desc_col]) if row[desc_col] else ""
             c = str(row[cat_col]) if row[cat_col] else "unknown"
+            # Normalizar categoria: espaços → underscores
+            c = c.lower().strip().replace(" ", "_")
             texts.append(f"{t} {d}".lower().strip())
             labels.append(c)
-
         # Adicionar novas amostras
         new_categories = set()
         for s in new_samples:

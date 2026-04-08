@@ -4,7 +4,7 @@
  *
  * Funcionalidades:
  *  - Visualizar métricas do modelo (acurácia, CV, distribuição)
- *  - Download do dataset de treinamento (incidentes_cybersecurity_100.xlsx)
+ *  - Download do dataset de treinamento (incidentes_cybersecurity_2000.xlsx)
  *  - Retreinar o modelo com novas amostras e categorias
  */
 
@@ -72,17 +72,17 @@ export default function AdminML() {
     },
   });
 
-  const DATASET_CDN_URL = "https://d2xsxph8kpxj0f.cloudfront.net/310519663148675640/KjT4emSwzjBHV8i56oSYsp/incidentes_cybersecurity_100_54912b47.xlsx";
+  const DATASET_CDN_URL = "https://d2xsxph8kpxj0f.cloudfront.net/310519663148675640/KjT4emSwzjBHV8i56oSYsp/incidentes_cybersecurity_2000_6bb5989b.xlsx";
   const ONLINE_VIEWER_URL = `https://view.officeapps.live.com/op/view.aspx?src=${encodeURIComponent(DATASET_CDN_URL)}`;
 
   const handleDownloadDataset = () => {
     const a = document.createElement("a");
     a.href = DATASET_CDN_URL;
-    a.download = "incidentes_cybersecurity_100.xlsx";
+    a.download = "incidentes_cybersecurity_2000.xlsx";
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
-    toast.success("Download iniciado: incidentes_cybersecurity_100.xlsx");
+    toast.success("Download iniciado: incidentes_cybersecurity_2000.xlsx");
   };
 
   const addSample = () => {
@@ -251,7 +251,7 @@ export default function AdminML() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs font-mono text-muted-foreground">
-                  Arquivo: <span className="text-foreground">incidentes_cybersecurity_100.xlsx</span>
+                  Arquivo: <span className="text-foreground">incidentes_cybersecurity_2000.xlsx</span>
                 </p>
                 <p className="text-xs font-mono text-muted-foreground mt-0.5">
                   Total: <span className="text-foreground">{dataset?.total_samples ?? metrics?.dataset_size ?? "..."} amostras</span>

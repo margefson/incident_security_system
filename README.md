@@ -5,7 +5,7 @@
 ![Python](https://img.shields.io/badge/Python-3.11-3776AB?style=flat-square&logo=python)
 ![MySQL](https://img.shields.io/badge/MySQL-8.x-4479A1?style=flat-square&logo=mysql)
 ![ML Accuracy](https://img.shields.io/badge/ML%20Accuracy-97%25-brightgreen?style=flat-square)
-![Tests](https://img.shields.io/badge/tests-347%20passing-brightgreen)
+![Tests](https://img.shields.io/badge/tests-421%20passing-brightgreen)
 ![License](https://img.shields.io/badge/License-MIT-blue?style=flat-square)
 
 Plataforma de gerenciamento de incidentes de segurança cibernética com classificação automática por Machine Learning (TF-IDF + Naive Bayes), painel de administração global, **CRUD de categorias de incidentes (exclusivo para administradores)**, exportação de relatórios em PDF, notificações automáticas de risco crítico e interface SOC Portal — design profissional dark com tipografia Inter, sidebar compacta, badges coloridos por severidade e tabelas operacionais.
@@ -33,7 +33,7 @@ Plataforma de gerenciamento de incidentes de segurança cibernética com classif
 
 ## Visão Geral
 
-O **INCIDENT_SYS** é uma aplicação web full-stack que permite que equipes de segurança registrem, classifiquem e analisem incidentes cibernéticos de forma estruturada. Cada incidente é automaticamente classificado em uma das cinco categorias de ameaça por um modelo de ML treinado com um dataset real de 100 amostras, recebendo também um score de risco calculado automaticamente.
+O **INCIDENT_SYS** é uma aplicação web full-stack que permite que equipes de segurança registrem, classifiquem e analisem incidentes cibernéticos de forma estruturada. Cada incidente é automaticamente classificado em uma das cinco categorias de ameaça por um modelo de ML treinado com um dataset real de 2000 amostras, recebendo também um score de risco calculado automaticamente.
 
 O sistema opera com três servidores independentes: um servidor Node.js/Express que expõe a API tRPC e serve o frontend React, um servidor Flask em Python que hospeda o modelo de classificação (porta 5001), e um segundo servidor Flask para geração de relatórios PDF (porta 5002).
 
@@ -183,7 +183,7 @@ Node.js recebe via tRPC incidents.create
 - Classificação automática pelo modelo ML ao submeter
 
 ### Classificação por Machine Learning
-- Modelo TF-IDF + Naive Bayes treinado com 100 amostras reais
+- Modelo TF-IDF + Naive Bayes treinado com 2000 amostras reais
 - Acurácia de 97% em cross-validation 5-fold
 - 5 categorias: Phishing, Malware, Força Bruta, DDoS, Vazamento de Dados
 - Score de confiança retornado junto com a classificação
@@ -290,7 +290,7 @@ O classificador usa um pipeline scikit-learn com vetorização TF-IDF (máximo 5
 | Métrica | Valor |
 |---|---|
 | Acurácia (Cross-Validation 5-fold) | 97% |
-| Dataset de treinamento | 100 amostras |
+| Dataset de treinamento | 2000 amostras |
 | Algoritmo | TF-IDF + Multinomial Naive Bayes |
 | Features máximas | 5.000 |
 | N-gramas | Unigramas e bigramas |
@@ -325,7 +325,7 @@ incident_security_system/
 ├── drizzle/
 │   └── schema.ts                  # Tabelas: users, incidents
 ├── ml/
-│   ├── incidentes_cybersecurity_100.xlsx  # Dataset de treinamento
+│   ├── incidentes_cybersecurity_2000.xlsx  # Dataset de treinamento
 │   ├── train_model.py             # Script de treinamento
 │   ├── classifier_server.py       # Flask API de classificação (porta 5001)
 │   ├── pdf_server.py              # Flask API de geração PDF (porta 5002)
@@ -441,7 +441,7 @@ cd ..
 
 Saída esperada:
 ```
-Carregando dataset: 100 amostras
+Carregando dataset: 2000 amostras
 Treinando modelo TF-IDF + Naive Bayes...
 Acurácia Cross-Validation (5-fold): 0.97 ± 0.02
 Modelo salvo em: ml/model/classifier.pkl
@@ -721,7 +721,7 @@ Tests: 296 passed
 | **7.5 Múltiplas Categorias** | `recommendations.test.ts` | 4 | Múltiplas recomendações, ordenação por prioridade, sem incidentes, categoria desconhecida |
 | **7.5 Estrutura dos Dados** | `recommendations.test.ts` | 4 | Campos obrigatórios, priority válido, count correto, campo recommendations sempre presente |
 | **8.1 Arquitetura TF-IDF** | `ml.test.ts` | 3 | Config ngram_range=(1,2), max_features=5000, sublinear_tf=True |
-| **8.2 Dataset de Treinamento** | `ml.test.ts` | 3 | 100 amostras, 5 categorias, 20 por categoria |
+| **8.2 Dataset de Treinamento** | `ml.test.ts` | 3 | 2000 amostras, 5 categorias, 20 por categoria |
 | **8.3 Métricas de Desempenho** | `ml.test.ts` | 4 | Acurácia treino 100%, CV 97%, 5 categorias, 5000 features |
 | **8.4 Mapeamento de Risco** | `ml.test.ts` | 5 | Cada categoria mapeia para o risco correto (critical/high/medium/low) |
 | **8.5 Fluxo de Classificação** | `ml.test.ts` | 6 | Endpoint /classify, retorno category+confidence+method, fallback keyword |
@@ -755,7 +755,7 @@ O sistema foi desenvolvido por uma equipe de cinco integrantes, com responsabili
 | **Front-end** | Nattan e Keven | Desenvolvimento das interfaces React, design system SOC Portal (dark theme profissional, tipografia Inter, sidebar compacta, badges de severidade por categoria), componentes shadcn/ui, páginas de login, registro, dashboard, listagem, detalhe e painel admin |
 | **Back-end** | Margefson | Implementação da API tRPC com Express, autenticação bcryptjs, procedures de incidentes, admin e exportação PDF, validação Joi e testes Vitest |
 | **Banco de Dados** | Nattan | Modelagem do schema Drizzle ORM, definição das tabelas `users` e `incidents`, configuração das migrações e queries de acesso |
-| **Classificador ML** | Josias e Keven | Construção do pipeline TF-IDF + Naive Bayes, treinamento com o dataset de 100 amostras, servidor Flask de classificação (porta 5001) e servidor Flask de geração de PDF (porta 5002) |
+| **Classificador ML** | Josias e Keven | Construção do pipeline TF-IDF + Naive Bayes, treinamento com o dataset de 2000 amostras, servidor Flask de classificação (porta 5001) e servidor Flask de geração de PDF (porta 5002) |
 
 ---
 

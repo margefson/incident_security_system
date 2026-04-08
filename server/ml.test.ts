@@ -119,13 +119,13 @@ describe("8.2 Dataset de Treinamento", () => {
     expect(fs.existsSync(metricsPath)).toBe(true);
   });
 
-  it("train_model.py usa 100 amostras (20 por categoria)", async () => {
+  it("train_model.py usa o dataset de 2000 amostras (atualizado na sess\u00e3o 8)", async () => {
     const fs = await import("fs");
     const path = await import("path");
     const trainPath = path.resolve(__dirname, "../ml/train_model.py");
     const content = fs.readFileSync(trainPath, "utf-8");
-    // O script de treinamento deve referenciar o dataset
-    expect(content).toContain("incidentes_cybersecurity_100.xlsx");
+    // O script de treinamento deve referenciar o dataset de 2000 amostras
+    expect(content).toContain("incidentes_cybersecurity_2000.xlsx");
   });
 });
 

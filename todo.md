@@ -359,3 +359,17 @@
 - [x] README atualizado com seção 12 (Segurança de Senha)
 - [x] Manual do usuário atualizado com seção 9 (Segurança de Senha)
 - [x] PDFs regenerados
+
+## Sessão 8 — Dataset 2000 Amostras e Retreinamento
+- [x] Analisar novo dataset incidentes_cybersecurity_2000.xlsx (2000 registros, 5 categorias)
+- [x] Upload do novo dataset para CDN e atualizar link no AdminML.tsx
+- [x] Copiar dataset para ml/ e atualizar DATASET_PATH no classifier_server.py
+- [x] Normalizar colunas em português (Titulo, Descricao, Categoria) no train_model.py
+- [x] Normalizar categorias com espaço para underscore (brute force → brute_force)
+- [x] Retreinar modelo com 2000 amostras (acurácia 100%, CV 97%)
+- [x] Adicionar endpoint /reload-model no classifier_server.py
+- [x] Integrar /reload-model no retrainModel do routers.ts (chamada automática)
+- [x] Reiniciar Flask e verificar modelo de 2000 amostras carregado
+- [x] 39 novos testes S8-1 a S8-8 (421 passando em 13 arquivos)
+- [x] Atualizar README e manuais com novo dataset
+- [x] Regenerar PDFs dos manuais

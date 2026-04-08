@@ -1,28 +1,22 @@
 {
   "method": "TF-IDF + Naive Bayes (MultinomialNB)",
-  "dataset_size": 101,
+  "dataset_size": 2000,
   "categories": [
     "brute_force",
+    "vazamento_de_dados",
     "ddos",
-    "engenharia_social",
     "malware",
-    "phishing",
-    "vazamento_de_dados"
+    "phishing"
   ],
-  "cv_accuracy_mean": 0.9605,
-  "cv_accuracy_std": 0.0582,
-  "train_accuracy": 0.9901,
+  "cv_accuracy_mean": 1.0,
+  "cv_accuracy_std": 0.0,
+  "train_accuracy": 1.0,
   "category_distribution": {
-    "phishing": 20,
-    "malware": 20,
-    "brute_force": 20,
-    "ddos": 20,
-    "vazamento_de_dados": 20,
-    "engenharia_social": 1
+    "malware": 436,
+    "brute_force": 423,
+    "phishing": 401,
+    "vazamento_de_dados": 371,
+    "ddos": 369
   },
-  "new_samples_added": 1,
-  "new_categories": [
-    "engenharia_social"
-  ],
-  "last_updated": "2026-04-07T17:48:27.155482+00:00"
+  "last_updated": "2026-04-08T00:02:28.632675+00:00"
 }

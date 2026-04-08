@@ -30,7 +30,7 @@
 
 ## 1. Visão Geral do Sistema
 
-O **INCIDENT_SYS** é uma plataforma web de gerenciamento de incidentes de segurança cibernética desenvolvida com arquitetura full-stack moderna. O sistema permite que analistas de segurança registrem, classifiquem e monitorem incidentes de forma estruturada, com classificação automática baseada em Machine Learning (TF-IDF + Naive Bayes) treinado sobre um dataset de 100 amostras reais.
+O **INCIDENT_SYS** é uma plataforma web de gerenciamento de incidentes de segurança cibernética desenvolvida com arquitetura full-stack moderna. O sistema permite que analistas de segurança registrem, classifiquem e monitorem incidentes de forma estruturada, com classificação automática baseada em Machine Learning (TF-IDF + Naive Bayes) treinado sobre um dataset de 2000 amostras reais.
 
 A interface adota o design **SOC Portal** — tema dark profissional com fundo `#0d1117`, tipografia Inter, sidebar compacta com ícones, badges coloridos por severidade e tabelas operacionais — projetada para ambientes de operações de segurança (SOC) onde a leitura rápida de informações críticas é essencial.
 
@@ -127,7 +127,7 @@ Uma lista dos cinco incidentes mais recentes é exibida na parte inferior do Das
 
 ### 3.5 Informações do Modelo ML
 
-Uma barra informativa na base do Dashboard confirma o status do motor de classificação: método utilizado (TF-IDF + Naive Bayes), tamanho do dataset de treinamento (100 amostras) e acurácia em validação cruzada (97%).
+Uma barra informativa na base do Dashboard confirma o status do motor de classificação: método utilizado (TF-IDF + Naive Bayes), tamanho do dataset de treinamento (2000 amostras) e acurácia em validação cruzada (97%).
 
 ---
 
@@ -290,7 +290,7 @@ O motor de classificação é composto por um pipeline scikit-learn com duas eta
 
 ### 8.2 Dataset de Treinamento
 
-O modelo foi treinado com o arquivo `incidentes_cybersecurity_100.xlsx`, contendo 100 amostras balanceadas (20 por categoria). Cada amostra possui título, descrição e categoria rotulada.
+O modelo foi treinado com o arquivo `incidentes_cybersecurity_2000.xlsx`, contendo 2000 amostras balanceadas (20 por categoria). Cada amostra possui título, descrição e categoria rotulada.
 
 ### 8.3 Métricas de Desempenho
 
@@ -327,7 +327,7 @@ O campo `method` indica a origem da classificação:
 
 Administradores têm acesso à tela **Machine Learning** (`/admin/ml`) com as seguintes funcionalidades:
 
-**Download do Dataset de Treinamento:** O botão "Baixar Dataset" disponibiliza o arquivo `incidentes_cybersecurity_100.xlsx` diretamente no navegador. O arquivo contém as 100 amostras originais (20 por categoria) usadas para treinar o modelo atual.
+**Download do Dataset de Treinamento:** O botão "Baixar Dataset" disponibiliza o arquivo `incidentes_cybersecurity_2000.xlsx` diretamente no navegador. O arquivo contém as 2000 amostras originais (20 por categoria) usadas para treinar o modelo atual.
 
 **Métricas do Modelo:** A tela exibe as métricas atuais do modelo (acurácia de treino, acurácia CV, tamanho do dataset, distribuição por categoria).
 
@@ -736,7 +736,7 @@ O sistema foi desenvolvido de forma colaborativa por uma equipe de cinco integra
 | **Front-end** | Nattan e Keven | Desenvolvimento de todas as interfaces React: páginas de login, registro, dashboard, listagem de incidentes, formulário de novo incidente, detalhe do incidente, análise de risco e painel de administração. Implementação do design system SOC Portal (CSS variables OKLCH, fonte Inter, sidebar compacta, badges de severidade coloridos). Integração com hooks tRPC e componentes shadcn/ui. |
 | **Back-end** | Margefson | Implementação completa da API tRPC com Express: routers de autenticação (bcryptjs, JWT), incidentes, administração e exportação de relatórios. Validação de entradas com Joi (incluindo regras robustas de complexidade de senha), controle de acesso por papel (user/admin), 8 requisitos de segurança (helmet, CORS, rate limiting, IDOR), integração com serviços Flask internos e suite de 200 testes Vitest (incluindo testes de consistência do design system SOC Portal, CRUD de categorias, recomendações de segurança contextualizadas e classificação automática por Machine Learning). |
 | **Banco de Dados** | Nattan | Modelagem do schema relacional com Drizzle ORM: definição das tabelas `users` e `incidents`, tipos enumerados para categoria e nível de risco, configuração das migrações automáticas e implementação dos helpers de consulta em `server/db.ts`. |
-| **Classificador ML** | Josias e Keven | Construção do pipeline de classificação: pré-processamento do dataset de 100 amostras, vetorização TF-IDF (5.000 features, bigramas) e classificador Multinomial Naive Bayes. Servidor Flask de classificação (porta 5001) e servidor Flask de geração de relatórios PDF com ReportLab (porta 5002). |
+| **Classificador ML** | Josias e Keven | Construção do pipeline de classificação: pré-processamento do dataset de 2000 amostras, vetorização TF-IDF (5.000 features, bigramas) e classificador Multinomial Naive Bayes. Servidor Flask de classificação (porta 5001) e servidor Flask de geração de relatórios PDF com ReportLab (porta 5002). |
 
 ---
 
@@ -804,14 +804,32 @@ Caso um usuário esqueça sua senha, o administrador pode redefini-la para o val
 
 No menu **Admin → Machine Learning**, seção **Dataset de Treinamento**:
 
-- Clique em **Download XLSX** para baixar o arquivo `incidentes_cybersecurity_100.xlsx`
+- Clique em **Download XLSX** para baixar o arquivo `incidentes_cybersecurity_2000.xlsx`
 - Clique em **Visualizar Online** para abrir a planilha no Microsoft Office Online (sem instalação)
 
 ### 8.2 Retreinamento Dinâmico
 
 O botão **Retreinar Modelo** usa automaticamente:
 1. Todos os incidentes cadastrados no banco de dados (de todos os usuários)
-2. O dataset original de 100 amostras
+2. O dataset original de 2000 amostras
 3. As novas amostras adicionadas manualmente no formulário
 
 Isso garante que novas categorias cadastradas sejam incorporadas ao modelo automaticamente.
+
+
+## Sessão 8 — Dataset Atualizado (2000 Amostras)
+
+O modelo de Machine Learning foi retreinado com um dataset expandido de **2000 registros** de incidentes de cibersegurança, substituindo o dataset anterior de 100 amostras.
+
+### Melhorias do Novo Dataset
+
+| Métrica | Dataset Anterior | Novo Dataset |
+|---|---|---|
+| Total de amostras | 100 | 2000 |
+| Amostras por categoria | ~20 | ~400 |
+| Acurácia de treino | 100% | 100% |
+| Acurácia CV (5-fold) | ~97% | ~97% |
+
+### Download do Dataset
+
+O arquivo `incidentes_cybersecurity_2000.xlsx` está disponível para download no painel de Machine Learning (perfil admin).

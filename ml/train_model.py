@@ -1,15 +1,11 @@
-"""
-Treinamento do Modelo de Classificação de Incidentes de Segurança
-Pipeline: TF-IDF + Naive Bayes (MultinomialNB)
-Dataset: incidentes_cybersecurity_100.xlsx (100 amostras)
-Categorias: phishing, malware, brute_force, ddos, vazamento_de_dados
-"""
+"""\nTreinamento do Modelo de Classificação de Incidentes de Segurança\nPipeline: TF-IDF + Naive Bayes (MultinomialNB)\nDataset: incidentes_cybersecurity_2000.xlsx (2000 amostras)\nCategorias: phishing, malware, brute_force, ddos, vazamento_de_dados\n"""
 
 import os
 import sys
 import json
 import joblib
 import pandas as pd
+from datetime import datetime, timezone
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.naive_bayes import MultinomialNB
 from sklearn.pipeline import Pipeline
@@ -18,7 +14,7 @@ from sklearn.metrics import classification_report, accuracy_score
 
 # ─── Caminhos ────────────────────────────────────────────────────────────────
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-DATASET_PATH = os.path.join(SCRIPT_DIR, "incidentes_cybersecurity_100.xlsx")
+DATASET_PATH = os.path.join(SCRIPT_DIR, "incidentes_cybersecurity_2000.xlsx")
 MODEL_PATH = os.path.join(SCRIPT_DIR, "model.pkl")
 METRICS_PATH = os.path.join(SCRIPT_DIR, "metrics.json")
 
@@ -26,15 +22,33 @@ METRICS_PATH = os.path.join(SCRIPT_DIR, "metrics.json")
 print("[ML] Carregando dataset...")
 df = pd.read_excel(DATASET_PATH)
 print(f"[ML] Dataset carregado: {len(df)} amostras")
-print(f"[ML] Distribuição de categorias:\n{df['category'].value_counts()}")
+print(f"[ML] Colunas encontradas: {list(df.columns)}")
+
+# Normalizar nomes de colunas (suporte a português e inglês)
+col_map = {}
+for col in df.columns:
+    col_lower = col.lower().strip()
+    if col_lower in ("title", "titulo", "título"):
+        col_map["title"] = col
+    elif col_lower in ("description", "descricao", "descrição"):
+        col_map["description"] = col
+    elif col_lower in ("category", "categoria"):
+        col_map["category"] = col
+
+print(f"[ML] Mapeamento de colunas: {col_map}")
+title_col = col_map.get("title", df.columns[0])
+desc_col = col_map.get("description", df.columns[1])
+cat_col = col_map.get("category", df.columns[2])
+
+print(f"[ML] Distribuição de categorias:\n{df[cat_col].value_counts()}")
 
 # ─── Pré-processamento ────────────────────────────────────────────────────────
-# Passo 1: Juntar título e descrição em um único texto (conforme documento)
-df["text"] = df["title"].fillna("") + " " + df["description"].fillna("")
+df["text"] = df[title_col].fillna("") + " " + df[desc_col].fillna("")
 df["text"] = df["text"].str.lower().str.strip()
 
 X = df["text"]
-y = df["category"]
+# Normalizar categorias: espaços → underscores (brute force → brute_force)
+y = df[cat_col].str.lower().str.strip().str.replace(" ", "_", regex=False)
 
 # ─── Pipeline TF-IDF + Naive Bayes ───────────────────────────────────────────
 # Passo 2: TF-IDF (recomendado no documento)
@@ -42,9 +56,9 @@ y = df["category"]
 pipeline = Pipeline([
     ("tfidf", TfidfVectorizer(
         ngram_range=(1, 2),       # unigrams + bigrams
-        max_features=5000,         # limitar vocabulário
+        max_features=10000,        # aumentado para 2000 amostras
         sublinear_tf=True,         # aplicar log(tf) para normalização
-        min_df=1,                  # mínimo de documentos
+        min_df=2,                  # mínimo de 2 documentos para vocabulário maior
         analyzer="word",
         strip_accents="unicode",
     )),
@@ -75,11 +89,12 @@ joblib.dump(pipeline, MODEL_PATH)
 metrics = {
     "method": "TF-IDF + Naive Bayes (MultinomialNB)",
     "dataset_size": len(df),
-    "categories": list(df["category"].unique()),
+    "categories": list(y.unique()),
     "cv_accuracy_mean": float(cv_scores.mean()),
     "cv_accuracy_std": float(cv_scores.std()),
     "train_accuracy": float(train_accuracy),
-    "category_distribution": df["category"].value_counts().to_dict(),
+    "category_distribution": y.value_counts().to_dict(),
+    "last_updated": datetime.now(timezone.utc).isoformat(),
 }
 with open(METRICS_PATH, "w", encoding="utf-8") as f:
     json.dump(metrics, f, ensure_ascii=False, indent=2)
