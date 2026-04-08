@@ -2,6 +2,7 @@ import { TRPCError } from "@trpc/server";
 import { generatePdfBuffer, type IncidentRow } from "./pdf";
 import fs from "fs";
 import path from "path";
+import { execSync } from "child_process";
 import { z } from "zod/v4";
 import { COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
@@ -917,6 +918,63 @@ const adminRouter = router({
       checked_at: new Date().toISOString(),
     };
   }),
+
+  // ─── Reiniciar Serviço Flask ──────────────────────────────────────────────────────────────────────────────
+  restartService: adminProcedure
+    .input(z.object({
+      port: z.number().int().min(1024).max(65535), // porta do serviço a reiniciar
+    }))
+    .mutation(async ({ input }) => {
+      const SCRIPT_DIR = path.resolve(__dirname, "..", "ml");
+      const SCRIPT_PATH = path.join(SCRIPT_DIR, "classifier_server.py");
+      const LOG_PATH = path.join(SCRIPT_DIR, `flask_${input.port}.log`);
+
+      if (!fs.existsSync(SCRIPT_PATH)) {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: `Script Flask não encontrado: ${SCRIPT_PATH}`,
+        });
+      }
+
+      try {
+        // 1. Matar processo existente na porta
+        try {
+          execSync(`pkill -f "classifier_server.py.*${input.port}" 2>/dev/null || true`, { timeout: 5000 });
+          execSync(`fuser -k ${input.port}/tcp 2>/dev/null || true`, { timeout: 5000 });
+        } catch {
+          // Ignora erros ao matar processo (pode não existir)
+        }
+
+        // 2. Aguardar 1 segundo para liberar a porta
+        await new Promise(resolve => setTimeout(resolve, 1000));
+
+        // 3. Iniciar novo processo Flask na porta especificada
+        execSync(
+          `nohup python3 ${SCRIPT_PATH} --port ${input.port} > ${LOG_PATH} 2>&1 &`,
+          { timeout: 5000, cwd: SCRIPT_DIR }
+        );
+
+        // 4. Aguardar 3 segundos para o Flask inicializar
+        await new Promise(resolve => setTimeout(resolve, 3000));
+
+        // 5. Verificar se o serviço está respondendo
+        const ML_URL = `http://localhost:${input.port}`;
+        try {
+          const res = await fetch(`${ML_URL}/health`, { signal: AbortSignal.timeout(4000) });
+          if (res.ok) {
+            return { success: true, message: `Serviço Flask na porta ${input.port} reiniciado com sucesso.`, port: input.port };
+          }
+          return { success: false, message: `Serviço iniciado mas não respondeu ao health check. Verifique os logs.`, port: input.port };
+        } catch {
+          return { success: false, message: `Serviço iniciado mas ainda não responde. Aguarde alguns segundos e atualize.`, port: input.port };
+        }
+      } catch (err) {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: `Erro ao reiniciar serviço na porta ${input.port}: ${String(err)}`,
+        });
+      }
+    }),
 });
 // ─── Reports Routerr ───────────────────────────────────────────────────────
 const reportsRouter = router({

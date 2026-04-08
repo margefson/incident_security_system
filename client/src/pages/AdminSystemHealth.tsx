@@ -4,9 +4,10 @@ import DashboardLayout from "@/components/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 import {
   Activity, RefreshCw, CheckCircle2, XCircle, AlertTriangle,
-  Server, Database, Clock, Wifi,
+  Server, Database, Clock, Wifi, RotateCcw,
 } from "lucide-react";
 
 type ServiceStatus = "online" | "degraded" | "offline";
@@ -30,10 +31,38 @@ function StatusIcon({ status }: { status: ServiceStatus }) {
   return <XCircle className="w-5 h-5 text-red-400" />;
 }
 
+// Extrai o número da porta do nome do serviço (ex: "Flask ML (porta 5001)" → 5001)
+function extractPort(serviceName: string): number | null {
+  const match = serviceName.match(/(\d{4,5})/);
+  return match ? parseInt(match[1], 10) : null;
+}
+
 export default function AdminSystemHealth() {
   const [lastRefresh, setLastRefresh] = useState<string>("");
+  const [restartingPorts, setRestartingPorts] = useState<Set<number>>(new Set());
   const healthQuery = trpc.admin.getSystemHealth.useQuery(undefined, {
     refetchInterval: 30000,
+  });
+  const utils = trpc.useUtils();
+
+  const restartMutation = trpc.admin.restartService.useMutation({
+    onMutate: ({ port }) => {
+      setRestartingPorts(prev => { const s = new Set(Array.from(prev)); s.add(port); return s; });
+    },
+    onSuccess: (result) => {
+      setRestartingPorts(prev => { const s = new Set(Array.from(prev)); s.delete(result.port); return s; });
+      if (result.success) {
+        toast.success(result.message);
+      } else {
+        toast.warning(result.message);
+      }
+      // Atualiza o status após reiniciar
+      void utils.admin.getSystemHealth.invalidate();
+    },
+    onError: (err, { port }) => {
+      setRestartingPorts(prev => { const s = new Set(Array.from(prev)); s.delete(port); return s; });
+      toast.error(err.message);
+    },
   });
 
   useEffect(() => {
@@ -155,11 +184,29 @@ export default function AdminSystemHealth() {
                             ))}
                           </div>
                         )}
-                        {service.status === "offline" && (
-                          <p className="text-xs font-mono text-red-400">
-                            Serviço não responde. Verifique se o processo Flask está em execução.
-                          </p>
-                        )}
+                        {service.status === "offline" && (() => {
+                          const port = extractPort(service.name);
+                          const isRestarting = port !== null && restartingPorts.has(port);
+                          return (
+                            <div className="space-y-2">
+                              <p className="text-xs font-mono text-red-400">
+                                Serviço não responde. Verifique se o processo Flask está em execução.
+                              </p>
+                              {port !== null && (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  className="font-mono text-xs gap-1.5 border-red-500/30 text-red-400 hover:bg-red-500/10 hover:text-red-300"
+                                  disabled={isRestarting}
+                                  onClick={() => restartMutation.mutate({ port })}
+                                >
+                                  <RotateCcw className={`w-3.5 h-3.5 ${isRestarting ? "animate-spin" : ""}`} />
+                                  {isRestarting ? "Reiniciando..." : "Reiniciar Serviço"}
+                                </Button>
+                              )}
+                            </div>
+                          );
+                        })()}
                       </CardContent>
                     </Card>
                   );

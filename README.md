@@ -870,7 +870,19 @@ Tests: 296 passed
 | **S15-7: Paginação Frontend** | `session15.test.ts` | 8 | AdminIncidents, Anterior/Próxima, filtros categoria/risco, PAGE_SIZE, rota, link |
 | **S15-8: PDF com Filtros** | `session15.test.ts` | 10 | ExportPdfWithFilters, dateFrom, dateTo, categoria, risco, Dialog, exportPdf, db.ts |
 
-**Total: 773 testes passando em 19 arquivos**
+| **S16-1: Procedure restartService** | `session16.test.ts` | 6 | adminProcedure, port, execSync, pkill, success, message |
+| **S16-2: Botão Reiniciar Frontend** | `session16.test.ts` | 10 | RotateCcw, restartService, Reiniciar Serviço, Reiniciando..., restartingPorts, extractPort, disabled, invalidate |
+| **S16-3: Endpoints Flask upload** | `session16.test.ts` | 4 | /upload-train-dataset, /upload-eval-dataset, .xlsx, total |
+| **S16-4: Procedures upload tRPC** | `session16.test.ts` | 5 | uploadTrainDataset, uploadEvalDataset, fileBase64, filename |
+| **S16-5: AdminSystemHealth geral** | `session16.test.ts` | 5 | getSystemHealth, 30000, Saúde do Sistema, online/offline, DashboardLayout |
+
+**Total: 803 testes passando em 20 arquivos**
+
+### Sessão 16 (v2.8) — Botão Reiniciar Serviço + Apresentação PPTX
+- **Botão Reiniciar Serviço**: no Dashboard de Saúde, quando um servidor Flask estiver Offline, aparece o botão "Reiniciar Serviço" com spinner, estado desabilitado durante a operação e toast de feedback (sonner)
+- **Procedure `restartService`**: `adminProcedure` que mata o processo Flask na porta especificada via `execSync`/`pkill`, aguarda 1s, reinicia com `nohup python3 classifier_server.py --port {N}` e verifica se o `/health` responde em 4s
+- **Apresentação PPTX**: 6 slides com tema cybersecurity dark (Space Grotesk + JetBrains Mono, fundo #0a0f1e, cyan #00e5ff, laranja #ff6b35) cobrindo: Problema/Solução, Time/Stacks, Arquitetura PNG, Funcionalidades, ML/Segurança/Privacidade e Links GitHub/Manus
+- **30 novos testes S16** cobrindo restartService, botão de reinicialização, endpoints Flask de upload e AdminSystemHealth
 
 ---
 

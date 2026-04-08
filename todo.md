@@ -434,3 +434,9 @@
 - [x] 49 novos testes S13-1 a S13-11 (680 passando em 17 arquivos)
 - [x] Atualizar manuais v2.5 e README com as mudanças da Sessão 13
 - [x] Commitar no GitHub
+
+## Sessão 16 — Reiniciar Serviço + Apresentação PPTX
+- [ ] Procedure restartService no adminRouter (executa pkill + nohup do Flask)
+- [ ] Botão "Reiniciar Serviço" no AdminSystemHealth quando status=offline
+- [ ] Apresentação PPTX 6 slides
+- [ ] Testes S16 e checkpoint
