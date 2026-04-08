@@ -1,9 +1,5 @@
 {
   "method": "TF-IDF + Naive Bayes (MultinomialNB)",
-  "dataset_size": 2050,
-  "train_accuracy": 1.0,
-  "cv_accuracy_mean": 0.9995,
-  "cv_accuracy_std": 0.001,
   "categories": [
     "brute_force",
     "ddos",
@@ -11,20 +7,9 @@
     "phishing",
     "vazamento_de_dados"
   ],
-  "category_distribution": {
-    "malware": 446,
-    "brute force": 433,
-    "phishing": 411,
-    "vazamento de dados": 381,
-    "ddos": 379
-  },
-  "last_updated": "2026-04-08T22:46:27.457195+00:00",
   "training": {
     "dataset": "incidentes_cybersecurity_2000.xlsx",
-    "dataset_size": 2050,
-    "train_accuracy": 1.0,
-    "cv_accuracy_mean": 0.9995,
-    "cv_accuracy_std": 0.001,
+    "dataset_size": 5050,
     "categories": [
       "brute_force",
       "ddos",
@@ -32,12 +17,15 @@
       "phishing",
       "vazamento_de_dados"
     ],
+    "cv_accuracy_mean": 0.9984,
+    "cv_accuracy_std": 0.0032,
+    "train_accuracy": 0.9998,
     "category_distribution": {
-      "malware": 446,
-      "brute force": 433,
-      "phishing": 411,
-      "vazamento de dados": 381,
-      "ddos": 379
+      "ddos": 1000,
+      "vazamento_de_dados": 1000,
+      "malware": 1000,
+      "phishing": 1000,
+      "brute_force": 1000
     },
     "new_samples_added": 0,
     "new_categories": []
@@ -80,6 +68,17 @@
     },
     "evaluated_at": "2026-04-08T22:46:27.457195+00:00"
   },
-  "eval_accuracy": 0.78,
-  "last_evaluated": "2026-04-08T22:46:27.457195+00:00"
+  "last_updated": "2026-04-08T23:20:50.950298+00:00",
+  "last_evaluated": "2026-04-08T22:46:27.457195+00:00",
+  "dataset_size": 5050,
+  "cv_accuracy_mean": 0.9984,
+  "cv_accuracy_std": 0.0,
+  "train_accuracy": 0.9998,
+  "category_distribution": {
+    "ddos": 1000,
+    "vazamento_de_dados": 1000,
+    "malware": 1000,
+    "phishing": 1000,
+    "brute_force": 1000
+  }
 }

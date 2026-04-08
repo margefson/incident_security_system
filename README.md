@@ -5,7 +5,7 @@
 ![Python](https://img.shields.io/badge/Python-3.11-3776AB?style=flat-square&logo=python)
 ![MySQL](https://img.shields.io/badge/MySQL-8.x-4479A1?style=flat-square&logo=mysql)
 ![ML Accuracy](https://img.shields.io/badge/ML%20Accuracy%20(CV)-97%25%20%7C%20Eval%3A78%25-brightgreen?style=flat-square)
-![Tests](https://img.shields.io/badge/tests-713%20passing-brightgreen)
+![Tests](https://img.shields.io/badge/tests-880%20passing-brightgreen)
 ![License](https://img.shields.io/badge/License-MIT-blue?style=flat-square)
 
 Plataforma de gerenciamento de incidentes de segurança cibernética com classificação automática por Machine Learning (TF-IDF + Naive Bayes), painel de administração global, **CRUD de categorias de incidentes (exclusivo para administradores)**, exportação de relatórios em PDF, notificações automáticas de risco crítico e interface SOC Portal — design profissional dark com tipografia Inter, sidebar compacta, badges coloridos por severidade e tabelas operacionais.
@@ -34,7 +34,7 @@ Plataforma de gerenciamento de incidentes de segurança cibernética com classif
 
 ## Visão Geral
 
-O **INCIDENT_SYS** é uma aplicação web full-stack que permite que equipes de segurança registrem, classifiquem e analisem incidentes cibernéticos de forma estruturada. Cada incidente é automaticamente classificado em uma das cinco categorias de ameaça por um modelo de ML treinado com um dataset real de 2000 amostras, recebendo também um score de risco calculado automaticamente.
+O **INCIDENT_SYS** é uma aplicação web full-stack que permite que equipes de segurança registrem, classifiquem e analisem incidentes cibernéticos de forma estruturada. Cada incidente é automaticamente classificado em uma das cinco categorias de ameaça por um modelo de ML treinado com um dataset real de 5050 amostras (5000 técnicas + 50 metafóricas), recebendo também um score de risco calculado automaticamente.
 
 O sistema opera com três servidores independentes: um servidor Node.js/Express que expõe a API tRPC e serve o frontend React, um servidor Flask em Python que hospeda o modelo de classificação (porta 5001), e um segundo servidor Flask para geração de relatórios PDF (porta 5002).
 
@@ -184,7 +184,7 @@ Node.js recebe via tRPC incidents.create
 - Classificação automática pelo modelo ML ao submeter
 
 ### Classificação por Machine Learning
-- Modelo TF-IDF + Naive Bayes treinado com 2000 amostras reais
+- Modelo TF-IDF + Naive Bayes treinado com 5050 amostras (5000 técnicas + 50 metafóricas)
 - Acurácia de 97% em cross-validation 5-fold
 - 5 categorias: Phishing, Malware, Força Bruta, DDoS, Vazamento de Dados
 - Score de confiança retornado junto com a classificação
@@ -884,8 +884,23 @@ Tests: 296 passed
 | **S17-6: Aviso baixa confiança** | `session17.test.ts` | 4 | confidence < 0.4, amarelo, descrição técnica |
 | **S17-7: Rota ml-training** | `session17.test.ts` | 2 | /admin/ml-training, AdminMLTraining |
 | **S17-8: Link DashboardLayout** | `session17.test.ts` | 3 | Treinamento ao Vivo, MonitorPlay |
+| **S18-1: Dataset 5000 amostras** | `session18.test.ts` | 3 | dataset_cybersecurity_treinamento_5000.xlsx, > 400KB |
+| **S18-2: Modelo retreinado 5050** | `session18.test.ts` | 5 | dataset_size >= 5000, train_accuracy >= 0.99, cv >= 0.98, 5 categorias, model.pkl |
+| **S18-3: /retrain body vazio** | `session18.test.ts` | 5 | /retrain, samples vazio, TRAIN_DATASET_PATH, /upload-train-dataset, f.save |
+| **S18-4: uploadTrainDataset erro** | `session18.test.ts` | 5 | ECONNREFUSED, Serviço ML offline, /admin/system-health, multipart/form-data, AbortSignal |
+| **S18-5: uploadEvalDataset erro** | `session18.test.ts` | 3 | uploadEvalDataset, 2x Serviço ML offline, 2x AbortSignal |
+| **S18-6: AdminML toast offline** | `session18.test.ts` | 5 | isOffline, Saúde do Sistema, uploadEvalMutation, duration 8000 |
+| **S18-7: Classificação 5050** | `session18.test.ts` | 5 | brute_force, phishing, malware, vazamento_de_dados, Flask online |
+| **S18-8: Métricas 5050** | `session18.test.ts` | 5 | dataset_size >= 5000, train_accuracy >= 0.99, 1000/categoria, last_updated, TRAIN_DATASET_PATH |
 
-**Total: 844 testes passando em 21 arquivos**
+**Total: 880 testes passando em 22 arquivos**
+
+### Sessão 18 (v3.0) — Dataset 5000 Amostras + Resiliência de Upload
+- **Upload de dataset com 5000 amostras**: novo arquivo `dataset_cybersecurity_treinamento_5000.xlsx` carregado via interface web; 5000 amostras balanceadas (1000/categoria) para ddos, malware, phishing, brute_force, vazamento_de_dados
+- **Modelo retreinado com 5050 amostras**: 5000 novas + 50 metafóricas preservadas; train_accuracy=99.98%, cv_accuracy=99.84%, eval_accuracy=78%
+- **Resiliência de upload**: procedures `uploadTrainDataset` e `uploadEvalDataset` detectam ECONNREFUSED e retornam mensagem clara: "Serviço ML offline. Use o painel Saúde do Sistema (/admin/system-health) para reiniciar o servidor Flask"
+- **AdminML.tsx melhorado**: toast de erro distingue Flask offline de erro genérico; exibe descrição "Menu Admin → Saúde do Sistema → Reiniciar Serviço" com duração de 8s
+- **36 novos testes S18** cobrindo dataset, modelo, endpoints Flask, procedures tRPC e UI
 
 ### Sessão 17 (v2.9) — Diagnóstico ML + Treinamento em Tempo Real
 - **Diagnóstico de classificação**: identificado que títulos metáforicos sem descrição técnica causavam confiança < 30%; adicionadas 50 amostras metáforicas ao dataset (2050 total)
@@ -938,7 +953,7 @@ O sistema foi desenvolvido por uma equipe de cinco integrantes, com responsabili
 | **Front-end** | Nattan e Keven | Desenvolvimento das interfaces React, design system SOC Portal (dark theme profissional, tipografia Inter, sidebar compacta, badges de severidade por categoria), componentes shadcn/ui, páginas de login, registro, dashboard, listagem, detalhe e painel admin |
 | **Back-end** | Margefson | Implementação da API tRPC com Express, autenticação bcryptjs, procedures de incidentes, admin e exportação PDF, validação Joi e testes Vitest |
 | **Banco de Dados** | Nattan | Modelagem do schema Drizzle ORM, definição das tabelas `users` e `incidents`, configuração das migrações e queries de acesso |
-| **Classificador ML** | Josias e Keven | Construção do pipeline TF-IDF + Naive Bayes, treinamento com o dataset de 2000 amostras, servidor Flask de classificação (porta 5001) e servidor Flask de geração de PDF (porta 5002) |
+| **Classificador ML** | Josias e Keven | Construção do pipeline TF-IDF + Naive Bayes, treinamento com o dataset de 5050 amostras (5000 técnicas + 50 metafóricas), servidor Flask de classificação (porta 5001) e servidor Flask de geração de PDF (porta 5002) |
 
 ---
 

@@ -24,6 +24,7 @@ import json
 import base64
 import joblib
 import numpy as np
+import pandas as pd
 import threading
 import time
 import unicodedata
@@ -363,8 +364,8 @@ def retrain():
     new_samples  = data.get("samples", [])
     new_risk_map = data.get("risk_map", {})
 
-    if not new_samples:
-        return jsonify({"error": "samples array is required and must not be empty"}), 400
+    # Se samples estiver vazio, retreinar apenas com o dataset atual (ex: após upload de novo dataset)
+    # Se samples tiver itens, adicionar ao dataset existente
 
     for s in new_samples:
         if not s.get("description", "").strip():
@@ -480,12 +481,13 @@ def upload_train_dataset():
     try:
         # Salvar o novo arquivo substituindo o dataset de treino
         f.save(TRAIN_DATASET_PATH)
-        # Verificar quantas amostras o novo dataset tem
-        wb = openpyxl.load_workbook(TRAIN_DATASET_PATH)
-        ws = wb.active
-        total = ws.max_row - 1  # subtrair cabeçalho
+        # Verificar quantas amostras o novo dataset tem usando pandas
+        df_new = pd.read_excel(TRAIN_DATASET_PATH)
+        total = len(df_new)
+        cats = int(df_new.iloc[:, -1].nunique()) if len(df_new.columns) >= 2 else 0
         return jsonify({"success": True, "filename": f.filename, "total_samples": total,
-                        "message": f"Dataset de treinamento atualizado com {total} amostras. Execute o retreinamento para aplicar."})
+                        "total": total, "categories": cats,
+                        "message": f"Dataset de treinamento atualizado com {total} amostras em {cats} categorias. Execute o retreinamento para aplicar."})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
@@ -501,10 +503,10 @@ def upload_eval_dataset():
         return jsonify({"error": "Apenas arquivos .xlsx são aceitos"}), 400
     try:
         f.save(EVAL_DATASET_PATH)
-        wb = openpyxl.load_workbook(EVAL_DATASET_PATH)
-        ws = wb.active
-        total = ws.max_row - 1
+        df_new = pd.read_excel(EVAL_DATASET_PATH)
+        total = len(df_new)
         return jsonify({"success": True, "filename": f.filename, "total_samples": total,
+                        "total": total,
                         "message": f"Dataset de avaliação atualizado com {total} amostras."})
     except Exception as e:
         return jsonify({"error": str(e)}), 500

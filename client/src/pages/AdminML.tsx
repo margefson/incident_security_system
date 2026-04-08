@@ -101,7 +101,12 @@ export default function AdminML() {
       void datasetQuery.refetch();
     },
     onError: (err: { message: string }) => {
-      toast.error(`Erro no upload: ${err.message}`);
+      const isOffline = err.message.includes('offline') || err.message.includes('indisponível');
+      toast.error(isOffline
+        ? 'Serviço ML offline. Acesse Saúde do Sistema para reiniciar o Flask.'
+        : `Erro no upload: ${err.message}`,
+        { description: isOffline ? 'Menu Admin → Saúde do Sistema → Reiniciar Serviço' : undefined, duration: 8000 }
+      );
     },
   });
 
@@ -112,7 +117,12 @@ export default function AdminML() {
       void evalDatasetQuery.refetch();
     },
     onError: (err: { message: string }) => {
-      toast.error(`Erro no upload: ${err.message}`);
+      const isOffline = err.message.includes('offline') || err.message.includes('indisponível');
+      toast.error(isOffline
+        ? 'Serviço ML offline. Acesse Saúde do Sistema para reiniciar o Flask.'
+        : `Erro no upload: ${err.message}`,
+        { description: isOffline ? 'Menu Admin → Saúde do Sistema → Reiniciar Serviço' : undefined, duration: 8000 }
+      );
     },
   });
 

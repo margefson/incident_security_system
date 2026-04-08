@@ -852,7 +852,13 @@ const adminRouter = router({
         return await response.json() as { success: boolean; filename: string; total_samples: number; message: string };
       } catch (e) {
         if (e instanceof TRPCError) throw e;
-        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Serviço ML indisponível. Verifique se o servidor Flask está rodando na porta 5001." });
+        const isConnErr = e instanceof Error && (e.message.includes('fetch') || e.message.includes('ECONNREFUSED') || e.message.includes('timeout'));
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: isConnErr
+            ? "Serviço ML offline. Use o painel Saúde do Sistema (/admin/system-health) para reiniciar o servidor Flask na porta 5001."
+            : `Erro no upload: ${e instanceof Error ? e.message : String(e)}`
+        });
       }
     }),
 
@@ -885,7 +891,13 @@ const adminRouter = router({
         return await response.json() as { success: boolean; filename: string; total_samples: number; message: string };
       } catch (e) {
         if (e instanceof TRPCError) throw e;
-        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Serviço ML indisponível. Verifique se o servidor Flask está rodando na porta 5001." });
+        const isConnErr = e instanceof Error && (e.message.includes('fetch') || e.message.includes('ECONNREFUSED') || e.message.includes('timeout'));
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: isConnErr
+            ? "Serviço ML offline. Use o painel Saúde do Sistema (/admin/system-health) para reiniciar o servidor Flask na porta 5001."
+            : `Erro no upload: ${e instanceof Error ? e.message : String(e)}`
+        });
       }
     }),
 

@@ -442,9 +442,9 @@
 - [x] Testes S16 e checkpoint
 
 ## Sessão 17 — Diagnóstico de Classificação + Tela de Treinamento em Tempo Real
-- [ ] Diagnosticar classificações incorretas dos incidentes 60004 e 60002
-- [ ] Analisar features TF-IDF que causam confusão entre categorias
-- [ ] Corrigir dataset de treino para reduzir erros de classificação
-- [ ] Endpoint Flask /train-stream com SSE para logs em tempo real
-- [ ] Página AdminMLTraining.tsx com acompanhamento do treino em tempo real
-- [ ] Testes S17 e checkpoint
+- [x] Diagnosticar classificações incorretas dos incidentes 60004 e 60002
+- [x] Analisar features TF-IDF que causam confusão entre categorias
+- [x] Corrigir dataset de treino para reduzir erros de classificação
+- [x] Endpoint Flask /train-stream com SSE para logs em tempo real
+- [x] Página AdminMLTraining.tsx com acompanhamento do treino em tempo real
+- [x] Testes S17 e checkpoint
