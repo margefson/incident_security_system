@@ -190,7 +190,7 @@ export default function AdminML() {
             <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-blue-500/10 border border-blue-500/20">
               <BookOpen className="w-3.5 h-3.5 text-blue-400" />
               <span className="text-xs font-mono text-blue-400 font-semibold">TREINO</span>
-              <span className="text-xs font-mono text-blue-300">incidentes_cybersecurity_2000.xlsx</span>
+              <button onClick={handleDownloadDataset} className="text-xs font-mono text-blue-300 hover:text-blue-200 underline underline-offset-2 cursor-pointer">incidentes_cybersecurity_2000.xlsx</button>
               <Badge variant="outline" className="text-xs font-mono border-blue-500/30 text-blue-400 ml-1">
                 {trainingMetrics?.dataset_size ?? metrics?.dataset_size ?? "2000"} amostras
               </Badge>
@@ -198,7 +198,7 @@ export default function AdminML() {
             <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-purple-500/10 border border-purple-500/20">
               <FlaskConical className="w-3.5 h-3.5 text-purple-400" />
               <span className="text-xs font-mono text-purple-400 font-semibold">AVALIAÇÃO</span>
-              <span className="text-xs font-mono text-purple-300">incidentes_cybersecurity_100.xlsx</span>
+              <button onClick={handleDownloadEvalDataset} className="text-xs font-mono text-purple-300 hover:text-purple-200 underline underline-offset-2 cursor-pointer">incidentes_cybersecurity_100.xlsx</button>
               <Badge variant="outline" className="text-xs font-mono border-purple-500/30 text-purple-400 ml-1">
                 {evalDataset?.total_samples ?? "100"} amostras
               </Badge>
@@ -437,7 +437,7 @@ export default function AdminML() {
                 <div className="flex items-center justify-between flex-wrap gap-2">
                   <div>
                     <p className="text-xs font-mono text-muted-foreground">
-                      Arquivo: <span className="text-blue-400 font-semibold">incidentes_cybersecurity_2000.xlsx</span>
+                      Arquivo: <button onClick={handleDownloadDataset} className="text-blue-400 font-semibold hover:text-blue-300 underline underline-offset-2 cursor-pointer">incidentes_cybersecurity_2000.xlsx</button>
                     </p>
                     <p className="text-xs font-mono text-muted-foreground mt-0.5">
                       Total: <span className="text-foreground">{dataset?.total_samples ?? metrics?.dataset_size ?? "2000"} amostras</span>
@@ -618,7 +618,7 @@ export default function AdminML() {
                 <div className="flex items-center justify-between flex-wrap gap-2">
                   <div>
                     <p className="text-xs font-mono text-muted-foreground">
-                      Arquivo: <span className="text-purple-400 font-semibold">incidentes_cybersecurity_100.xlsx</span>
+                      Arquivo: <button onClick={handleDownloadEvalDataset} className="text-purple-400 font-semibold hover:text-purple-300 underline underline-offset-2 cursor-pointer">incidentes_cybersecurity_100.xlsx</button>
                     </p>
                     <p className="text-xs font-mono text-muted-foreground mt-0.5">
                       Total: <span className="text-foreground">{evalDataset?.total_samples ?? "100"} amostras</span>

@@ -5,7 +5,7 @@
 ![Python](https://img.shields.io/badge/Python-3.11-3776AB?style=flat-square&logo=python)
 ![MySQL](https://img.shields.io/badge/MySQL-8.x-4479A1?style=flat-square&logo=mysql)
 ![ML Accuracy](https://img.shields.io/badge/ML%20Accuracy%20(CV)-97%25%20%7C%20Eval%3A78%25-brightgreen?style=flat-square)
-![Tests](https://img.shields.io/badge/tests-631%20passing-brightgreen)
+![Tests](https://img.shields.io/badge/tests-680%20passing-brightgreen)
 ![License](https://img.shields.io/badge/License-MIT-blue?style=flat-square)
 
 Plataforma de gerenciamento de incidentes de segurança cibernética com classificação automática por Machine Learning (TF-IDF + Naive Bayes), painel de administração global, **CRUD de categorias de incidentes (exclusivo para administradores)**, exportação de relatórios em PDF, notificações automáticas de risco crítico e interface SOC Portal — design profissional dark com tipografia Inter, sidebar compacta, badges coloridos por severidade e tabelas operacionais.
@@ -174,7 +174,7 @@ Node.js recebe via tRPC incidents.create
   - Botão de submissão bloqueado até todos os critérios serem atendidos
 - Login com hash bcrypt (custo 12) e sessão JWT HttpOnly
 - Controle de acesso por usuário: cada usuário vê apenas seus próprios incidentes
-- Controle de acesso por papel (role): `user` e `admin`
+- Controle de acesso por papel (role): `user`, `security-analyst` e `admin` (3 perfis)
 - Proteção de todas as rotas sensíveis via `protectedProcedure`
 
 ### Registro de Incidentes
@@ -841,8 +841,19 @@ Tests: 296 passed
 | **S12-8: analyticsRouter** | `session12.test.ts` | 6 | resolutionMetrics, exportHistoryCsv, CSV com cabeçalhos PT, escape aspas |
 | **S12-9: Helpers Métricas db.ts** | `session12.test.ts` | 7 | getResolutionMetrics (TIMESTAMPDIFF, DATE_FORMAT), getAllIncidentHistoryForExport |
 | **S12-10: App.tsx rota /metrics** | `session12.test.ts` | 2 | Importa ResolutionMetrics, registra rota /metrics |
+| **S13-1: RBAC 3 Perfis no Schema** | `session13.test.ts` | 4 | Enum com admin, security-analyst, user; campo role na tabela users |
+| **S13-2: analystProcedure** | `session13.test.ts` | 3 | Definido no trpc.ts, verifica role security-analyst ou admin, lança FORBIDDEN |
+| **S13-3: updateStatus com RBAC** | `session13.test.ts` | 3 | updateStatus usa analystProcedure; analystProcedure importado no routers.ts |
+| **S13-4: db.ts 3 perfis** | `session13.test.ts` | 2 | updateUserRole aceita security-analyst; parâmetro role tipado |
+| **S13-5: AdminUsers 3 perfis** | `session13.test.ts` | 9 | Badge Security Analyst, contagem analysts, botões promoção/rebaixamento, hierarquia |
+| **S13-6: Profile badge** | `session13.test.ts` | 3 | Exibe Security Analyst, cor azul para analyst, cor amarela para admin |
+| **S13-7: DashboardLayout label** | `session13.test.ts` | 3 | Exibe Administrador, Security Analyst, Usuário no footer do sidebar |
+| **S13-8: Home sem botões header** | `session13.test.ts` | 4 | Sem nav/header com Entrar/Criar Conta; template dashboard; grid responsivo |
+| **S13-9: Incidents tabela Status** | `session13.test.ts` | 5 | Coluna Status, botão Editar, botão Excluir, controle por perfil, badges status |
+| **S13-10: AdminML links download** | `session13.test.ts` | 7 | Links clicáveis para datasets, underline, leitura train_accuracy, cv_accuracy_mean |
+| **S13-11: Flask endpoints ML** | `session13.test.ts` | 6 | /metrics, /evaluate, /eval-dataset, /dataset, train_accuracy, categories |
 
-**Total: 631 testes passando em 16 arquivos**
+**Total: 680 testes passando em 17 arquivos**
 
 ---
 
@@ -862,6 +873,9 @@ Tests: 296 passed
 | Reset só envia para um endereço | Plano gratuito Resend sem domínio verificado | Verifique um domínio em https://resend.com/domains para enviar para qualquer destinatário |
 | Notificações não aparecem | Tabela `notifications` não criada | Execute o SQL de criação da tabela ou faça `pnpm db:push` |
 | Métricas de resolução vazias | Nenhum incidente resolvido | Resolva incidentes para gerar dados de tempo médio |
+| Acurácia ML aparece 0% | Cache antigo do esbuild no dev server | Reinicie o servidor com `pnpm dev` para limpar o cache |
+| Erro ao alterar status do incidente | Usuário sem perfil security-analyst ou admin | Admin deve promover o usuário em `/admin/users` |
+| Usuário não pode alterar status | Role `user` não tem permissão | Apenas `security-analyst` e `admin` podem alterar status |
 | Exportação CSV vazia | Sem histórico de alterações | Altere status ou notas de incidentes para gerar histórico |
 
 ---

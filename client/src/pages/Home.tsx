@@ -108,18 +108,6 @@ export default function Home() {
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
             <span className="text-xs text-emerald-400 font-mono font-semibold hidden sm:inline">LIVE</span>
           </div>
-          <button
-            onClick={() => navigate("/login")}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-primary text-primary-foreground text-xs font-mono font-semibold hover:bg-primary/90 transition-colors"
-          >
-            <Lock className="w-3 h-3" /> Entrar
-          </button>
-          <button
-            onClick={() => navigate("/register")}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-card border border-border text-foreground text-xs font-mono font-semibold hover:bg-muted/50 transition-colors"
-          >
-            Criar Conta
-          </button>
         </div>
       </header>
 

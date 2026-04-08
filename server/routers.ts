@@ -4,7 +4,7 @@ import { z } from "zod/v4";
 import { COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
-import { protectedProcedure, publicProcedure, router } from "./_core/trpc";
+import { protectedProcedure, publicProcedure, router, analystProcedure } from "./_core/trpc";
 import {
   createLocalUser,
   createIncident,
@@ -380,7 +380,7 @@ const incidentsRouter = router({
       return { category: result.category, riskLevel, confidence: result.confidence, method: result.method };
     }),
   // ─── Status & Notes (sugestões de acompanhamento) ────────────────────────
-  updateStatus: protectedProcedure
+  updateStatus: analystProcedure
     .input(z.object({
       id: z.number(),
       status: z.enum(["open", "in_progress", "resolved"]),
@@ -388,12 +388,12 @@ const incidentsRouter = router({
     }))
     .mutation(async ({ input, ctx }) => {
       const incident = await getIncidentById(input.id);
-      if (!incident || (incident.userId !== ctx.user.id && ctx.user.role !== "admin")) {
+      if (!incident) {
         throw new TRPCError({ code: "NOT_FOUND", message: "Incidente não encontrado" });
       }
       const current = await getIncidentById(input.id);
       if (!current) throw new TRPCError({ code: "NOT_FOUND", message: "Incidente não encontrado" });
-      await updateIncidentStatus(input.id, ctx.user.id, input.status, ctx.user.role === "admin");
+      await updateIncidentStatus(input.id, ctx.user.id, input.status, ctx.user.role === "admin" || ctx.user.role === "security-analyst");
       // Record history entry
       await addIncidentHistory({
         incidentId: input.id,
@@ -403,6 +403,16 @@ const incidentsRouter = router({
         toValue: input.status,
         comment: input.comment ?? null,
       });
+      // Notify incident owner if changed by analyst or admin
+      if (incident.userId !== ctx.user.id) {
+        await createNotification({
+          userId: incident.userId,
+          type: "status_changed",
+          title: "Status do incidente atualizado",
+          message: `O analista ${ctx.user.name ?? ctx.user.email ?? "desconhecido"} alterou o status do incidente "${incident.title}" para "${input.status}".`,
+          incidentId: input.id,
+        });
+      }
       return { success: true };
     }),
   updateNotes: protectedProcedure
@@ -560,7 +570,7 @@ const adminRouter = router({
   updateUserRole: adminProcedure
     .input(z.object({
       userId: z.number(),
-      role: z.enum(["user", "admin"]),
+      role: z.enum(["user", "security-analyst", "admin"]),
     }))
     .mutation(async ({ input, ctx }) => {
       if (input.userId === ctx.user.id) {

@@ -414,3 +414,23 @@
 - [x] Testes individuais S12-x para as novas funcionalidades
 - [x] Atualizar manuais v2.4 e README
 - [x] Commitar no GitHub
+
+## Sessão 13 — Melhorias de Interface e RBAC com 3 Perfis
+- [x] Adicionar perfil security-analyst no schema (enum role)
+- [x] Migrar banco de dados com ALTER TABLE
+- [x] Criar analystProcedure no trpc.ts
+- [x] Atualizar updateStatus para usar analystProcedure
+- [x] Atualizar updateUserRole para aceitar security-analyst
+- [x] Redesenhar AdminUsers.tsx com 3 perfis e botões de promoção/rebaixamento
+- [x] Atualizar Profile.tsx com badge azul para security-analyst
+- [x] Atualizar DashboardLayout com labels amigáveis para 3 perfis
+- [x] Remover botões Entrar/Criar Conta do header da Home.tsx
+- [x] Adicionar coluna Status na tabela de incidentes (Incidents.tsx)
+- [x] Adicionar botões Editar e Excluir na tabela de incidentes
+- [x] Controle de acesso: botão Alterar Status apenas para analyst/admin
+- [x] Corrigir AdminML: acurácia real (100%/97%), avaliação, categorias
+- [x] Transformar nomes dos datasets em links de download no AdminML
+- [x] Reiniciar servidor Flask para limpar cache do esbuild
+- [x] 49 novos testes S13-1 a S13-11 (680 passando em 17 arquivos)
+- [x] Atualizar manuais v2.5 e README com as mudanças da Sessão 13
+- [x] Commitar no GitHub

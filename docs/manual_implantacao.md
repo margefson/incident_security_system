@@ -1,8 +1,8 @@
 # Manual de Implantação
 ## INCIDENT_SYS — Sistema Web Seguro para Registro e Classificação de Incidentes de Segurança Cibernética
 
-**Versão:** 2.4  
-**Data:** Abril de 2026 (Sessão 11 — Separação Metodológica de Datasets)  
+**Versão:** 2.5  
+**Data:** 2026-04-08Abril de 2026 (Sessão 11 — Separação Metodológica de Datasets)  
 **Repositório:** https://github.com/margefson/incident_security_system  
 **Modo de execução:** Desenvolvimento local (localhost)  
 **Equipe:** Nattan, Keven, Margefson, Josias
@@ -986,3 +986,29 @@ Os servidores Flask **não devem ser expostos publicamente**. Configure o firewa
 ---
 
 *Manual de Implantação v2.2 — Atualizado em Abril de 2026 (Sessão 11 — Separação Metodológica de Datasets). Para suporte técnico, consulte o repositório: https://github.com/margefson/incident_security_system*
+
+---
+
+## Sessão 13 — RBAC com 3 Perfis e Correções de ML (v2.5)
+
+### 13.1 Novo Perfil: security-analyst
+
+O enum de role no banco de dados foi expandido de 2 para 3 valores:
+
+| Valor | Descrição |
+|---|---|
+| user | Usuário comum — cria e visualiza seus incidentes |
+| security-analyst | Analista de segurança — altera status de incidentes, reclassifica categorias |
+| admin | Administrador — acesso total ao sistema |
+
+A migration foi aplicada via ALTER TABLE no MySQL. O procedure analystProcedure foi adicionado ao trpc.ts para proteger endpoints que requerem o perfil security-analyst ou admin.
+
+### 13.2 Endpoints Atualizados
+
+- updateStatus: agora usa analystProcedure (apenas security-analyst e admin)
+- updateUserRole: aceita os 3 valores de role
+- AdminUsers: suporta promoção/rebaixamento entre os 3 perfis
+
+### 13.3 Correções do Servidor Flask ML
+
+O servidor Flask foi reiniciado para limpar o cache do esbuild. Os endpoints /metrics, /evaluate e /eval-dataset retornam dados corretos. Os links de download dos datasets são servidos via CDN.

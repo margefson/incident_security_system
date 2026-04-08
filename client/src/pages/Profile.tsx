@@ -132,11 +132,13 @@ export default function Profile() {
                     variant="outline"
                     className={`mt-1 text-xs font-mono ${
                       user?.role === "admin"
-                        ? "border-primary/30 text-primary"
+                        ? "border-yellow-400/30 text-yellow-400"
+                        : user?.role === "security-analyst"
+                        ? "border-blue-400/30 text-blue-400"
                         : "border-muted-foreground/30 text-muted-foreground"
                     }`}
                   >
-                    {user?.role === "admin" ? "Administrador" : "Usuário"}
+                    {user?.role === "admin" ? "Administrador" : user?.role === "security-analyst" ? "Security Analyst" : "Usuário"}
                   </Badge>
                 </div>
               </div>

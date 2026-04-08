@@ -117,7 +117,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 </Avatar>
                 <div className="flex-1 min-w-0">
                   <p className="text-xs font-mono font-medium truncate text-foreground">{user?.name || "Usuário"}</p>
-                  <p className="text-xs text-muted-foreground truncate font-mono">{user?.role ?? "user"}</p>
+                  <p className="text-xs text-muted-foreground truncate font-mono">
+                    {user?.role === "admin" ? "Administrador" : user?.role === "security-analyst" ? "Security Analyst" : "Usuário"}
+                  </p>
                 </div>
               </button>
             </DropdownMenuTrigger>

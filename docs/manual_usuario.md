@@ -1,8 +1,8 @@
 # Manual do Usuário
 ## INCIDENT_SYS — Sistema Web Seguro para Registro e Classificação de Incidentes de Segurança Cibernética
 
-**Versão:** 2.4  
-**Data:** Abril de 2026 (Sessão 11 — Separação Metodológica de Datasets)  
+**Versão:** 2.5  
+**Data:** 2026-04-08Abril de 2026 (Sessão 11 — Separação Metodológica de Datasets)  
 **Repositório:** https://github.com/margefson/incident_security_system  
 **Equipe:** Nattan, Keven, Margefson, Josias
 
@@ -1009,3 +1009,55 @@ Na página de Métricas de Resolução, o botão **"Exportar Histórico CSV"** g
 | Data/Hora | Timestamp ISO 8601 da alteração |
 
 O arquivo é gerado com BOM UTF-8 para compatibilidade com Excel e aspas duplas escapadas corretamente.
+
+---
+
+## Sessão 13 — Melhorias de Interface e RBAC com 3 Perfis (v2.5)
+
+### 13.1 Perfis de Usuário (RBAC)
+
+O sistema agora possui **três perfis** com permissões distintas:
+
+| Perfil | Badge | Permissões |
+|---|---|---|
+| **Usuário** | Cinza | Abre incidentes, visualiza seus próprios incidentes |
+| **Security Analyst** | Azul | Tudo do Usuário + altera status (Em Andamento / Concluído) + reclassifica categorias |
+| **Admin** | Amarelo | Acesso total: gerencia usuários, ML, relatórios e todas as operações |
+
+**Regra importante:** Somente o **Admin** pode promover um usuário para Security Analyst ou para Admin. A promoção é feita em **Gerenciamento de Usuários** (`/admin/users`).
+
+### 13.2 Gerenciamento de Usuários (AdminUsers)
+
+A tela de gerenciamento de usuários foi completamente redesenhada para suportar os 3 perfis:
+
+- **Contadores no topo:** Admins (amarelo), Analysts (azul), Usuários (verde)
+- **Botões de promoção/rebaixamento:** `→ Analyst`, `→ Admin`, `← Analyst`, `← Usuário`
+- **Bloco de hierarquia:** Explicação visual das permissões de cada perfil
+- **Confirmação detalhada:** O diálogo de confirmação explica o que cada perfil pode fazer
+
+### 13.3 Tela Principal (Home)
+
+A tela principal foi atualizada para usar o mesmo template visual do dashboard:
+- Layout responsivo em grid (1→2→3 colunas conforme a tela)
+- Cards com `bg-card` e `border-border` consistentes com o restante do sistema
+- Botões de ação ("Acessar Sistema" e "Criar Conta") posicionados no **corpo da tela**, abaixo da descrição
+- Sem botões de navegação no cabeçalho (interface mais limpa)
+
+### 13.4 Tabela de Incidentes
+
+A tabela de incidentes agora exibe:
+- **Coluna Status** com badge colorido (Aberto, Em Andamento, Concluído)
+- **Botão Editar** para todos os usuários (editar título, descrição, prioridade)
+- **Botão Excluir** para todos os usuários (excluir seus próprios incidentes)
+- **Botão Alterar Status** — visível apenas para **Security Analyst** e **Admin**
+
+### 13.5 Painel Machine Learning (AdminML)
+
+Correções aplicadas:
+- **Acurácia de Treino e CV** agora exibem os valores reais (100% e 97%)
+- **Avaliação** funciona corretamente via endpoint `/evaluate` do Flask
+- **Categorias do modelo** exibidas na aba de Treinamento
+- **Links de download:** Os nomes dos datasets são clicáveis para download direto:
+  - TREINO: `incidentes_cybersecurity_2000.xlsx`
+  - AVALIAÇÃO: `incidentes_cybersecurity_100.xlsx`
+
