@@ -167,8 +167,17 @@ export default function IncidentDetail() {
                 </span>
               )}
               {incident.confidence != null && (
-                <span className="text-xs px-2.5 py-1 rounded-full border font-mono text-muted-foreground bg-muted/30 border-border">
+                <span className={`text-xs px-2.5 py-1 rounded-full border font-mono ${
+                  incident.confidence < 0.4
+                    ? "text-yellow-400 bg-yellow-900/20 border-yellow-700/50"
+                    : "text-muted-foreground bg-muted/30 border-border"
+                }`}>
                   <Activity className="w-3 h-3 inline mr-1" />{Math.round(incident.confidence * 100)}% confiança
+                </span>
+              )}
+              {incident.confidence != null && incident.confidence < 0.4 && (
+                <span className="text-xs px-2.5 py-1 rounded-full border font-mono text-yellow-400 bg-yellow-900/20 border-yellow-700/50">
+                  ⚠️ Classificação incerta — adicione uma descrição técnica
                 </span>
               )}
               {/* Badge de status atual */}

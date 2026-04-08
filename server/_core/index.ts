@@ -132,6 +132,36 @@ async function startServer() {
   app.use(express.urlencoded({ limit: "50mb", extended: true }));
   // OAuth callback under /api/oauth/callback
   registerOAuthRoutes(app);
+  // SSE proxy: /api/ml-train-stream → Flask :5001/train-stream
+  app.get("/api/ml-train-stream", async (req, res) => {
+    const ML_URL = process.env.ML_SERVICE_URL ?? "http://localhost:5001";
+    res.setHeader("Content-Type", "text/event-stream");
+    res.setHeader("Cache-Control", "no-cache");
+    res.setHeader("X-Accel-Buffering", "no");
+    res.setHeader("Connection", "keep-alive");
+    res.flushHeaders();
+    try {
+      const upstream = await fetch(`${ML_URL}/train-stream`);
+      if (!upstream.body) {
+        res.write(`data: {"type":"error","message":"Flask não retornou stream"}\n\n`);
+        res.end();
+        return;
+      }
+      const reader = upstream.body.getReader();
+      const decoder = new TextDecoder();
+      req.on("close", () => { try { reader.cancel(); } catch {} });
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        res.write(decoder.decode(value, { stream: true }));
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      res.write(`data: {"type":"error","message":${JSON.stringify(msg)}}\n\n`);
+    }
+    res.end();
+  });
+
   // tRPC API
   app.use(
     "/api/trpc",

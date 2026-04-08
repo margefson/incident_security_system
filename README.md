@@ -876,7 +876,25 @@ Tests: 296 passed
 | **S16-4: Procedures upload tRPC** | `session16.test.ts` | 5 | uploadTrainDataset, uploadEvalDataset, fileBase64, filename |
 | **S16-5: AdminSystemHealth geral** | `session16.test.ts` | 5 | getSystemHealth, 30000, Saúde do Sistema, online/offline, DashboardLayout |
 
-**Total: 803 testes passando em 20 arquivos**
+| **S17-1: Dataset metafórico** | `session17.test.ts` | 4 | >= 2050 amostras, cv_accuracy >= 0.99 |
+| **S17-2: Classificação metafórica** | `session17.test.ts` | 3 | DDoS/Phishing com títulos poéticos |
+| **S17-3: SSE /train-stream Flask** | `session17.test.ts` | 8 | text/event-stream, fold, progress, complete, error |
+| **S17-4: Proxy SSE Express** | `session17.test.ts` | 6 | /api/ml-train-stream, reader.cancel, catch |
+| **S17-5: AdminMLTraining** | `session17.test.ts` | 11 | EventSource, Progress, STEP_LABELS, AccuracyBar, folds |
+| **S17-6: Aviso baixa confiança** | `session17.test.ts` | 4 | confidence < 0.4, amarelo, descrição técnica |
+| **S17-7: Rota ml-training** | `session17.test.ts` | 2 | /admin/ml-training, AdminMLTraining |
+| **S17-8: Link DashboardLayout** | `session17.test.ts` | 3 | Treinamento ao Vivo, MonitorPlay |
+
+**Total: 844 testes passando em 21 arquivos**
+
+### Sessão 17 (v2.9) — Diagnóstico ML + Treinamento em Tempo Real
+- **Diagnóstico de classificação**: identificado que títulos metáforicos sem descrição técnica causavam confiança < 30%; adicionadas 50 amostras metáforicas ao dataset (2050 total)
+- **Modelo retreinado**: "O Estrangulamento da Disponibilidade" agora classifica como **DDoS (73.7%)** e "A Arte da Manipulação Psicológica" como **Phishing (74%)** — antes ambos eram Malware (22%)
+- **Endpoint SSE `/train-stream`**: Flask emite eventos em tempo real com 8 passos (load, preprocess, pipeline, train, 5 folds CV, evaluate, save, reload)
+- **Proxy SSE `/api/ml-train-stream`**: servidor Express faz proxy autenticado do Flask com suporte a desconexão do cliente
+- **Página Treinamento ao Vivo** (`/admin/ml-training`): barra de progresso, 8 passos com ícones, métricas ao vivo (acurácia treino + CV), folds da validação cruzada, log de eventos, botões Iniciar/Interromper e badge AO VIVO
+- **Aviso de baixa confiança**: quando confiança < 40%, IncidentDetail exibe badge amarelo "Classificação incerta — adicione uma descrição técnica"
+- **41 novos testes S17** cobrindo dataset, classificação, SSE, proxy, UI e aviso
 
 ### Sessão 16 (v2.8) — Botão Reiniciar Serviço + Apresentação PPTX
 - **Botão Reiniciar Serviço**: no Dashboard de Saúde, quando um servidor Flask estiver Offline, aparece o botão "Reiniciar Serviço" com spinner, estado desabilitado durante a operação e toast de feedback (sonner)

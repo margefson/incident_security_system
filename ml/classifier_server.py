@@ -24,8 +24,12 @@ import json
 import base64
 import joblib
 import numpy as np
+import threading
+import time
+import unicodedata
+import re
 from datetime import datetime, timezone
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, Response, stream_with_context
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 MODEL_PATH         = os.path.join(SCRIPT_DIR, "model.pkl")
@@ -504,6 +508,211 @@ def upload_eval_dataset():
                         "message": f"Dataset de avaliação atualizado com {total} amostras."})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+
+# ─── Treinamento em Tempo Real (SSE) ─────────────────────────────────────────
+_train_lock = threading.Lock()
+_train_running = False
+
+
+def _normalize_text(text: str) -> str:
+    """Normaliza texto removendo acentos e caracteres especiais."""
+    text = str(text).lower()
+    text = unicodedata.normalize('NFKD', text)
+    text = ''.join(c for c in text if not unicodedata.combining(c))
+    text = re.sub(r'[^a-z0-9\s]', ' ', text)
+    return re.sub(r'\s+', ' ', text).strip()
+
+
+@app.route("/train-stream", methods=["GET"])
+def train_stream():
+    """
+    Endpoint SSE que executa o retreinamento completo do modelo em tempo real,
+    emitindo eventos de progresso via Server-Sent Events.
+    """
+    global pipeline, metrics, _train_running
+
+    if _train_running:
+        def already_running():
+            yield 'data: {"type":"error","message":"Treinamento já em andamento. Aguarde."}\n\n'
+        return Response(stream_with_context(already_running()), mimetype='text/event-stream')
+
+    def generate():
+        global pipeline, metrics, _train_running
+        _train_running = True
+        try:
+            import pandas as pd
+            from sklearn.pipeline import Pipeline
+            from sklearn.feature_extraction.text import TfidfVectorizer
+            from sklearn.naive_bayes import MultinomialNB
+            from sklearn.model_selection import cross_val_score, StratifiedKFold
+            from sklearn.metrics import classification_report, confusion_matrix
+
+            def emit(event_type, **kwargs):
+                data = json.dumps({"type": event_type, "ts": datetime.now(timezone.utc).isoformat(), **kwargs})
+                return f"data: {data}\n\n"
+
+            yield emit("start", message="Iniciando treinamento do modelo TF-IDF + Naive Bayes...")
+            time.sleep(0.1)
+
+            # 1. Carregar dataset
+            yield emit("log", step=1, total=8, message=f"Carregando dataset: {TRAIN_DATASET_PATH}")
+            time.sleep(0.2)
+            df = pd.read_excel(TRAIN_DATASET_PATH)
+            n_samples = len(df)
+            cats = df['Categoria'].value_counts().to_dict()
+            yield emit("log", step=1, total=8,
+                       message=f"Dataset carregado: {n_samples} amostras em {len(cats)} categorias",
+                       details=cats)
+            time.sleep(0.2)
+
+            # 2. Pré-processamento
+            yield emit("log", step=2, total=8, message="Pré-processando textos (normalização, remoção de acentos)...")
+            time.sleep(0.3)
+            X = (df['Titulo'].apply(_normalize_text) + ' ' + df['Descricao'].apply(_normalize_text)).values
+            y = df['Categoria'].str.lower().str.replace(' ', '_').values
+            unique_cats = sorted(set(y))
+            yield emit("log", step=2, total=8,
+                       message=f"Pré-processamento concluído: {len(X)} amostras, categorias: {unique_cats}")
+            time.sleep(0.2)
+
+            # 3. Construir pipeline TF-IDF
+            yield emit("log", step=3, total=8, message="Construindo pipeline TF-IDF (ngram 1-2, max_features=10000)...")
+            time.sleep(0.3)
+            model = Pipeline([
+                ('tfidf', TfidfVectorizer(ngram_range=(1, 2), min_df=1, max_features=10000)),
+                ('clf', MultinomialNB(alpha=0.1))
+            ])
+            yield emit("log", step=3, total=8,
+                       message="Pipeline criado: TfidfVectorizer(ngram=(1,2), max_features=10000) + MultinomialNB(alpha=0.1)")
+            time.sleep(0.2)
+
+            # 4. Treinar modelo
+            yield emit("log", step=4, total=8, message="Treinando modelo com todos os dados...")
+            time.sleep(0.3)
+            model.fit(X, y)
+            train_acc = model.score(X, y)
+            yield emit("progress", step=4, total=8,
+                       message=f"Treinamento concluído! Acurácia no treino: {train_acc:.2%}",
+                       train_accuracy=round(train_acc, 4))
+            time.sleep(0.2)
+
+            # 5. Validação cruzada (5-fold)
+            yield emit("log", step=5, total=8, message="Executando validação cruzada 5-fold...")
+            time.sleep(0.2)
+            cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
+            cv_scores = cross_val_score(model, X, y, cv=cv, scoring='accuracy')
+            for fold_i, score in enumerate(cv_scores, 1):
+                yield emit("fold", step=5, total=8,
+                           message=f"Fold {fold_i}/5: {score:.2%}",
+                           fold=fold_i, score=round(float(score), 4))
+                time.sleep(0.15)
+            cv_mean = float(cv_scores.mean())
+            cv_std = float(cv_scores.std())
+            yield emit("progress", step=5, total=8,
+                       message=f"Validação cruzada: {cv_mean:.2%} ± {cv_std:.2%}",
+                       cv_mean=round(cv_mean, 4), cv_std=round(cv_std, 4))
+            time.sleep(0.2)
+
+            # 6. Avaliação com dataset independente
+            yield emit("log", step=6, total=8, message=f"Avaliando com dataset independente: {EVAL_DATASET_PATH}")
+            time.sleep(0.3)
+            eval_acc = None
+            per_category = {}
+            try:
+                eval_texts, eval_labels = _load_dataset(EVAL_DATASET_PATH)
+                eval_preds = model.predict(eval_texts)
+                eval_acc = float(np.mean(eval_preds == eval_labels))
+                report = classification_report(eval_labels, eval_preds, output_dict=True)
+                per_category = {k: {"precision": round(v["precision"], 4),
+                                    "recall": round(v["recall"], 4),
+                                    "f1_score": round(v["f1-score"], 4),
+                                    "support": v["support"]}
+                                for k, v in report.items()
+                                if k not in ["accuracy", "macro avg", "weighted avg"]}
+                cm = confusion_matrix(eval_labels, eval_preds, labels=unique_cats).tolist()
+                yield emit("progress", step=6, total=8,
+                           message=f"Avaliação independente: {eval_acc:.2%}",
+                           eval_accuracy=round(eval_acc, 4),
+                           per_category=per_category,
+                           confusion_matrix={"labels": unique_cats, "matrix": cm})
+            except Exception as e:
+                yield emit("warning", step=6, total=8,
+                           message=f"Avaliação independente falhou: {e}. Continuando...")
+            time.sleep(0.2)
+
+            # 7. Salvar modelo
+            yield emit("log", step=7, total=8, message="Salvando modelo treinado em disco...")
+            time.sleep(0.3)
+            joblib.dump(model, MODEL_PATH)
+            yield emit("log", step=7, total=8, message=f"Modelo salvo: {MODEL_PATH}")
+            time.sleep(0.2)
+
+            # 8. Atualizar modelo em memória e métricas
+            yield emit("log", step=8, total=8, message="Atualizando modelo em memória e métricas...")
+            pipeline = model
+            now = datetime.now(timezone.utc).isoformat()
+            new_metrics = {
+                "method": "TF-IDF + Naive Bayes (MultinomialNB)",
+                "dataset_size": n_samples,
+                "train_accuracy": round(train_acc, 4),
+                "cv_accuracy_mean": round(cv_mean, 4),
+                "cv_accuracy_std": round(cv_std, 4),
+                "categories": unique_cats,
+                "category_distribution": {k: int(v) for k, v in cats.items()},
+                "last_updated": now,
+                "training": {
+                    "dataset": os.path.basename(TRAIN_DATASET_PATH),
+                    "dataset_size": n_samples,
+                    "train_accuracy": round(train_acc, 4),
+                    "cv_accuracy_mean": round(cv_mean, 4),
+                    "cv_accuracy_std": round(cv_std, 4),
+                    "categories": unique_cats,
+                    "category_distribution": {k: int(v) for k, v in cats.items()},
+                    "new_samples_added": 0,
+                    "new_categories": []
+                }
+            }
+            if eval_acc is not None:
+                new_metrics["evaluation"] = {
+                    "dataset": os.path.basename(EVAL_DATASET_PATH),
+                    "dataset_size": len(eval_texts),
+                    "eval_accuracy": round(eval_acc, 4),
+                    "per_category": per_category,
+                    "evaluated_at": now
+                }
+                new_metrics["eval_accuracy"] = round(eval_acc, 4)
+                new_metrics["last_evaluated"] = now
+            metrics = new_metrics
+            with open(METRICS_PATH, "w", encoding="utf-8") as mf:
+                json.dump(metrics, mf, ensure_ascii=False, indent=2)
+            yield emit("complete",
+                       message="Treinamento concluído com sucesso!",
+                       train_accuracy=round(train_acc, 4),
+                       cv_accuracy=round(cv_mean, 4),
+                       eval_accuracy=round(eval_acc, 4) if eval_acc is not None else None,
+                       dataset_size=n_samples,
+                       categories=unique_cats)
+        except Exception as e:
+            yield f'data: {{"type":"error","message":{json.dumps(str(e))}}}\n\n'
+        finally:
+            _train_running = False
+
+    return Response(
+        stream_with_context(generate()),
+        mimetype='text/event-stream',
+        headers={
+            'Cache-Control': 'no-cache',
+            'X-Accel-Buffering': 'no',
+            'Access-Control-Allow-Origin': '*'
+        }
+    )
+
+
+@app.route("/train-status", methods=["GET"])
+def train_status():
+    """Verifica se um treinamento está em andamento."""
+    return jsonify({"running": _train_running})
 
 
 if __name__ == "__main__":

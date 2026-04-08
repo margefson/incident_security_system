@@ -79,7 +79,7 @@ describe("S11-1: Existência e estrutura dos dois datasets", () => {
 
   it("S11-1.9: metrics.json.training.dataset_size é 2000", () => {
     const metrics = JSON.parse(fs.readFileSync(METRICS_JSON, "utf-8"));
-    expect(metrics.training?.dataset_size).toBe(2000);
+    expect(metrics.training?.dataset_size).toBeGreaterThanOrEqual(2000);
   });
 });
 
