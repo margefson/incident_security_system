@@ -1,3 +1,4 @@
+// Server bootstrap v2.6 — S14 fix
 import "dotenv/config";
 import express from "express";
 import { createServer } from "http";
@@ -33,13 +34,36 @@ async function findAvailablePort(startPort: number = 3000): Promise<number> {
   throw new Error(`No available port found starting from ${startPort}`);
 }
 
+async function installPythonDeps(mlDir: string): Promise<void> {
+  const reqFile = path.join(mlDir, "requirements.txt");
+  return new Promise((resolve) => {
+    const pip = spawn("pip3", ["install", "-q", "-r", reqFile], {
+      cwd: mlDir,
+      stdio: ["ignore", "pipe", "pipe"],
+    });
+    pip.on("error", () => resolve()); // pip not found — skip
+    pip.on("exit", () => resolve());
+  });
+}
+
+async function waitForFlask(port: number, maxRetries = 20, delayMs = 500): Promise<boolean> {
+  for (let i = 0; i < maxRetries; i++) {
+    try {
+      const res = await fetch(`http://localhost:${port}/health`);
+      if (res.ok) return true;
+    } catch (_) { /* not ready yet */ }
+    await new Promise(r => setTimeout(r, delayMs));
+  }
+  return false;
+}
+
 function startFlaskServer(scriptName: string, port: number) {
   const mlDir = path.resolve(__dirname, "../../ml");
   const proc = spawn("python3", [path.join(mlDir, scriptName)], {
     cwd: mlDir,
     detached: false,
     stdio: ["ignore", "pipe", "pipe"],
-    env: { ...process.env, ML_PORT: String(port) },
+    env: { ...process.env, ML_PORT: String(port), PYTHONUNBUFFERED: "1" },
   });
   // Gracefully handle spawn errors (e.g. python3 not installed in container)
   proc.on("error", (err: NodeJS.ErrnoException) => {
@@ -69,11 +93,23 @@ async function startServer() {
   const app = express();
   const server = createServer(app);
 
-  // ─── Start Python ML services ───────────────────────────────────────────────
+  // ─── Start Python ML services ──────────────────────────────────────────────
+  const mlDir = path.resolve(__dirname, "../../ml");
+  // Install Python dependencies if requirements.txt exists
+  console.log("[ML] Installing Python dependencies...");
+  await installPythonDeps(mlDir);
+
   const mlClassifierAvailable = await isPortAvailable(5001);
   if (mlClassifierAvailable) {
     console.log("[ML] Starting classifier server on port 5001...");
     startFlaskServer("classifier_server.py", 5001);
+    // Wait up to 10s for Flask to be ready
+    const ready = await waitForFlask(5001, 20, 500);
+    if (ready) {
+      console.log("[ML] Classifier server ready on port 5001");
+    } else {
+      console.warn("[ML] Classifier server did not respond in time — ML features may be unavailable");
+    }
   } else {
     console.log("[ML] Classifier server already running on port 5001");
   }
@@ -82,6 +118,7 @@ async function startServer() {
   if (mlPdfAvailable) {
     console.log("[ML] Starting PDF server on port 5002...");
     startFlaskServer("pdf_server.py", 5002);
+    await waitForFlask(5002, 10, 500);
   } else {
     console.log("[ML] PDF server already running on port 5002");
   }

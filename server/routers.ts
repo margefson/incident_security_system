@@ -1,5 +1,7 @@
 import { TRPCError } from "@trpc/server";
 import { generatePdfBuffer, type IncidentRow } from "./pdf";
+import fs from "fs";
+import path from "path";
 import { z } from "zod/v4";
 import { COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
@@ -49,6 +51,50 @@ import bcrypt from "bcryptjs";
 import { v4 as uuidv4 } from "uuid";
 import { sdk } from "./_core/sdk";
 import { notifyOwner } from "./_core/notification";
+
+// ─── ML Metrics Fallback ─────────────────────────────────────────────────
+const METRICS_JSON_PATH = path.resolve(process.cwd(), "ml", "metrics.json");
+
+type MLMetrics = {
+  method: string;
+  categories: string[];
+  training: {
+    dataset: string;
+    dataset_size: number;
+    categories: string[];
+    cv_accuracy_mean: number;
+    cv_accuracy_std: number;
+    train_accuracy: number;
+    category_distribution: Record<string, number>;
+  };
+  evaluation: {
+    dataset: string;
+    dataset_size: number;
+    eval_accuracy: number;
+    category_distribution: Record<string, number>;
+    per_category: Record<string, { precision: number; recall: number; f1_score: number; support: number }>;
+    macro_avg: { precision: number; recall: number; f1_score: number };
+    weighted_avg: { precision: number; recall: number; f1_score: number };
+    confusion_matrix: { labels: string[]; matrix: number[][] };
+    evaluated_at: string;
+  } | null;
+  last_updated?: string;
+  last_evaluated?: string | null;
+  dataset_size: number;
+  cv_accuracy_mean: number;
+  cv_accuracy_std: number;
+  train_accuracy: number;
+  category_distribution: Record<string, number>;
+};
+
+function readMetricsJson(): MLMetrics | null {
+  try {
+    const raw = fs.readFileSync(METRICS_JSON_PATH, "utf-8");
+    return JSON.parse(raw) as MLMetrics;
+  } catch {
+    return null;
+  }
+}
 
 // ─── Risk Level Mapping ────────────────────────────────────────────────────
 const CATEGORY_RISK: Record<string, "critical" | "high" | "medium" | "low"> = {
@@ -620,77 +666,82 @@ const adminRouter = router({
   stats: adminProcedure.query(async () => {
     return getGlobalStats();
   }),
-  //   // ─── ML Procedures ────────────────────────────────────────────
+  // ─── ML Procedures ────────────────────────────────────────────
   getMLMetrics: adminProcedure.query(async () => {
     const ML_URL = process.env.ML_SERVICE_URL ?? "http://localhost:5001";
-    const response = await fetch(`${ML_URL}/metrics`);
-    if (!response.ok) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "ML service unavailable" });
-    const data = await response.json() as {
-      method: string;
-      categories: string[];
-      // Nova estrutura com treino e avaliação separados
-      training: {
-        dataset: string;
-        dataset_size: number;
-        categories: string[];
-        cv_accuracy_mean: number;
-        cv_accuracy_std: number;
-        train_accuracy: number;
-        category_distribution: Record<string, number>;
-      };
-      evaluation: {
-        dataset: string;
-        dataset_size: number;
-        eval_accuracy: number;
-        category_distribution: Record<string, number>;
-        per_category: Record<string, { precision: number; recall: number; f1_score: number; support: number }>;
-        macro_avg: { precision: number; recall: number; f1_score: number };
-        weighted_avg: { precision: number; recall: number; f1_score: number };
-        confusion_matrix: { labels: string[]; matrix: number[][] };
-        evaluated_at: string;
-      } | null;
-      last_updated?: string;
-      last_evaluated?: string | null;
-      // Campos legados para compatibilidade
-      dataset_size: number;
-      cv_accuracy_mean: number;
-      cv_accuracy_std: number;
-      train_accuracy: number;
-      category_distribution: Record<string, number>;
-    };
-    return data;
+    try {
+      const response = await fetch(`${ML_URL}/metrics`, { signal: AbortSignal.timeout(5000) });
+      if (!response.ok) throw new Error("ML service error");
+      return await response.json() as MLMetrics;
+    } catch {
+      // Fallback: read metrics.json from disk
+      const cached = readMetricsJson();
+      if (!cached) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Serviço ML indisponível e cache de métricas não encontrado" });
+      return { ...cached, _source: "cache" } as MLMetrics & { _source?: string };
+    }
   }),
   getDataset: adminProcedure.query(async () => {
     const ML_URL = process.env.ML_SERVICE_URL ?? "http://localhost:5001";
-    const response = await fetch(`${ML_URL}/dataset`);
-    if (!response.ok) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "ML service unavailable" });
-    const data = await response.json() as {
-      role: string;
-      filename: string;
-      base64: string;
-      total_samples: number;
-      category_distribution: Record<string, number>;
-      preview: Array<{ title: string; description: string; category: string }>;
-    };
-    return data;
+    try {
+      const response = await fetch(`${ML_URL}/dataset`, { signal: AbortSignal.timeout(5000) });
+      if (!response.ok) throw new Error("ML service error");
+      return await response.json() as {
+        role: string;
+        filename: string;
+        base64: string;
+        total_samples: number;
+        category_distribution: Record<string, number>;
+        preview: Array<{ title: string; description: string; category: string }>;
+      };
+    } catch {
+      // Fallback: return metadata from metrics.json (no base64)
+      const cached = readMetricsJson();
+      return {
+        role: "training",
+        filename: "incidentes_cybersecurity_2000.xlsx",
+        base64: "",
+        total_samples: cached?.training?.dataset_size ?? cached?.dataset_size ?? 2000,
+        category_distribution: cached?.training?.category_distribution ?? cached?.category_distribution ?? {},
+        preview: [],
+        _source: "cache",
+      };
+    }
   }),
   getEvalDataset: adminProcedure.query(async () => {
     const ML_URL = process.env.ML_SERVICE_URL ?? "http://localhost:5001";
-    const response = await fetch(`${ML_URL}/eval-dataset`);
-    if (!response.ok) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "ML service unavailable" });
-    const data = await response.json() as {
-      role: string;
-      filename: string;
-      base64: string;
-      total_samples: number;
-      category_distribution: Record<string, number>;
-      preview: Array<{ title: string; description: string; category: string }>;
-    };
-    return data;
+    try {
+      const response = await fetch(`${ML_URL}/eval-dataset`, { signal: AbortSignal.timeout(5000) });
+      if (!response.ok) throw new Error("ML service error");
+      return await response.json() as {
+        role: string;
+        filename: string;
+        base64: string;
+        total_samples: number;
+        category_distribution: Record<string, number>;
+        preview: Array<{ title: string; description: string; category: string }>;
+      };
+    } catch {
+      // Fallback: return metadata from metrics.json evaluation section
+      const cached = readMetricsJson();
+      return {
+        role: "evaluation",
+        filename: "incidentes_cybersecurity_100.xlsx",
+        base64: "",
+        total_samples: cached?.evaluation?.dataset_size ?? 100,
+        category_distribution: cached?.evaluation?.category_distribution ?? {},
+        preview: [],
+        _source: "cache",
+      };
+    }
   }),
   evaluateModel: adminProcedure.mutation(async () => {
     const ML_URL = process.env.ML_SERVICE_URL ?? "http://localhost:5001";
-    const response = await fetch(`${ML_URL}/evaluate`, { method: "POST" });
+    let response: Response;
+    try {
+      response = await fetch(`${ML_URL}/evaluate`, { method: "POST", signal: AbortSignal.timeout(30000) });
+    } catch {
+      throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Serviço ML indisponível. Verifique se o servidor Flask está rodando na porta 5001." });
+    }
     if (!response.ok) {
       const err = await response.json() as { error?: string };
       throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: err.error ?? "Evaluation failed" });
@@ -739,15 +790,22 @@ const adminRouter = router({
       if (allSamples.length === 0) {
         throw new TRPCError({ code: "BAD_REQUEST", message: "Nenhuma amostra disponível para retreinamento. Cadastre incidentes ou adicione amostras manuais." });
       }
-      const response = await fetch(`${ML_URL}/retrain`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ samples: allSamples, risk_map: input.risk_map ?? {} }),
-      });
-      if (!response.ok) {
-        const err = await response.json() as { error?: string };
+      let retrainResponse: Response;
+      try {
+        retrainResponse = await fetch(`${ML_URL}/retrain`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ samples: allSamples, risk_map: input.risk_map ?? {} }),
+          signal: AbortSignal.timeout(120000), // 2 min timeout for retraining
+        });
+      } catch {
+        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Serviço ML indisponível. Verifique se o servidor Flask está rodando na porta 5001." });
+      }
+      if (!retrainResponse.ok) {
+        const err = await retrainResponse.json() as { error?: string };
         throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: err.error ?? "Retrain failed" });
       }
+      const response = retrainResponse;
       const data = await response.json() as {
         success: boolean;
         message: string;

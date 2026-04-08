@@ -5,7 +5,7 @@
 ![Python](https://img.shields.io/badge/Python-3.11-3776AB?style=flat-square&logo=python)
 ![MySQL](https://img.shields.io/badge/MySQL-8.x-4479A1?style=flat-square&logo=mysql)
 ![ML Accuracy](https://img.shields.io/badge/ML%20Accuracy%20(CV)-97%25%20%7C%20Eval%3A78%25-brightgreen?style=flat-square)
-![Tests](https://img.shields.io/badge/tests-680%20passing-brightgreen)
+![Tests](https://img.shields.io/badge/tests-713%20passing-brightgreen)
 ![License](https://img.shields.io/badge/License-MIT-blue?style=flat-square)
 
 Plataforma de gerenciamento de incidentes de segurança cibernética com classificação automática por Machine Learning (TF-IDF + Naive Bayes), painel de administração global, **CRUD de categorias de incidentes (exclusivo para administradores)**, exportação de relatórios em PDF, notificações automáticas de risco crítico e interface SOC Portal — design profissional dark com tipografia Inter, sidebar compacta, badges coloridos por severidade e tabelas operacionais.
@@ -852,8 +852,16 @@ Tests: 296 passed
 | **S13-9: Incidents tabela Status** | `session13.test.ts` | 5 | Coluna Status, botão Editar, botão Excluir, controle por perfil, badges status |
 | **S13-10: AdminML links download** | `session13.test.ts` | 7 | Links clicáveis para datasets, underline, leitura train_accuracy, cv_accuracy_mean |
 | **S13-11: Flask endpoints ML** | `session13.test.ts` | 6 | /metrics, /evaluate, /eval-dataset, /dataset, train_accuracy, categories |
+| **S14-1: Fallback métricas ML** | `session14.test.ts` | 5 | metrics.json existe, campos training/evaluation, readMetricsJson, imports fs/path |
+| **S14-2: Labels corretas AdminML** | `session14.test.ts` | 4 | Acuácia Treinamento (não CV), Acuácia Avaliação (não Eval), train_accuracy, eval_accuracy |
+| **S14-3: URLs CDN download** | `session14.test.ts` | 5 | DATASET_CDN_URL, EVAL_DATASET_CDN_URL, handleDownloadDataset, handleDownloadEvalDataset, sem trpc |
+| **S14-4: Tratamento gracioso erros** | `session14.test.ts` | 5 | try/catch em getMLMetrics, getDataset, getEvalDataset, mensagens PT em evaluateModel/retrainModel |
+| **S14-5: Tipo MLMetrics** | `session14.test.ts` | 4 | type MLMetrics definido, training/evaluation/campos legados |
+| **S14-6: Fallback getDataset/getEvalDataset** | `session14.test.ts` | 4 | filenames corretos, readMetricsJson nos fallbacks |
+| **S14-7: evaluateModel timeout** | `session14.test.ts` | 3 | AbortSignal.timeout(30000), mensagem PT, TRPCError claro |
+| **S14-8: retrainModel timeout** | `session14.test.ts` | 3 | AbortSignal.timeout(120000), mensagem PT, TRPCError claro |
 
-**Total: 680 testes passando em 17 arquivos**
+**Total: 713 testes passando em 18 arquivos**
 
 ---
 
@@ -873,7 +881,9 @@ Tests: 296 passed
 | Reset só envia para um endereço | Plano gratuito Resend sem domínio verificado | Verifique um domínio em https://resend.com/domains para enviar para qualquer destinatário |
 | Notificações não aparecem | Tabela `notifications` não criada | Execute o SQL de criação da tabela ou faça `pnpm db:push` |
 | Métricas de resolução vazias | Nenhum incidente resolvido | Resolva incidentes para gerar dados de tempo médio |
-| Acurácia ML aparece 0% | Cache antigo do esbuild no dev server | Reinicie o servidor com `pnpm dev` para limpar o cache |
+| Acuácia ML aparece 0% | Cache antigo do esbuild no dev server | Reinicie o servidor com `pnpm dev` para limpar o cache |
+| Erro "fetch failed" nas operações ML | Flask offline ou porta 5001 ocupada | getMLMetrics usa fallback do `metrics.json`; retrainModel e evaluateModel mostram mensagem clara |
+| Download do dataset de avaliação falha | Flask offline (endpoint /eval-dataset) | Download agora usa URL CDN direta, sem dependência do Flask |
 | Erro ao alterar status do incidente | Usuário sem perfil security-analyst ou admin | Admin deve promover o usuário em `/admin/users` |
 | Usuário não pode alterar status | Role `user` não tem permissão | Apenas `security-analyst` e `admin` podem alterar status |
 | Exportação CSV vazia | Sem histórico de alterações | Altere status ou notas de incidentes para gerar histórico |

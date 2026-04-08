@@ -319,8 +319,9 @@ describe("S11-8: Backend Node.js — procedure evaluateModel", () => {
 
   it("S11-8.4: evaluateModel retorna campo evaluation com eval_accuracy", () => {
     // Verifica que o tipo de retorno de evaluateModel inclui eval_accuracy
+    // S14: janela aumentada para 1000 chars pois try/catch adicionou mais código antes do tipo
     const idx = src.indexOf("evaluateModel:");
-    const section = src.substring(idx, idx + 800);
+    const section = src.substring(idx, idx + 1000);
     expect(section).toContain("eval_accuracy");
   });
 
@@ -339,24 +340,24 @@ describe("S11-9: Backend Node.js — procedure getMLMetrics com nova estrutura",
   beforeAll(() => { src = fs.readFileSync(ROUTERS_TS, "utf-8"); });
 
   it("S11-9.1: getMLMetrics define tipo training com dataset", () => {
-    // Verifica que getMLMetrics inclui campo training no tipo de retorno
-    const idx = src.indexOf("getMLMetrics:");
+    // Verifica que o tipo MLMetrics (usado pela procedure) inclui campo training
+    // S14: tipo foi extraído para MLMetrics separado para reutilização no fallback
+    const idx = src.indexOf("type MLMetrics");
     const section = src.substring(idx, idx + 1200);
     expect(section).toContain("training:");
   });
 
   it("S11-9.2: getMLMetrics define tipo evaluation como nullable", () => {
-    // Verifica que getMLMetrics inclui campo evaluation nullable
-    // Busca em uma janela maior pois o tipo pode ser extenso
-    const idx = src.indexOf("getMLMetrics:");
+    // Verifica que o tipo MLMetrics inclui campo evaluation nullable
+    const idx = src.indexOf("type MLMetrics");
     const section = src.substring(idx, idx + 1600);
     expect(section).toContain("evaluation:");
     expect(section).toContain("| null");
   });
 
   it("S11-9.3: getMLMetrics mantém campos legados para compatibilidade", () => {
-    // Verifica que getMLMetrics inclui campos legados para compatibilidade
-    const idx = src.indexOf("getMLMetrics:");
+    // Verifica que o tipo MLMetrics inclui campos legados para compatibilidade
+    const idx = src.indexOf("type MLMetrics");
     const section = src.substring(idx, idx + 1500);
     expect(section).toContain("dataset_size:");
     expect(section).toContain("train_accuracy:");

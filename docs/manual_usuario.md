@@ -1061,3 +1061,40 @@ Correções aplicadas:
   - TREINO: `incidentes_cybersecurity_2000.xlsx`
   - AVALIAÇÃO: `incidentes_cybersecurity_100.xlsx`
 
+
+## Sessão 14 — Correções Críticas de ML e Robustez (v2.6)
+
+### 14.1 Painel Machine Learning — Labels Corrigidas
+
+As labels de acurácia no painel AdminML foram corrigidas para maior clareza:
+
+| Campo | Label Anterior | Label Atual |
+|---|---|---|
+| train_accuracy | "Acurácia CV" | **Acurácia Treinamento** |
+| eval_accuracy | "Acurácia Eval" | **Acurácia Avaliação** |
+| cv_accuracy_mean | "Acurácia CV:" (resultado retrain) | **Validação Cruzada (CV):** |
+
+### 14.2 Download de Datasets Independente do Flask
+
+O download dos datasets agora funciona mesmo quando o servidor Flask está offline:
+
+- **Dataset de Treino** (`incidentes_cybersecurity_2000.xlsx`): download via URL CDN direta
+- **Dataset de Avaliação** (`incidentes_cybersecurity_100.xlsx`): download via URL CDN direta
+
+Anteriormente, o download dependia do endpoint `/dataset` do Flask (que retornava o arquivo em base64). Agora, os arquivos são baixados diretamente do CDN CloudFront.
+
+### 14.3 Sistema Mais Robusto Quando Flask Está Offline
+
+O painel AdminML agora funciona mesmo quando o servidor Flask (porta 5001) está temporariamente indisponível:
+
+- **Métricas ML**: exibidas a partir do cache `ml/metrics.json` quando o Flask não responde
+- **Retreinamento e Avaliação**: mensagem de erro clara em português informando que o Flask está indisponível, em vez de "fetch failed"
+
+### 14.4 Valores Corretos das Métricas
+
+| Métrica | Valor |
+|---|---|
+| Acurácia Treinamento | 100% |
+| Validação Cruzada (5-fold) | 100% ± 0% |
+| Acurácia Avaliação (78 amostras corretas em 100) | **78%** |
+| Categorias classificadas | 5 |

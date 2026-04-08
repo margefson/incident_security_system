@@ -1012,3 +1012,67 @@ A migration foi aplicada via ALTER TABLE no MySQL. O procedure analystProcedure 
 ### 13.3 Correções do Servidor Flask ML
 
 O servidor Flask foi reiniciado para limpar o cache do esbuild. Os endpoints /metrics, /evaluate e /eval-dataset retornam dados corretos. Os links de download dos datasets são servidos via CDN.
+
+## Sessão 14 — Correções Críticas de ML e Robustez do Sistema (v2.6)
+
+### 14.1 Problema: "fetch failed" e Acurácia 0%
+
+O erro "fetch failed" nas operações ML era causado pelo cache do esbuild no dev server — o servidor ainda rodava com código antigo. Após reiniciar o servidor, o Flask retorna corretamente:
+
+| Métrica | Valor |
+|---|---|
+| Acurácia Treinamento (train_accuracy) | 100% |
+| Validação Cruzada (cv_accuracy_mean) | 100% |
+| Acurácia Avaliação (eval_accuracy) | 78% |
+| Categorias | 5 (brute_force, ddos, malware, phishing, vazamento_de_dados) |
+
+### 14.2 Fallback Robusto via metrics.json
+
+As procedures ML agora usam fallback gracioso quando o Flask está offline:
+
+- **getMLMetrics**: tenta Flask primeiro; se falhar, lê `ml/metrics.json` do disco. Se o cache também não existir, lança INTERNAL_SERVER_ERROR com mensagem clara.
+- **getDataset**: tenta Flask; se falhar, retorna metadados do metrics.json (sem base64).
+- **getEvalDataset**: tenta Flask; se falhar, retorna metadados da seção evaluation do metrics.json.
+
+O tipo `MLMetrics` foi extraído como tipo TypeScript separado para reutilização no fallback e no tipo de retorno da procedure.
+
+### 14.3 Labels Corrigidas no AdminML
+
+| Label Antiga | Label Nova |
+|---|---|
+| "Acurácia CV" | "Acurácia Treinamento" (usa train_accuracy) |
+| "Acurácia Eval" | "Acurácia Avaliação" (usa eval_accuracy) |
+| "Acurácia CV:" (resultado do retrain) | "Validação Cruzada (CV):" |
+
+### 14.4 Download de Datasets via CDN
+
+O download dos datasets agora usa URLs CDN diretas (CloudFront), sem dependência do Flask:
+
+- Dataset de treino: `DATASET_CDN_URL` → `incidentes_cybersecurity_2000.xlsx`
+- Dataset de avaliação: `EVAL_DATASET_CDN_URL` → `incidentes_cybersecurity_100.xlsx`
+
+Isso elimina o problema de download falhar quando o Flask está offline.
+
+### 14.5 Timeouts nas Procedures ML
+
+| Procedure | Timeout |
+|---|---|
+| getMLMetrics | 5 segundos (AbortSignal.timeout) |
+| getDataset | 5 segundos |
+| getEvalDataset | 5 segundos |
+| evaluateModel | 30 segundos |
+| retrainModel | 120 segundos (2 minutos) |
+
+### 14.6 Testes S14
+
+33 novos testes foram adicionados em `server/session14.test.ts`, cobrindo:
+- Fallback via metrics.json (S14-1)
+- Labels corretas no AdminML (S14-2)
+- URLs CDN para download (S14-3)
+- Tratamento gracioso de erros (S14-4)
+- Tipo MLMetrics extraído (S14-5)
+- Fallback de getDataset/getEvalDataset (S14-6)
+- Timeout de evaluateModel (S14-7)
+- Timeout de retrainModel (S14-8)
+
+**Total após S14: 713 testes passando em 18 arquivos**

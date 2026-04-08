@@ -100,7 +100,8 @@ export default function AdminML() {
     },
   });
 
-  const DATASET_CDN_URL = "https://d2xsxph8kpxj0f.cloudfront.net/310519663148675640/KjT4emSwzjBHV8i56oSYsp/incidentes_cybersecurity_2000_6bb5989b.xlsx";
+  const DATASET_CDN_URL = "https://d2xsxph8kpxj0f.cloudfront.net/310519663148675640/KjT4emSwzjBHV8i56oSYsp/incidentes_cybersecurity_2000_90e4a061.xlsx";
+  const EVAL_DATASET_CDN_URL = "https://d2xsxph8kpxj0f.cloudfront.net/310519663148675640/KjT4emSwzjBHV8i56oSYsp/incidentes_cybersecurity_100_9671eb41.xlsx";
   const ONLINE_VIEWER_URL = `https://view.officeapps.live.com/op/view.aspx?src=${encodeURIComponent(DATASET_CDN_URL)}`;
 
   const handleDownloadDataset = () => {
@@ -114,23 +115,12 @@ export default function AdminML() {
   };
 
   const handleDownloadEvalDataset = () => {
-    if (!evalDatasetQuery.data?.base64) {
-      toast.error("Dataset de avaliação não disponível");
-      return;
-    }
-    const byteChars = atob(evalDatasetQuery.data.base64);
-    const byteNums = Array.from(byteChars, (c) => c.charCodeAt(0));
-    const blob = new Blob([new Uint8Array(byteNums)], {
-      type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-    });
-    const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
-    a.href = url;
+    a.href = EVAL_DATASET_CDN_URL;
     a.download = "incidentes_cybersecurity_100.xlsx";
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
-    URL.revokeObjectURL(url);
     toast.success("Download iniciado: incidentes_cybersecurity_100.xlsx");
   };
 
@@ -257,12 +247,12 @@ export default function AdminML() {
                 <CardContent className="pt-4 pb-3">
                   <div className="flex items-center gap-2 mb-1">
                     <BookOpen className="w-4 h-4 text-blue-400" />
-                    <span className="text-xs font-mono text-muted-foreground">Acurácia Treino</span>
+                    <span className="text-xs font-mono text-muted-foreground">Acurácia Treinamento</span>
                   </div>
                   <p className="text-2xl font-mono font-bold text-blue-400">
                     {metricsQuery.isLoading ? "..." : `${Math.round((trainingMetrics?.train_accuracy ?? metrics?.train_accuracy ?? 0) * 100)}%`}
                   </p>
-                  <p className="text-xs font-mono text-muted-foreground mt-0.5">CV: {Math.round((trainingMetrics?.cv_accuracy_mean ?? metrics?.cv_accuracy_mean ?? 0) * 100)}%</p>
+                  <p className="text-xs font-mono text-muted-foreground mt-0.5">CV: {metricsQuery.isLoading ? "..." : `${Math.round((trainingMetrics?.cv_accuracy_mean ?? metrics?.cv_accuracy_mean ?? 0) * 100)}%`}</p>
                 </CardContent>
               </Card>
               <Card className="bg-card border-border">
@@ -592,7 +582,7 @@ export default function AdminML() {
                       <div className="mt-2 grid grid-cols-2 gap-2 text-xs font-mono">
                         <div><span className="text-muted-foreground">Amostras treino: </span><span className="text-blue-400">{String(retrainResult.metrics.dataset_size)}</span></div>
                         <div><span className="text-muted-foreground">Acurácia treino: </span><span className="text-green-400">{Math.round(Number(retrainResult.metrics.train_accuracy) * 100)}%</span></div>
-                        <div><span className="text-muted-foreground">Acurácia CV: </span><span className="text-blue-400">{Math.round(Number(retrainResult.metrics.cv_accuracy_mean) * 100)}% ±{Math.round(Number(retrainResult.metrics.cv_accuracy_std) * 100)}%</span></div>
+                        <div><span className="text-muted-foreground">Validação Cruzada (CV): </span><span className="text-blue-400">{Math.round(Number(retrainResult.metrics.cv_accuracy_mean) * 100)}% ±{Math.round(Number(retrainResult.metrics.cv_accuracy_std) * 100)}%</span></div>
                       </div>
                     )}
                   </div>
