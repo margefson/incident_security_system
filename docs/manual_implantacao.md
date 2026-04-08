@@ -1076,3 +1076,71 @@ Isso elimina o problema de download falhar quando o Flask está offline.
 - Timeout de retrainModel (S14-8)
 
 **Total após S14: 713 testes passando em 18 arquivos**
+
+---
+
+## Sessão 15 — Upload de Dataset, Dashboard de Saúde, Paginação e PDF com Filtros (v2.7)
+
+### Novas Funcionalidades
+
+#### 1. Upload de Dataset via Interface Web
+Administradores podem substituir os datasets de treinamento e avaliação diretamente pela interface web, sem acesso ao servidor.
+
+**Acesso:** Menu Machine Learning → Aba Treinamento (dataset de treino) ou Aba Avaliação (dataset de avaliação)
+
+**Como usar:**
+1. Acesse o painel Machine Learning como administrador
+2. Na aba Treinamento, localize o card "Atualizar Dataset de Treinamento"
+3. Arraste e solte um arquivo `.xlsx` ou clique para selecionar
+4. Clique em "Enviar Dataset"
+5. O sistema valida o arquivo, substitui o dataset e exibe o total de amostras
+
+**Requisitos do arquivo:**
+- Formato: `.xlsx` (Excel)
+- Colunas obrigatórias: `description` (texto do incidente) e `category` (categoria)
+- Tamanho recomendado: 500–5000 amostras para treino; 50–200 para avaliação
+
+#### 2. Dashboard de Saúde do Sistema
+Nova página `/admin/system-health` com monitoramento em tempo real dos servidores Flask.
+
+**Funcionalidades:**
+- Status Online/Degradado/Offline para cada servidor (porta 5001 e 5002)
+- Latência de resposta em milissegundos
+- Cache de métricas ML (data da última atualização)
+- Auto-refresh automático a cada 30 segundos
+- Botão de atualização manual
+
+**Acesso:** Menu lateral → Saúde do Sistema (ícone Activity)
+
+#### 3. Paginação Server-Side no Admin de Incidentes
+Nova página `/admin/incidents` com paginação eficiente para grandes volumes de dados.
+
+**Funcionalidades:**
+- 20 incidentes por página (configurável via `PAGE_SIZE`)
+- Filtros por categoria e nível de risco
+- Indicador de total de incidentes e página atual
+- Botões Anterior/Próxima com desabilitação automática
+
+**Acesso:** Menu lateral → Todos Incidentes (ícone List)
+
+#### 4. Exportação PDF com Filtros de Data e Categoria
+O botão "Exportar PDF" agora abre um modal com filtros avançados.
+
+**Filtros disponíveis:**
+- Período: data de início e data de fim
+- Categoria: phishing, malware, brute_force, ddos, vazamento_de_dados
+- Nível de risco: crítico, alto, médio, baixo
+
+**Acesso:** Painel Admin → Exportar PDF com Filtros
+
+### Testes S15
+- S15-1: Upload Dataset Flask (10 testes)
+- S15-2: Upload Dataset Backend (7 testes)
+- S15-3: Upload Dataset AdminML (8 testes)
+- S15-4: Dashboard Saúde Backend (7 testes)
+- S15-5: Dashboard Saúde Frontend (7 testes)
+- S15-6: Paginação Backend (3 testes)
+- S15-7: Paginação Frontend (8 testes)
+- S15-8: PDF com Filtros (10 testes)
+
+**Total após S15: 773 testes passando em 19 arquivos**

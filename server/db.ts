@@ -161,6 +161,8 @@ export async function getAllIncidents(filters?: {
   userId?: number;
   limit?: number;
   offset?: number;
+  dateFrom?: number; // Unix ms
+  dateTo?: number;   // Unix ms
 }) {
   const db = await getDb();
   if (!db) return [];
@@ -168,6 +170,8 @@ export async function getAllIncidents(filters?: {
   if (filters?.category) conditions.push(eq(incidents.category, filters.category as Incident["category"]));
   if (filters?.riskLevel) conditions.push(eq(incidents.riskLevel, filters.riskLevel as Incident["riskLevel"]));
   if (filters?.userId) conditions.push(eq(incidents.userId, filters.userId));
+  if (filters?.dateFrom) conditions.push(sql`${incidents.createdAt} >= ${new Date(filters.dateFrom)}` as unknown as ReturnType<typeof eq>);
+  if (filters?.dateTo) conditions.push(sql`${incidents.createdAt} <= ${new Date(filters.dateTo)}` as unknown as ReturnType<typeof eq>);
   const query = db
     .select({
       id: incidents.id,

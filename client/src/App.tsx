@@ -16,6 +16,8 @@ import Admin from "./pages/Admin";
 import AdminCategories from "./pages/AdminCategories";
 import AdminML from "./pages/AdminML";
 import AdminUsers from "./pages/AdminUsers";
+import AdminSystemHealth from "./pages/AdminSystemHealth";
+import AdminIncidents from "./pages/AdminIncidents";
 import Profile from "./pages/Profile";
 import ResetPassword from "./pages/ResetPassword";
 import ResolutionMetrics from "./pages/ResolutionMetrics";
@@ -35,6 +37,8 @@ function Router() {
       <Route path="/admin/categories" component={AdminCategories} />
       <Route path="/admin/ml" component={AdminML} />
       <Route path="/admin/users" component={AdminUsers} />
+      <Route path="/admin/system-health" component={AdminSystemHealth} />
+      <Route path="/admin/incidents" component={AdminIncidents} />
       <Route path="/profile" component={Profile} />
       <Route path="/metrics" component={ResolutionMetrics} />
       <Route path="/404" component={NotFound} />

@@ -861,7 +861,16 @@ Tests: 296 passed
 | **S14-7: evaluateModel timeout** | `session14.test.ts` | 3 | AbortSignal.timeout(30000), mensagem PT, TRPCError claro |
 | **S14-8: retrainModel timeout** | `session14.test.ts` | 3 | AbortSignal.timeout(120000), mensagem PT, TRPCError claro |
 
-**Total: 713 testes passando em 18 arquivos**
+| **S15-1: Upload Dataset Flask** | `session15.test.ts` | 10 | /upload-train-dataset, /upload-eval-dataset, .xlsx, POST, total_samples |
+| **S15-2: Upload Dataset Backend** | `session15.test.ts` | 7 | uploadTrainDataset, uploadEvalDataset, adminProcedure, fileBase64, filename |
+| **S15-3: Upload Dataset AdminML** | `session15.test.ts` | 8 | ícone Upload, uploadTrainFile, uploadEvalFile, drag-and-drop, .xlsx, base64 |
+| **S15-4: Dashboard Saúde Backend** | `session15.test.ts` | 7 | getSystemHealth, adminProcedure, 5001, 5002, services, metrics_cache, AbortSignal |
+| **S15-5: Dashboard Saúde Frontend** | `session15.test.ts` | 7 | AdminSystemHealth, auto-refresh 30s, Online/Degradado/Offline, latency, rota, link |
+| **S15-6: Paginação Backend** | `session15.test.ts` | 3 | listIncidents limit/offset, total, countAllIncidents |
+| **S15-7: Paginação Frontend** | `session15.test.ts` | 8 | AdminIncidents, Anterior/Próxima, filtros categoria/risco, PAGE_SIZE, rota, link |
+| **S15-8: PDF com Filtros** | `session15.test.ts` | 10 | ExportPdfWithFilters, dateFrom, dateTo, categoria, risco, Dialog, exportPdf, db.ts |
+
+**Total: 773 testes passando em 19 arquivos**
 
 ---
 

@@ -4,7 +4,7 @@ import { useAuth } from "@/_core/hooks/useAuth";
 import { toast } from "sonner";
 import {
   LayoutDashboard, AlertTriangle, PlusCircle, BarChart2, TrendingUp,
-  Shield, ShieldAlert, LogOut, User, Tag, ChevronRight, Brain, Users
+  Shield, ShieldAlert, LogOut, User, Tag, ChevronRight, Brain, Users, Activity, List
 } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
@@ -31,6 +31,8 @@ const adminItems = [
   { path: "/admin/categories", label: "Categorias",    icon: Tag },
   { path: "/admin/ml",         label: "Machine Learning", icon: Brain },
   { path: "/admin/users",       label: "Usuários",         icon: Users },
+  { path: "/admin/incidents",    label: "Todos Incidentes",  icon: List },
+  { path: "/admin/system-health",label: "Saúde do Sistema",  icon: Activity },
 ];
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {

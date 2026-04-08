@@ -1098,3 +1098,63 @@ O painel AdminML agora funciona mesmo quando o servidor Flask (porta 5001) está
 | Validação Cruzada (5-fold) | 100% ± 0% |
 | Acurácia Avaliação (78 amostras corretas em 100) | **78%** |
 | Categorias classificadas | 5 |
+
+---
+
+## Novidades da Versão 2.7 (Sessão 15)
+
+### Upload de Dataset via Interface Web
+
+Administradores agora podem substituir os datasets de treinamento e avaliação diretamente pela interface, sem precisar de acesso ao servidor.
+
+**Como acessar:** Menu Machine Learning → Aba Treinamento (dataset de treino) ou Aba Avaliação (dataset de avaliação)
+
+**Passos:**
+1. Acesse o painel Machine Learning como administrador
+2. Localize o card "Atualizar Dataset de Treinamento" ou "Atualizar Dataset de Avaliação"
+3. Arraste e solte um arquivo `.xlsx` ou clique para selecionar
+4. Clique em "Enviar Dataset"
+5. Aguarde a confirmação com o total de amostras carregadas
+
+**Formato aceito:** Apenas arquivos `.xlsx` (Excel) com colunas `description` e `category`
+
+---
+
+### Dashboard de Saúde do Sistema
+
+Nova página de monitoramento em tempo real dos servidores Flask.
+
+**Como acessar:** Menu lateral → Saúde do Sistema
+
+**O que mostra:**
+- Status de cada servidor (Online / Degradado / Offline)
+- Latência de resposta em milissegundos
+- Data da última atualização das métricas ML
+- Atualização automática a cada 30 segundos
+
+---
+
+### Todos os Incidentes (com Paginação)
+
+Nova página para administradores visualizarem todos os incidentes do sistema com paginação eficiente.
+
+**Como acessar:** Menu lateral → Todos Incidentes
+
+**Funcionalidades:**
+- 20 incidentes por página
+- Filtro por categoria e nível de risco
+- Indicador de total de registros
+- Botões Anterior / Próxima
+
+---
+
+### Exportação PDF com Filtros
+
+O botão "Exportar PDF" agora abre um modal com filtros avançados antes de gerar o relatório.
+
+**Filtros disponíveis:**
+- **Período:** data de início e data de fim
+- **Categoria:** phishing, malware, brute_force, ddos, vazamento_de_dados
+- **Nível de risco:** crítico, alto, médio, baixo
+
+Deixe os campos em branco para incluir todos os incidentes no relatório.

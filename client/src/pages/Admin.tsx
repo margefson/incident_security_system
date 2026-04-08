@@ -2,7 +2,7 @@ import { useLocation } from "wouter";
 import DashboardLayout from "@/components/DashboardLayout";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { ShieldAlert, Tag, Users, Brain, FileText } from "lucide-react";
-import ExportPdfButton from "@/components/ExportPdfButton";
+import ExportPdfWithFilters from "@/components/ExportPdfWithFilters";
 import { trpc } from "@/lib/trpc";
 
 export default function Admin() {
@@ -88,10 +88,9 @@ export default function Admin() {
                 Inclui dados de usuário, categoria, risco e confiança.
               </p>
             </div>
-            <ExportPdfButton
+            <ExportPdfWithFilters
               adminMode={true}
-              label="Exportar PDF Consolidado"
-              className="shrink-0"
+              buttonLabel="Exportar PDF com Filtros"
             />
           </div>
         </div>

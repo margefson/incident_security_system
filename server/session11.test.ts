@@ -250,11 +250,11 @@ describe("S11-6: Servidor Flask — /retrain não inclui dataset de avaliação"
 
   it("S11-6.2: /retrain NÃO usa EVAL_DATASET_PATH", () => {
     // Verifica que o /retrain não carrega o dataset de avaliação
-    // Extrai a seção do /retrain até o final do arquivo (ou até __main__)
+    // Extrai a seção do /retrain até o próximo @app.route (upload-train-dataset)
     const retrainIdx = src.indexOf('"/retrain"');
-    const mainIdx = src.indexOf('if __name__');
+    const nextRouteIdx = src.indexOf('@app.route', retrainIdx + 1);
     const retrainSection = retrainIdx >= 0
-      ? src.substring(retrainIdx, mainIdx > retrainIdx ? mainIdx : src.length)
+      ? src.substring(retrainIdx, nextRouteIdx > retrainIdx ? nextRouteIdx : src.length)
       : "";
     expect(retrainSection).toContain("TRAIN_DATASET_PATH");
     expect(retrainSection).not.toContain("EVAL_DATASET_PATH");
@@ -441,10 +441,11 @@ describe("S11-11: Integridade metodológica — separação treino/avaliação",
 
   it("S11-11.1: Flask — /retrain usa apenas TRAIN_DATASET_PATH", () => {
     // Verifica que /retrain usa TRAIN_DATASET_PATH e não EVAL_DATASET_PATH
+    // Extrai a seção do /retrain até o próximo @app.route (upload-train-dataset)
     const retrainIdx = flaskSrc.indexOf('"/retrain"');
-    const mainIdx = flaskSrc.indexOf('if __name__');
+    const nextRouteIdx = flaskSrc.indexOf('@app.route', retrainIdx + 1);
     const retrainSection = retrainIdx >= 0
-      ? flaskSrc.substring(retrainIdx, mainIdx > retrainIdx ? mainIdx : flaskSrc.length)
+      ? flaskSrc.substring(retrainIdx, nextRouteIdx > retrainIdx ? nextRouteIdx : flaskSrc.length)
       : "";
     expect(retrainSection).toContain("TRAIN_DATASET_PATH");
     expect(retrainSection).not.toContain("EVAL_DATASET_PATH");

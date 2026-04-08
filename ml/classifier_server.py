@@ -464,6 +464,48 @@ def retrain():
         return jsonify({"error": str(e)}), 500
 
 
+# ─── Upload de Dataset de Treinamento ──────────────────────────────────────────
+@app.route("/upload-train-dataset", methods=["POST"])
+def upload_train_dataset():
+    """Substitui o dataset de TREINAMENTO por um novo arquivo .xlsx enviado pelo admin."""
+    if "file" not in request.files:
+        return jsonify({"error": "Nenhum arquivo enviado"}), 400
+    f = request.files["file"]
+    if not f.filename or not f.filename.lower().endswith(".xlsx"):
+        return jsonify({"error": "Apenas arquivos .xlsx são aceitos"}), 400
+    try:
+        # Salvar o novo arquivo substituindo o dataset de treino
+        f.save(TRAIN_DATASET_PATH)
+        # Verificar quantas amostras o novo dataset tem
+        wb = openpyxl.load_workbook(TRAIN_DATASET_PATH)
+        ws = wb.active
+        total = ws.max_row - 1  # subtrair cabeçalho
+        return jsonify({"success": True, "filename": f.filename, "total_samples": total,
+                        "message": f"Dataset de treinamento atualizado com {total} amostras. Execute o retreinamento para aplicar."})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+# ─── Upload de Dataset de Avaliação ─────────────────────────────────────────────
+@app.route("/upload-eval-dataset", methods=["POST"])
+def upload_eval_dataset():
+    """Substitui o dataset de AVALIAÇÃO por um novo arquivo .xlsx enviado pelo admin."""
+    if "file" not in request.files:
+        return jsonify({"error": "Nenhum arquivo enviado"}), 400
+    f = request.files["file"]
+    if not f.filename or not f.filename.lower().endswith(".xlsx"):
+        return jsonify({"error": "Apenas arquivos .xlsx são aceitos"}), 400
+    try:
+        f.save(EVAL_DATASET_PATH)
+        wb = openpyxl.load_workbook(EVAL_DATASET_PATH)
+        ws = wb.active
+        total = ws.max_row - 1
+        return jsonify({"success": True, "filename": f.filename, "total_samples": total,
+                        "message": f"Dataset de avaliação atualizado com {total} amostras."})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
 if __name__ == "__main__":
     port = int(os.environ.get("ML_PORT", 5001))
     print(f"[Classifier] Iniciando servidor na porta {port}...")

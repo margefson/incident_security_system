@@ -23,7 +23,7 @@ import { toast } from "sonner";
 import {
   Brain, Download, RefreshCw, Plus, Trash2, BarChart2,
   CheckCircle2, AlertTriangle, Database, Cpu, ExternalLink,
-  FlaskConical, BookOpen, PlayCircle, Table2,
+  FlaskConical, BookOpen, PlayCircle, Table2, Upload, FileSpreadsheet,
 } from "lucide-react";
 
 type RiskLevel = "critical" | "high" | "medium" | "low";
@@ -73,6 +73,12 @@ export default function AdminML() {
   } | null>(null);
   const [activeTab, setActiveTab] = useState<"overview" | "training" | "evaluation">("overview");
 
+  // Upload de dataset
+  const [uploadTrainFile, setUploadTrainFile] = useState<File | null>(null);
+  const [uploadEvalFile, setUploadEvalFile] = useState<File | null>(null);
+  const [isDraggingTrain, setIsDraggingTrain] = useState(false);
+  const [isDraggingEval, setIsDraggingEval] = useState(false);
+
   const metricsQuery = trpc.admin.getMLMetrics.useQuery();
   const datasetQuery = trpc.admin.getDataset.useQuery();
   const evalDatasetQuery = trpc.admin.getEvalDataset.useQuery();
@@ -87,6 +93,48 @@ export default function AdminML() {
       toast.error(`Erro ao retreinar: ${err.message}`);
     },
   });
+
+  const uploadTrainMutation = trpc.admin.uploadTrainDataset.useMutation({
+    onSuccess: (data) => {
+      toast.success(data.message);
+      setUploadTrainFile(null);
+      void datasetQuery.refetch();
+    },
+    onError: (err: { message: string }) => {
+      toast.error(`Erro no upload: ${err.message}`);
+    },
+  });
+
+  const uploadEvalMutation = trpc.admin.uploadEvalDataset.useMutation({
+    onSuccess: (data) => {
+      toast.success(data.message);
+      setUploadEvalFile(null);
+      void evalDatasetQuery.refetch();
+    },
+    onError: (err: { message: string }) => {
+      toast.error(`Erro no upload: ${err.message}`);
+    },
+  });
+
+  const handleUploadTrain = async () => {
+    if (!uploadTrainFile) return;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const base64 = (e.target?.result as string).split(",")[1];
+      uploadTrainMutation.mutate({ fileBase64: base64, filename: uploadTrainFile.name });
+    };
+    reader.readAsDataURL(uploadTrainFile);
+  };
+
+  const handleUploadEval = async () => {
+    if (!uploadEvalFile) return;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const base64 = (e.target?.result as string).split(",")[1];
+      uploadEvalMutation.mutate({ fileBase64: base64, filename: uploadEvalFile.name });
+    };
+    reader.readAsDataURL(uploadEvalFile);
+  };
 
   const evaluateMutation = trpc.admin.evaluateModel.useMutation({
     onSuccess: (data) => {
@@ -370,6 +418,76 @@ export default function AdminML() {
               </Card>
             </div>
 
+            {/* Upload de Dataset de Avaliação */}
+            <Card className="bg-card border-border">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-mono font-semibold text-foreground flex items-center gap-2">
+                  <Upload className="w-4 h-4 text-purple-400" />
+                  Substituir Dataset de Avaliação
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <p className="text-xs font-mono text-muted-foreground">
+                  Envie um novo arquivo <span className="text-foreground font-semibold">.xlsx</span> para substituir o dataset de avaliação atual.
+                  Após o upload, execute a avaliação para ver as novas métricas.
+                </p>
+                <div
+                  className={`border-2 border-dashed rounded-lg p-4 text-center transition-colors cursor-pointer ${
+                    isDraggingEval ? "border-purple-400 bg-purple-500/5" : "border-border hover:border-purple-500/50"
+                  }`}
+                  onDragOver={(e) => { e.preventDefault(); setIsDraggingEval(true); }}
+                  onDragLeave={() => setIsDraggingEval(false)}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    setIsDraggingEval(false);
+                    const file = e.dataTransfer.files[0];
+                    if (file && file.name.endsWith(".xlsx")) setUploadEvalFile(file);
+                    else toast.error("Apenas arquivos .xlsx são aceitos");
+                  }}
+                  onClick={() => document.getElementById("upload-eval-input")?.click()}
+                >
+                  <input
+                    id="upload-eval-input"
+                    type="file"
+                    accept=".xlsx"
+                    className="hidden"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) setUploadEvalFile(file);
+                    }}
+                  />
+                  {uploadEvalFile ? (
+                    <div className="flex items-center justify-center gap-2 text-sm font-mono text-foreground">
+                      <FileSpreadsheet className="w-4 h-4 text-green-400" />
+                      <span>{uploadEvalFile.name}</span>
+                      <span className="text-muted-foreground">({(uploadEvalFile.size / 1024).toFixed(1)} KB)</span>
+                    </div>
+                  ) : (
+                    <div className="text-muted-foreground">
+                      <Upload className="w-6 h-6 mx-auto mb-1 opacity-50" />
+                      <p className="text-xs font-mono">Arraste um arquivo .xlsx ou clique para selecionar</p>
+                    </div>
+                  )}
+                </div>
+                {uploadEvalFile && (
+                  <div className="flex gap-2">
+                    <Button
+                      size="sm"
+                      className="font-mono text-xs gap-1.5 bg-purple-600 hover:bg-purple-700 text-white"
+                      onClick={handleUploadEval}
+                      disabled={uploadEvalMutation.isPending}
+                    >
+                      {uploadEvalMutation.isPending ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Upload className="w-3.5 h-3.5" />}
+                      {uploadEvalMutation.isPending ? "Enviando..." : "Enviar Dataset"}
+                    </Button>
+                    <Button size="sm" variant="ghost" className="font-mono text-xs" onClick={() => setUploadEvalFile(null)}>
+                      Cancelar
+                    </Button>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
             {/* Botão de avaliação rápida */}
             <Card className="bg-card border-border border-purple-500/20">
               <CardContent className="pt-4 pb-4">
@@ -479,6 +597,76 @@ export default function AdminML() {
                         </tbody>
                       </table>
                     </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Upload de Dataset de Treino */}
+            <Card className="bg-card border-border">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-mono font-semibold text-foreground flex items-center gap-2">
+                  <Upload className="w-4 h-4 text-primary" />
+                  Substituir Dataset de Treinamento
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <p className="text-xs font-mono text-muted-foreground">
+                  Envie um novo arquivo <span className="text-foreground font-semibold">.xlsx</span> para substituir o dataset de treinamento atual.
+                  Após o upload, execute o retreinamento para aplicar as mudanças.
+                </p>
+                <div
+                  className={`border-2 border-dashed rounded-lg p-4 text-center transition-colors cursor-pointer ${
+                    isDraggingTrain ? "border-primary bg-primary/5" : "border-border hover:border-primary/50"
+                  }`}
+                  onDragOver={(e) => { e.preventDefault(); setIsDraggingTrain(true); }}
+                  onDragLeave={() => setIsDraggingTrain(false)}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    setIsDraggingTrain(false);
+                    const file = e.dataTransfer.files[0];
+                    if (file && file.name.endsWith(".xlsx")) setUploadTrainFile(file);
+                    else toast.error("Apenas arquivos .xlsx são aceitos");
+                  }}
+                  onClick={() => document.getElementById("upload-train-input")?.click()}
+                >
+                  <input
+                    id="upload-train-input"
+                    type="file"
+                    accept=".xlsx"
+                    className="hidden"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) setUploadTrainFile(file);
+                    }}
+                  />
+                  {uploadTrainFile ? (
+                    <div className="flex items-center justify-center gap-2 text-sm font-mono text-foreground">
+                      <FileSpreadsheet className="w-4 h-4 text-green-400" />
+                      <span>{uploadTrainFile.name}</span>
+                      <span className="text-muted-foreground">({(uploadTrainFile.size / 1024).toFixed(1)} KB)</span>
+                    </div>
+                  ) : (
+                    <div className="text-muted-foreground">
+                      <Upload className="w-6 h-6 mx-auto mb-1 opacity-50" />
+                      <p className="text-xs font-mono">Arraste um arquivo .xlsx ou clique para selecionar</p>
+                    </div>
+                  )}
+                </div>
+                {uploadTrainFile && (
+                  <div className="flex gap-2">
+                    <Button
+                      size="sm"
+                      className="font-mono text-xs gap-1.5"
+                      onClick={handleUploadTrain}
+                      disabled={uploadTrainMutation.isPending}
+                    >
+                      {uploadTrainMutation.isPending ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Upload className="w-3.5 h-3.5" />}
+                      {uploadTrainMutation.isPending ? "Enviando..." : "Enviar Dataset"}
+                    </Button>
+                    <Button size="sm" variant="ghost" className="font-mono text-xs" onClick={() => setUploadTrainFile(null)}>
+                      Cancelar
+                    </Button>
                   </div>
                 )}
               </CardContent>

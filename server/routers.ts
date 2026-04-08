@@ -820,6 +820,103 @@ const adminRouter = router({
       }
       return data;
     }),
+
+  // ─── Upload de Dataset de Treinamento ────────────────────────────────────────────────
+  uploadTrainDataset: adminProcedure
+    .input(z.object({
+      fileBase64: z.string(), // arquivo .xlsx em base64
+      filename: z.string(),
+    }))
+    .mutation(async ({ input }) => {
+      const ML_URL = process.env.ML_SERVICE_URL ?? "http://localhost:5001";
+      // Converter base64 para Buffer e enviar como multipart/form-data
+      const fileBuffer = Buffer.from(input.fileBase64, "base64");
+      const boundary = `----FormBoundary${Date.now()}`;
+      const body = Buffer.concat([
+        Buffer.from(`--${boundary}\r\nContent-Disposition: form-data; name="file"; filename="${input.filename}"\r\nContent-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet\r\n\r\n`),
+        fileBuffer,
+        Buffer.from(`\r\n--${boundary}--\r\n`),
+      ]);
+      try {
+        const response = await fetch(`${ML_URL}/upload-train-dataset`, {
+          method: "POST",
+          headers: { "Content-Type": `multipart/form-data; boundary=${boundary}` },
+          body,
+          signal: AbortSignal.timeout(30000),
+        });
+        if (!response.ok) {
+          const err = await response.json() as { error?: string };
+          throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: err.error ?? "Upload falhou" });
+        }
+        return await response.json() as { success: boolean; filename: string; total_samples: number; message: string };
+      } catch (e) {
+        if (e instanceof TRPCError) throw e;
+        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Serviço ML indisponível. Verifique se o servidor Flask está rodando na porta 5001." });
+      }
+    }),
+
+  // ─── Upload de Dataset de Avaliação ────────────────────────────────────────────────────
+  uploadEvalDataset: adminProcedure
+    .input(z.object({
+      fileBase64: z.string(),
+      filename: z.string(),
+    }))
+    .mutation(async ({ input }) => {
+      const ML_URL = process.env.ML_SERVICE_URL ?? "http://localhost:5001";
+      const fileBuffer = Buffer.from(input.fileBase64, "base64");
+      const boundary = `----FormBoundary${Date.now()}`;
+      const body = Buffer.concat([
+        Buffer.from(`--${boundary}\r\nContent-Disposition: form-data; name="file"; filename="${input.filename}"\r\nContent-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet\r\n\r\n`),
+        fileBuffer,
+        Buffer.from(`\r\n--${boundary}--\r\n`),
+      ]);
+      try {
+        const response = await fetch(`${ML_URL}/upload-eval-dataset`, {
+          method: "POST",
+          headers: { "Content-Type": `multipart/form-data; boundary=${boundary}` },
+          body,
+          signal: AbortSignal.timeout(30000),
+        });
+        if (!response.ok) {
+          const err = await response.json() as { error?: string };
+          throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: err.error ?? "Upload falhou" });
+        }
+        return await response.json() as { success: boolean; filename: string; total_samples: number; message: string };
+      } catch (e) {
+        if (e instanceof TRPCError) throw e;
+        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Serviço ML indisponível. Verifique se o servidor Flask está rodando na porta 5001." });
+      }
+    }),
+
+  // ─── Dashboard de Saúde do Sistema ───────────────────────────────────────────────────
+  getSystemHealth: adminProcedure.query(async () => {
+    const ML_URL = process.env.ML_SERVICE_URL ?? "http://localhost:5001";
+    const ML_URL2 = process.env.ML_SERVICE_URL2 ?? "http://localhost:5002";
+    const checkService = async (url: string, name: string) => {
+      try {
+        const start = Date.now();
+        const res = await fetch(`${url}/health`, { signal: AbortSignal.timeout(3000) });
+        const latency = Date.now() - start;
+        if (res.ok) {
+          const data = await res.json() as Record<string, unknown>;
+          return { name, status: "online" as const, latency, details: data };
+        }
+        return { name, status: "degraded" as const, latency, details: null };
+      } catch {
+        return { name, status: "offline" as const, latency: null as number | null, details: null };
+      }
+    };
+    const [primary, secondary] = await Promise.all([
+      checkService(ML_URL, "Flask ML (porta 5001)"),
+      checkService(ML_URL2, "Flask ML (porta 5002)"),
+    ]);
+    const metrics = readMetricsJson();
+    return {
+      services: [primary, secondary],
+      metrics_cache: metrics ? { available: true, last_updated: metrics.last_updated as string } : { available: false, last_updated: null as string | null },
+      checked_at: new Date().toISOString(),
+    };
+  }),
 });
 // ─── Reports Routerr ───────────────────────────────────────────────────────
 const reportsRouter = router({
@@ -828,15 +925,21 @@ const reportsRouter = router({
       category: z.string().optional(),
       riskLevel: z.string().optional(),
       adminMode: z.boolean().optional().default(false),
+      dateFrom: z.string().optional(), // ISO date string e.g. "2025-01-01"
+      dateTo: z.string().optional(),   // ISO date string e.g. "2025-12-31"
     }))
     .mutation(async ({ input, ctx }) => {
       // Collect incidents
       let incidents: Array<Record<string, unknown>>;
+      const dateFrom = input.dateFrom ? new Date(input.dateFrom).getTime() : undefined;
+      const dateTo = input.dateTo ? new Date(input.dateTo + "T23:59:59").getTime() : undefined;
       if (input.adminMode && ctx.user.role === "admin") {
         incidents = await getAllIncidents({
           category: input.category,
           riskLevel: input.riskLevel,
           limit: 500,
+          dateFrom,
+          dateTo,
         });
       } else {
         const rows = await getIncidentsByUser(ctx.user.id);
