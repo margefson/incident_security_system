@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { Shield, Lock, Mail, Eye, EyeOff } from "lucide-react";
+import { Shield, Lock, Mail, Eye, EyeOff, Copy, ExternalLink, AlertTriangle } from "lucide-react";
 import { getLoginUrl } from "@/const";
 
 /**
@@ -37,6 +37,8 @@ export default function Login() {
   const [showForgot, setShowForgot] = useState(false);
   const [forgotEmail, setForgotEmail] = useState("");
   const [forgotSent, setForgotSent] = useState(false);
+  const [inBandLink, setInBandLink] = useState<string | null>(null);
+  const [inBandNote, setInBandNote] = useState<string | null>(null);
   const utils = trpc.useUtils();
 
   const loginMutation = trpc.auth.login.useMutation({
@@ -54,8 +56,13 @@ export default function Login() {
   });
 
   const forgotMutation = trpc.auth.requestPasswordReset.useMutation({
-    onSuccess: () => {
+    onSuccess: (data) => {
       setForgotSent(true);
+      // If the email could not be delivered, show the link directly in the UI
+      if (data.linkInBand && data.resetUrl) {
+        setInBandLink(data.resetUrl);
+        setInBandNote(data.deliveryNote ?? null);
+      }
     },
     onError: (e) => toast.error(e.message),
   });
@@ -66,6 +73,14 @@ export default function Login() {
       return;
     }
     forgotMutation.mutate({ email: forgotEmail, origin: window.location.origin });
+  };
+
+  const copyLink = () => {
+    if (inBandLink) {
+      navigator.clipboard.writeText(inBandLink).then(() => {
+        toast.success("Link copiado para a área de transferência!");
+      });
+    }
   };
 
   return (
@@ -212,23 +227,74 @@ export default function Login() {
                 </div>
               </>
             ) : (
-              <div className="text-center space-y-4">
-                <div className="w-12 h-12 rounded-full bg-green-500/10 border border-green-500/30 flex items-center justify-center mx-auto">
-                  <Mail className="w-6 h-6 text-green-400" />
-                </div>
-                <div>
-                  <p className="text-foreground font-medium">E-mail enviado!</p>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    Se o endereço <strong className="text-foreground">{forgotEmail}</strong> estiver cadastrado,
-                    você receberá um link de redefinição em instantes.
-                  </p>
-                  <p className="text-xs text-yellow-400 mt-2 font-medium">
-                    ⚠ O link expira em 10 minutos. Verifique também a pasta de spam.
-                  </p>
-                </div>
-                <Button variant="outline" className="w-full" onClick={() => { setShowForgot(false); setForgotSent(false); setForgotEmail(""); }}>
-                  Voltar ao Login
-                </Button>
+              <div className="space-y-4">
+                {/* In-band link display (when email could not be delivered) */}
+                {inBandLink ? (
+                  <div className="space-y-3">
+                    <div className="flex items-start gap-3 p-3 bg-yellow-500/10 border border-yellow-500/30 rounded-lg">
+                      <AlertTriangle className="w-5 h-5 text-yellow-400 flex-shrink-0 mt-0.5" />
+                      <div>
+                        <p className="text-sm font-medium text-yellow-300">Link gerado com sucesso</p>
+                        <p className="text-xs text-yellow-400/80 mt-1">
+                          {inBandNote ?? "O e-mail não pôde ser entregue automaticamente. Use o link abaixo para redefinir sua senha."}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="bg-muted/30 border border-border rounded-lg p-3">
+                      <p className="text-xs text-muted-foreground mb-2 font-mono uppercase tracking-wider">
+                        Link de Redefinição (válido por 10 min)
+                      </p>
+                      <p className="text-xs font-mono text-primary break-all leading-relaxed mb-3">
+                        {inBandLink}
+                      </p>
+                      <div className="flex gap-2">
+                        <Button size="sm" variant="outline" className="flex-1 gap-2" onClick={copyLink}>
+                          <Copy className="w-3 h-3" />
+                          Copiar Link
+                        </Button>
+                        <Button size="sm" className="flex-1 gap-2" onClick={() => window.location.href = inBandLink}>
+                          <ExternalLink className="w-3 h-3" />
+                          Abrir Link
+                        </Button>
+                      </div>
+                    </div>
+
+                    <Button variant="outline" className="w-full" onClick={() => {
+                      setShowForgot(false);
+                      setForgotSent(false);
+                      setForgotEmail("");
+                      setInBandLink(null);
+                      setInBandNote(null);
+                    }}>
+                      Voltar ao Login
+                    </Button>
+                  </div>
+                ) : (
+                  /* Normal success (email was delivered) */
+                  <div className="text-center space-y-4">
+                    <div className="w-12 h-12 rounded-full bg-green-500/10 border border-green-500/30 flex items-center justify-center mx-auto">
+                      <Mail className="w-6 h-6 text-green-400" />
+                    </div>
+                    <div>
+                      <p className="text-foreground font-medium">E-mail enviado!</p>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        Se o endereço <strong className="text-foreground">{forgotEmail}</strong> estiver cadastrado,
+                        você receberá um link de redefinição em instantes.
+                      </p>
+                      <p className="text-xs text-yellow-400 mt-2 font-medium">
+                        ⚠ O link expira em 10 minutos. Verifique também a pasta de spam.
+                      </p>
+                    </div>
+                    <Button variant="outline" className="w-full" onClick={() => {
+                      setShowForgot(false);
+                      setForgotSent(false);
+                      setForgotEmail("");
+                    }}>
+                      Voltar ao Login
+                    </Button>
+                  </div>
+                )}
               </div>
             )}
           </div>

@@ -1,8 +1,8 @@
 # Manual do Usuário
 ## INCIDENT_SYS — Sistema Web Seguro para Registro e Classificação de Incidentes de Segurança Cibernética
 
-**Versão:** 2.0  
-**Data:** Abril de 2026  
+**Versão:** 2.1  
+**Data:** Abril de 2026 (Sessão 9 — Correção Reset de Senha)  
 **Repositório:** https://github.com/margefson/incident_security_system  
 **Equipe:** Nattan, Keven, Margefson, Josias
 
@@ -440,14 +440,33 @@ Se você esqueceu sua senha, siga os passos abaixo:
 1. Na tela de login, clique no link **"Esqueci minha senha"**
 2. Informe seu **e-mail cadastrado** no sistema
 3. Clique em **"Enviar Link de Redefinição"**
-4. Acesse seu e-mail e clique no link recebido
-   - O link é válido por **apenas 10 minutos**
-   - Após o prazo, você precisará solicitar um novo link
+4. O sistema tentará enviar o link por e-mail automaticamente via **Resend** (serviço de e-mail transacional)
+
+#### Cenário A — E-mail entregue com sucesso
+
+Se o sistema conseguir entregar o e-mail:
+- Você verá a mensagem **"E-mail enviado!"** na tela
+- Acesse sua caixa de entrada (verifique também a pasta de **spam/lixo eletrônico**)
+- Clique no link recebido — ele é válido por **apenas 10 minutos**
+
+#### Cenário B — Link exibido diretamente na tela
+
+Em ambientes de teste ou quando o serviço de e-mail está em modo restrito (domínio não verificado), o sistema exibirá o link diretamente na tela com um aviso amarelo:
+
+> *"Link gerado com sucesso — O e-mail não pôde ser entregue automaticamente. Use o link abaixo para redefinir sua senha."*
+
+Nesse caso:
+- Clique no botão **"Abrir Link"** para ir diretamente à página de redefinição, **ou**
+- Clique em **"Copiar Link"** para copiar o endereço e colá-lo no navegador
+- O link continua válido por **10 minutos** a partir da solicitação
+
+#### Passos finais (ambos os cenários)
+
 5. Na página de redefinição, crie uma nova senha forte
 6. Clique em **"Redefinir Senha"**
 7. Você será redirecionado para o login para entrar com a nova senha
 
-> **Atenção:** O link de redefinição pode ser usado apenas uma vez. Após o uso, ele é invalidado automaticamente.
+> **Atenção:** O link de redefinição pode ser usado apenas uma vez. Após o uso, ele é invalidado automaticamente. Por segurança, o sistema não informa se o e-mail está ou não cadastrado (prevenção de enumeração de e-mails).
 
 ### 9.4 Requisitos de Senha
 

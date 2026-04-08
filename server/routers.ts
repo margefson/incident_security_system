@@ -166,18 +166,28 @@ const authRouter = router({
     .mutation(async ({ input }) => {
       const user = await getUserByEmail(input.email);
       // Always return success to prevent email enumeration
-      if (!user || !user.email) return { success: true };
+      if (!user || !user.email) return { success: true, linkInBand: false };
       const token = crypto.randomBytes(48).toString("hex");
       const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
       await createPasswordResetToken(user.id, token, expiresAt);
       const resetUrl = `${input.origin}/reset-password?token=${token}`;
-      await sendPasswordResetEmail({
+      const emailResult = await sendPasswordResetEmail({
         to: user.email,
         userName: user.name ?? "Usuário",
         resetUrl,
         expiresMinutes: 10,
       });
-      return { success: true };
+      // If email could not be delivered (e.g., free-tier domain restriction),
+      // return the link in-band so the frontend can display it directly.
+      if (emailResult.linkInBand) {
+        return {
+          success: true,
+          linkInBand: true,
+          resetUrl,
+          deliveryNote: emailResult.deliveryNote,
+        };
+      }
+      return { success: true, linkInBand: false };
     }),
   validateResetToken: publicProcedure
     .input(z.object({ token: z.string() }))

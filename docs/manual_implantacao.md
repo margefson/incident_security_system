@@ -1,8 +1,8 @@
 # Manual de Implantação
 ## INCIDENT_SYS — Sistema Web Seguro para Registro e Classificação de Incidentes de Segurança Cibernética
 
-**Versão:** 2.0  
-**Data:** Abril de 2026  
+**Versão:** 2.1  
+**Data:** Abril de 2026 (Sessão 9 — Correção Reset de Senha)  
 **Repositório:** https://github.com/margefson/incident_security_system  
 **Modo de execução:** Desenvolvimento local (localhost)  
 **Equipe:** Nattan, Keven, Margefson, Josias
@@ -163,8 +163,35 @@ VITE_APP_LOGO=
 | `VITE_OAUTH_PORTAL_URL` | Não | URL do portal de login OAuth |
 | `OWNER_OPEN_ID` | Não | OpenID do proprietário (promovido a admin automaticamente) |
 | `OWNER_NAME` | Não | Nome do proprietário |
+| `RESEND_API_KEY` | Recomendado | API key do Resend para envio de e-mails de reset de senha (começa com `re_`) |
+| `SMTP_HOST` | Recomendado | Servidor SMTP — use `smtp.resend.com` para o Resend |
+| `SMTP_PORT` | Recomendado | Porta SMTP — use `465` (SSL) para o Resend |
+| `SMTP_USER` | Recomendado | Usuário SMTP — use `resend` para o Resend |
+| `SMTP_PASS` | Recomendado | Senha SMTP — mesma que `RESEND_API_KEY` |
+| `SMTP_FROM` | Recomendado | Endereço de remetente — use `onboarding@resend.dev` no plano gratuito |
 | `BUILT_IN_FORGE_API_*` | Não | APIs externas opcionais (notificações, LLM) |
 | `VITE_ANALYTICS_*` | Não | Analytics de uso (opcional) |
+
+### 4.3 Configuração do Serviço de E-mail (Resend)
+
+O sistema utiliza o **Resend** (https://resend.com) para envio de e-mails de reset de senha. Para configurar:
+
+1. Crie uma conta gratuita em https://resend.com
+2. Acesse **API Keys** → **Create API Key**
+3. Copie a chave gerada (começa com `re_...`)
+4. Adicione ao `.env`:
+
+```env
+# ── E-mail (Resend) ──────────────────────────────────────────────────────────
+RESEND_API_KEY=re_sua_chave_aqui
+SMTP_HOST=smtp.resend.com
+SMTP_PORT=465
+SMTP_USER=resend
+SMTP_PASS=re_sua_chave_aqui
+SMTP_FROM=onboarding@resend.dev
+```
+
+> **Plano Gratuito:** No plano gratuito sem domínio verificado, o Resend só envia e-mails para o endereço do dono da conta. Para outros destinatários, o sistema exibe o link de reset diretamente na tela (modo fallback). Para enviar para qualquer destinatário, verifique um domínio próprio em https://resend.com/domains.
 
 ### 4.2 Gerando o JWT_SECRET
 

@@ -5,7 +5,7 @@
 ![Python](https://img.shields.io/badge/Python-3.11-3776AB?style=flat-square&logo=python)
 ![MySQL](https://img.shields.io/badge/MySQL-8.x-4479A1?style=flat-square&logo=mysql)
 ![ML Accuracy](https://img.shields.io/badge/ML%20Accuracy-97%25-brightgreen?style=flat-square)
-![Tests](https://img.shields.io/badge/tests-421%20passing-brightgreen)
+![Tests](https://img.shields.io/badge/tests-499%20passing-brightgreen)
 ![License](https://img.shields.io/badge/License-MIT-blue?style=flat-square)
 
 Plataforma de gerenciamento de incidentes de segurança cibernética com classificação automática por Machine Learning (TF-IDF + Naive Bayes), painel de administração global, **CRUD de categorias de incidentes (exclusivo para administradores)**, exportação de relatórios em PDF, notificações automáticas de risco crítico e interface SOC Portal — design profissional dark com tipografia Inter, sidebar compacta, badges coloridos por severidade e tabelas operacionais.
@@ -727,7 +727,19 @@ Tests: 296 passed
 | **8.5 Fluxo de Classificação** | `ml.test.ts` | 6 | Endpoint /classify, retorno category+confidence+method, fallback keyword |
 | **8.6 Admin ML — Dataset** | `ml.test.ts` | 4 | Download dataset, getMLMetrics, acesso admin-only |
 | **8.6 Admin ML — Retreinamento** | `ml.test.ts` | 4 | retrainModel, novas categorias, FORBIDDEN para user |
-**Total: 382 testes passando em 10 arquivos***
+| **S8-1 a S8-8: Dataset 2000 Amostras** | `session8.test.ts` | 39 | Dataset 2000 amostras, normalização colunas PT, endpoint /reload-model, integração automática |
+| **S9-1: email.ts — Estrutura** | `session9.test.ts` | 7 | Exportações, interface SendResetEmailResult, campos sent/linkInBand/deliveryNote/preview |
+| **S9-2: email.ts — HTML do E-mail** | `session9.test.ts` | 7 | buildEmailHtml, buildEmailText, botão de reset, aviso de validade, link fallback |
+| **S9-3: email.ts — Fallback In-Band** | `session9.test.ts` | 7 | Detecção restrição Resend, linkInBand:true, preview com URL, deliveryNote |
+| **S9-4: email.ts — API Resend** | `session9.test.ts` | 8 | REST API Resend, RESEND_API_KEY, validação re_, Authorization Bearer |
+| **S9-5: requestPasswordReset** | `session9.test.ts` | 9 | linkInBand false/true, resetUrl, deliveryNote, token 48 bytes, expiração 10min |
+| **S9-6: validateResetToken** | `session9.test.ts` | 7 | Token inválido/utilizado/expirado, usedAt, expiresAt, valid:true |
+| **S9-7: confirmPasswordReset** | `session9.test.ts` | 9 | bcrypt custo 12, erros tipados, resetPasswordWithToken, success:true |
+| **S9-8: Segurança Anti-Enumeração** | `session9.test.ts` | 7 | Retorno success para e-mail inexistente, procedures públicas, token hex URL-safe |
+| **S9-9: Frontend Login.tsx** | `session9.test.ts` | 10 | inBandLink, inBandNote, data.linkInBand, botões Copiar/Abrir, clipboard API |
+| **S9-10: Configuração SMTP/Resend** | `session9.test.ts` | 7 | SMTP_HOST/PORT/USER/PASS, SMTP_FROM, RESEND_API_KEY com re_ |
+
+**Total: 499 testes passando em 14 arquivos**
 
 ---
 
@@ -743,6 +755,8 @@ Tests: 296 passed
 | Página em branco após login | Cookie bloqueado pelo navegador | Use Chrome/Firefox em modo normal |
 | PDF vazio ou erro 500 | Nenhum incidente registrado | Registre ao menos um incidente antes de exportar |
 | Acesso negado ao `/admin` | Usuário sem role admin | Execute `UPDATE users SET role='admin' WHERE email='...'` |
+| E-mail de reset não chega | Resend em modo restrito (domínio não verificado) | O link é exibido diretamente na tela com botões "Copiar Link" e "Abrir Link" |
+| Reset só envia para um endereço | Plano gratuito Resend sem domínio verificado | Verifique um domínio em https://resend.com/domains para enviar para qualquer destinatário |
 
 ---
 

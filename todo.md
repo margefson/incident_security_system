@@ -373,3 +373,13 @@
 - [x] 39 novos testes S8-1 a S8-8 (421 passando em 13 arquivos)
 - [x] Atualizar README e manuais com novo dataset
 - [x] Regenerar PDFs dos manuais
+
+## Sessão 9 — Correção do Reset de Senha por E-mail
+- [ ] Investigar configuração SMTP e logs de envio de e-mail
+- [ ] Identificar causa raiz do não-envio do link de reset
+- [ ] Corrigir configuração SMTP (host, porta, autenticação)
+- [ ] Implementar fallback/diagnóstico de erro de e-mail
+- [ ] Testar envio real para kevecoimbra@icomp.ufam.edu.br
+- [ ] Adicionar testes individuais S9-x para reset de senha
+- [ ] Atualizar manuais e README com a correção
+- [ ] Commitar no GitHub
