@@ -89,6 +89,25 @@ export const incidentHistory = mysqlTable("incident_history", {
 });
 export type IncidentHistory = typeof incidentHistory.$inferSelect;
 export type InsertIncidentHistory = typeof incidentHistory.$inferInsert;
+// ─── In-App Notifications ─────────────────────────────────────────────────
+export const notifications = mysqlTable("notifications", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),           // recipient user
+  type: mysqlEnum("type", [
+    "reclassification",
+    "status_changed",
+    "risk_changed",
+    "system",
+  ]).notNull(),
+  title: varchar("title", { length: 255 }).notNull(),
+  message: text("message").notNull(),
+  incidentId: int("incidentId"),             // optional link to incident
+  isRead: boolean("isRead").default(false).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+export type Notification = typeof notifications.$inferSelect;
+export type InsertNotification = typeof notifications.$inferInsert;
+
 // ─── Password Reset Tokens ──────────────────────────────────────────────────
 export const passwordResetTokens = mysqlTable("password_reset_tokens", {
   id: int("id").autoincrement().primaryKey(),

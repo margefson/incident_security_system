@@ -1,7 +1,7 @@
 # Manual de Implantação
 ## INCIDENT_SYS — Sistema Web Seguro para Registro e Classificação de Incidentes de Segurança Cibernética
 
-**Versão:** 2.3  
+**Versão:** 2.4  
 **Data:** Abril de 2026 (Sessão 11 — Separação Metodológica de Datasets)  
 **Repositório:** https://github.com/margefson/incident_security_system  
 **Modo de execução:** Desenvolvimento local (localhost)  

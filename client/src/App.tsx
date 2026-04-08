@@ -18,6 +18,7 @@ import AdminML from "./pages/AdminML";
 import AdminUsers from "./pages/AdminUsers";
 import Profile from "./pages/Profile";
 import ResetPassword from "./pages/ResetPassword";
+import ResolutionMetrics from "./pages/ResolutionMetrics";
 function Router() {
   return (
     <Switch>
@@ -35,6 +36,7 @@ function Router() {
       <Route path="/admin/ml" component={AdminML} />
       <Route path="/admin/users" component={AdminUsers} />
       <Route path="/profile" component={Profile} />
+      <Route path="/metrics" component={ResolutionMetrics} />
       <Route path="/404" component={NotFound} />
       <Route component={NotFound} />
     </Switch>

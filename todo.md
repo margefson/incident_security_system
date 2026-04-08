@@ -404,3 +404,13 @@
 - [x] Testes individuais S11-x para os novos fluxos
 - [x] Atualizar manuais v2.3 e README
 - [x] Commitar no GitHub
+
+## Sessão 12 — Home com Template Dashboard + 3 Sugestões de Acompanhamento
+- [x] Analisar Home.tsx e Dashboard.tsx atuais
+- [x] Reescrever Home.tsx com template visual do dashboard (responsivo, ocupa melhor o espaço)
+- [x] Sugestão 1: Dashboard de métricas de resolução (tempo médio por categoria, tendências mensais, taxa de reabertura)
+- [x] Sugestão 2: Notificações in-app para reclassificação (usuário responsável recebe notificação com nova categoria)
+- [x] Sugestão 3: Exportação do histórico completo de incidentes para CSV (quem mudou, quando, de qual status para qual)
+- [x] Testes individuais S12-x para as novas funcionalidades
+- [x] Atualizar manuais v2.4 e README
+- [x] Commitar no GitHub

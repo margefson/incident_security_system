@@ -3,7 +3,7 @@ import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { toast } from "sonner";
 import {
-  LayoutDashboard, AlertTriangle, PlusCircle, BarChart2,
+  LayoutDashboard, AlertTriangle, PlusCircle, BarChart2, TrendingUp,
   Shield, ShieldAlert, LogOut, User, Tag, ChevronRight, Brain, Users
 } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -16,12 +16,14 @@ import {
   SidebarProvider,
 } from "@/components/ui/sidebar";
 import DashboardLayoutSkeleton from "./DashboardLayoutSkeleton";
+import NotificationBell from "./NotificationBell";
 
 const menuItems = [
   { path: "/dashboard",    label: "Dashboard",    icon: LayoutDashboard },
   { path: "/incidents",    label: "Incidentes",   icon: AlertTriangle },
   { path: "/incidents/new",label: "Novo Incidente",icon: PlusCircle },
   { path: "/risk",         label: "Análise de Risco", icon: BarChart2 },
+  { path: "/metrics",      label: "Métricas de Resolução", icon: TrendingUp },
 ];
 
 const adminItems = [
@@ -138,9 +140,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <ChevronRight className="w-3 h-3 text-muted-foreground/30" />
             <span className="text-foreground font-medium">{activeItem?.label ?? "Dashboard"}</span>
           </div>
-          <div className="flex items-center gap-1.5 text-xs font-mono text-primary">
-            <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
-            LIVE
+          <div className="flex items-center gap-3">
+            <NotificationBell />
+            <div className="flex items-center gap-1.5 text-xs font-mono text-primary">
+              <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
+              LIVE
+            </div>
           </div>
         </div>
         <main className="flex-1 p-5 max-w-screen-2xl">{children}</main>

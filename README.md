@@ -5,7 +5,7 @@
 ![Python](https://img.shields.io/badge/Python-3.11-3776AB?style=flat-square&logo=python)
 ![MySQL](https://img.shields.io/badge/MySQL-8.x-4479A1?style=flat-square&logo=mysql)
 ![ML Accuracy](https://img.shields.io/badge/ML%20Accuracy%20(CV)-97%25%20%7C%20Eval%3A78%25-brightgreen?style=flat-square)
-![Tests](https://img.shields.io/badge/tests-572%20passing-brightgreen)
+![Tests](https://img.shields.io/badge/tests-631%20passing-brightgreen)
 ![License](https://img.shields.io/badge/License-MIT-blue?style=flat-square)
 
 Plataforma de gerenciamento de incidentes de segurança cibernética com classificação automática por Machine Learning (TF-IDF + Naive Bayes), painel de administração global, **CRUD de categorias de incidentes (exclusivo para administradores)**, exportação de relatórios em PDF, notificações automáticas de risco crítico e interface SOC Portal — design profissional dark com tipografia Inter, sidebar compacta, badges coloridos por severidade e tabelas operacionais.
@@ -830,7 +830,19 @@ Tests: 296 passed
 | **S9-9: Frontend Login.tsx** | `session9.test.ts` | 10 | inBandLink, inBandNote, data.linkInBand, botões Copiar/Abrir, clipboard API |
 | **S9-10: Configuração SMTP/Resend** | `session9.test.ts` | 7 | SMTP_HOST/PORT/USER/PASS, SMTP_FROM, RESEND_API_KEY com re_ |
 
-**Total: 499 testes passando em 14 arquivos**
+| **S11-1 a S11-11: Separação Datasets** | `session11.test.ts` | 73 | Dataset treino (2000) vs avaliação (100), endpoint /evaluate, métricas independentes, badges de contexto |
+| **S12-1: Home.tsx Dashboard Template** | `session12.test.ts` | 6 | Home usa template do dashboard, responsiva, font-mono, link para /dashboard |
+| **S12-2: NotificationBell** | `session12.test.ts` | 8 | Sino de notificações, contador badge, polling 30s, marcar lidas, navegação |
+| **S12-3: DashboardLayout + Bell** | `session12.test.ts` | 4 | Integra NotificationBell no header, item Métricas de Resolução no menu |
+| **S12-4: Procedures Notificações** | `session12.test.ts` | 6 | notificationsRouter, list, unreadCount, markRead, markAllRead |
+| **S12-5: Notificação Reclassificação** | `session12.test.ts` | 5 | createNotification ao reclassificar, type reclassification, try/catch seguro |
+| **S12-6: Helpers Notificações db.ts** | `session12.test.ts` | 7 | createNotification, getNotificationsByUser, markRead, markAllRead, countUnread |
+| **S12-7: ResolutionMetrics página** | `session12.test.ts` | 8 | BarChart, LineChart, exportação CSV, taxa reabertura, DashboardLayout |
+| **S12-8: analyticsRouter** | `session12.test.ts` | 6 | resolutionMetrics, exportHistoryCsv, CSV com cabeçalhos PT, escape aspas |
+| **S12-9: Helpers Métricas db.ts** | `session12.test.ts` | 7 | getResolutionMetrics (TIMESTAMPDIFF, DATE_FORMAT), getAllIncidentHistoryForExport |
+| **S12-10: App.tsx rota /metrics** | `session12.test.ts` | 2 | Importa ResolutionMetrics, registra rota /metrics |
+
+**Total: 631 testes passando em 16 arquivos**
 
 ---
 
@@ -848,6 +860,9 @@ Tests: 296 passed
 | Acesso negado ao `/admin` | Usuário sem role admin | Execute `UPDATE users SET role='admin' WHERE email='...'` |
 | E-mail de reset não chega | Resend em modo restrito (domínio não verificado) | O link é exibido diretamente na tela com botões "Copiar Link" e "Abrir Link" |
 | Reset só envia para um endereço | Plano gratuito Resend sem domínio verificado | Verifique um domínio em https://resend.com/domains para enviar para qualquer destinatário |
+| Notificações não aparecem | Tabela `notifications` não criada | Execute o SQL de criação da tabela ou faça `pnpm db:push` |
+| Métricas de resolução vazias | Nenhum incidente resolvido | Resolva incidentes para gerar dados de tempo médio |
+| Exportação CSV vazia | Sem histórico de alterações | Altere status ou notas de incidentes para gerar histórico |
 
 ---
 

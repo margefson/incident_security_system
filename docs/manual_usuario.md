@@ -1,7 +1,7 @@
 # Manual do Usuário
 ## INCIDENT_SYS — Sistema Web Seguro para Registro e Classificação de Incidentes de Segurança Cibernética
 
-**Versão:** 2.3  
+**Versão:** 2.4  
 **Data:** Abril de 2026 (Sessão 11 — Separação Metodológica de Datasets)  
 **Repositório:** https://github.com/margefson/incident_security_system  
 **Equipe:** Nattan, Keven, Margefson, Josias
@@ -942,3 +942,70 @@ O sistema utiliza uma barra lateral persistente em todas as páginas autenticada
 **Administradores** visualizam adicionalmente: Administração (com submenu para Categorias, Usuários e Machine Learning).
 
 O menu do perfil (canto superior direito da sidebar) oferece acesso à página de Perfil e à opção de Logout.
+
+---
+
+## Sessão 12 — Melhorias Visuais e Funcionalidades de Acompanhamento
+
+### 12.1 Tela Principal Renovada
+
+A tela inicial (`/`) foi redesenhada com o mesmo template visual do dashboard, incluindo:
+- Fundo escuro com cards `bg-card` e bordas `border-border`
+- Tipografia monospace (`font-mono`) consistente com o restante do sistema
+- Layout responsivo com grid adaptativo (1 coluna em mobile, 2 em tablet, 3+ em desktop)
+- Estatísticas globais do sistema exibidas em cards de KPI
+- Botões de acesso rápido para Login e Dashboard
+
+### 12.2 Sino de Notificações In-App
+
+Um sino de notificações foi adicionado ao cabeçalho de todas as páginas do sistema:
+- **Badge vermelho** exibe o número de notificações não lidas
+- **Polling automático** a cada 30 segundos para verificar novas notificações
+- **Painel de notificações** com lista das últimas 50 notificações
+- **Marcar como lida** individualmente ou todas de uma vez
+- **Navegação direta** ao clicar em uma notificação com incidentId
+
+**Tipos de notificação:**
+| Tipo | Ícone | Cor | Quando é criada |
+|---|---|---|---|
+| `reclassification` | RefreshCw | Amarelo | Quando admin reclassifica um incidente do usuário |
+| `status_changed` | AlertTriangle | Azul | Quando status do incidente é alterado |
+| `risk_changed` | AlertTriangle | Laranja | Quando nível de risco é alterado |
+| `system` | Info | Cinza | Notificações gerais do sistema |
+
+### 12.3 Métricas de Resolução (`/metrics`)
+
+Nova página acessível pelo menu lateral "Métricas de Resolução":
+
+**KPIs exibidos:**
+- Tempo médio de resolução (média geral em horas)
+- Total de incidentes resolvidos
+- Número de incidentes reabertos e taxa de reabertura
+- Número de categorias com dados de resolução
+
+**Gráficos:**
+- **Barras**: Tempo médio de resolução por categoria
+- **Linhas**: Tendência mensal dos últimos 6 meses (total vs. resolvidos)
+
+**Tabela de detalhamento** com barra de progresso visual por categoria.
+
+### 12.4 Exportação do Histórico Completo para CSV
+
+Na página de Métricas de Resolução, o botão **"Exportar Histórico CSV"** gera um arquivo com todas as alterações registradas no sistema:
+
+| Coluna | Descrição |
+|---|---|
+| ID Histórico | Identificador único da entrada no histórico |
+| ID Incidente | Identificador do incidente relacionado |
+| Título Incidente | Título do incidente |
+| Categoria | Categoria do incidente |
+| Status Atual | Status atual do incidente |
+| Ação | Tipo de alteração (status_changed, notes_updated, etc.) |
+| Valor Anterior | Valor antes da alteração |
+| Novo Valor | Valor após a alteração |
+| Comentário | Comentário opcional registrado |
+| Alterado Por | Nome do usuário que realizou a alteração |
+| E-mail | E-mail do usuário |
+| Data/Hora | Timestamp ISO 8601 da alteração |
+
+O arquivo é gerado com BOM UTF-8 para compatibilidade com Excel e aspas duplas escapadas corretamente.

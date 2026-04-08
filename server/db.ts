@@ -491,3 +491,137 @@ export async function resetPasswordWithToken(userId: number, newPasswordHash: st
   await db.update(users).set({ passwordHash: newPasswordHash, mustChangePassword: false }).where(eq(users.id, userId));
   await db.update(passwordResetTokens).set({ usedAt: new Date() }).where(eq(passwordResetTokens.id, tokenId));
 }
+
+// ─── Notifications ──────────────────────────────────────────────────────────
+import { notifications, InsertNotification } from "../drizzle/schema";
+
+export async function createNotification(data: InsertNotification) {
+  const db = await getDb();
+  if (!db) return;
+  await db.insert(notifications).values(data);
+}
+
+export async function getNotificationsByUser(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db
+    .select()
+    .from(notifications)
+    .where(eq(notifications.userId, userId))
+    .orderBy(desc(notifications.createdAt))
+    .limit(50);
+}
+
+export async function markNotificationRead(id: number, userId: number) {
+  const db = await getDb();
+  if (!db) return;
+  await db
+    .update(notifications)
+    .set({ isRead: true })
+    .where(and(eq(notifications.id, id), eq(notifications.userId, userId)));
+}
+
+export async function markAllNotificationsRead(userId: number) {
+  const db = await getDb();
+  if (!db) return;
+  await db
+    .update(notifications)
+    .set({ isRead: true })
+    .where(eq(notifications.userId, userId));
+}
+
+export async function countUnreadNotifications(userId: number) {
+  const db = await getDb();
+  if (!db) return 0;
+  const rows = await db
+    .select({ count: sql<number>`count(*)` })
+    .from(notifications)
+    .where(and(eq(notifications.userId, userId), eq(notifications.isRead, false)));
+  return Number(rows[0]?.count ?? 0);
+}
+
+// ─── Resolution Metrics ─────────────────────────────────────────────────────
+export async function getResolutionMetrics() {
+  const db = await getDb();
+  if (!db) return null;
+
+  // Average resolution time per category (in hours)
+  const avgRows = await db
+    .select({
+      category: incidents.category,
+      avgHours: sql<number>`AVG(TIMESTAMPDIFF(HOUR, ${incidents.createdAt}, ${incidents.resolvedAt}))`,
+      count: sql<number>`COUNT(*)`,
+    })
+    .from(incidents)
+    .where(sql`${incidents.resolvedAt} IS NOT NULL`)
+    .groupBy(incidents.category);
+
+  // Monthly trend (last 6 months)
+  const trendRows = await db
+    .select({
+      month: sql<string>`DATE_FORMAT(${incidents.createdAt}, '%Y-%m')`,
+      total: sql<number>`COUNT(*)`,
+      resolved: sql<number>`SUM(CASE WHEN ${incidents.status} = 'resolved' THEN 1 ELSE 0 END)`,
+    })
+    .from(incidents)
+    .where(sql`${incidents.createdAt} >= DATE_SUB(NOW(), INTERVAL 6 MONTH)`)
+    .groupBy(sql`DATE_FORMAT(${incidents.createdAt}, '%Y-%m')`)
+    .orderBy(sql`DATE_FORMAT(${incidents.createdAt}, '%Y-%m')`);
+
+  // Reopened incidents (status went from resolved back to open/in_progress)
+  const reopenedRows = await db
+    .select({ count: sql<number>`COUNT(DISTINCT ${incidentHistory.incidentId})` })
+    .from(incidentHistory)
+    .where(
+      and(
+        eq(incidentHistory.action, "status_changed"),
+        eq(incidentHistory.fromValue, "resolved")
+      )
+    );
+
+  // Total resolved
+  const totalResolvedRows = await db
+    .select({ count: sql<number>`COUNT(*)` })
+    .from(incidents)
+    .where(eq(incidents.status, "resolved"));
+
+  return {
+    avgByCategory: avgRows.map((r) => ({
+      category: r.category,
+      avgHours: Number(r.avgHours ?? 0),
+      count: Number(r.count ?? 0),
+    })),
+    monthlyTrend: trendRows.map((r) => ({
+      month: r.month,
+      total: Number(r.total ?? 0),
+      resolved: Number(r.resolved ?? 0),
+    })),
+    reopenedCount: Number(reopenedRows[0]?.count ?? 0),
+    totalResolved: Number(totalResolvedRows[0]?.count ?? 0),
+  };
+}
+
+// ─── History CSV Export ─────────────────────────────────────────────────────
+export async function getAllIncidentHistoryForExport() {
+  const db = await getDb();
+  if (!db) return [];
+  return db
+    .select({
+      historyId: incidentHistory.id,
+      incidentId: incidentHistory.incidentId,
+      action: incidentHistory.action,
+      fromValue: incidentHistory.fromValue,
+      toValue: incidentHistory.toValue,
+      comment: incidentHistory.comment,
+      changedAt: incidentHistory.createdAt,
+      changedBy: users.name,
+      changedByEmail: users.email,
+      incidentTitle: incidents.title,
+      incidentCategory: incidents.category,
+      incidentStatus: incidents.status,
+    })
+    .from(incidentHistory)
+    .leftJoin(users, eq(incidentHistory.userId, users.id))
+    .leftJoin(incidents, eq(incidentHistory.incidentId, incidents.id))
+    .orderBy(desc(incidentHistory.createdAt));
+}

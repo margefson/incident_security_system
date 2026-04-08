@@ -34,6 +34,13 @@ import {
   createPasswordResetToken,
   getPasswordResetToken,
   resetPasswordWithToken,
+  createNotification,
+  getNotificationsByUser,
+  markNotificationRead,
+  markAllNotificationsRead,
+  countUnreadNotifications,
+  getResolutionMetrics,
+  getAllIncidentHistoryForExport,
 } from "./db";
 import { sendPasswordResetEmail } from "./email";
 import crypto from "crypto";
@@ -515,9 +522,32 @@ const adminRouter = router({
       category: z.enum(["phishing", "malware", "brute_force", "ddos", "vazamento_de_dados", "unknown"]),
       riskLevel: z.enum(["critical", "high", "medium", "low"]),
     }))
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
       const updated = await reclassifyIncident(input.id, input.category, input.riskLevel);
       if (!updated) throw new TRPCError({ code: "NOT_FOUND", message: "Incidente não encontrado" });
+      // Create in-app notification for the incident owner
+      try {
+        const incident = await getIncidentById(input.id);
+        if (incident && incident.userId !== ctx.user.id) {
+          const categoryLabels: Record<string, string> = {
+            phishing: "Phishing",
+            malware: "Malware",
+            brute_force: "Força Bruta",
+            ddos: "DDoS",
+            vazamento_de_dados: "Vazamento de Dados",
+            unknown: "Desconhecido",
+          };
+          await createNotification({
+            userId: incident.userId,
+            type: "reclassification",
+            title: "Incidente Reclassificado",
+            message: `Seu incidente "${incident.title}" foi reclassificado para a categoria "${categoryLabels[input.category] ?? input.category}" com risco "${input.riskLevel}" pelo administrador.`,
+            incidentId: input.id,
+          });
+        }
+      } catch (e) {
+        console.warn("[Notification] Failed to create reclassification notification:", e);
+      }
       return updated;
     }),
 
@@ -780,7 +810,79 @@ const reportsRouter = router({
       };
     }),
 });
-// ─── App Router ─────────────────────────────────────────────────────────
+// ─── // ─── Notifications Router ─────────────────────────────────────────────────
+const notificationsRouter = router({
+  list: protectedProcedure.query(async ({ ctx }) => {
+    return getNotificationsByUser(ctx.user.id);
+  }),
+  unreadCount: protectedProcedure.query(async ({ ctx }) => {
+    return countUnreadNotifications(ctx.user.id);
+  }),
+  markRead: protectedProcedure
+    .input(z.object({ id: z.number() }))
+    .mutation(async ({ ctx, input }) => {
+      await markNotificationRead(input.id, ctx.user.id);
+      return { success: true };
+    }),
+  markAllRead: protectedProcedure.mutation(async ({ ctx }) => {
+    await markAllNotificationsRead(ctx.user.id);
+    return { success: true };
+  }),
+});
+
+// ─── Analytics Router ─────────────────────────────────────────────────────
+const analyticsRouter = router({
+  resolutionMetrics: protectedProcedure.query(async () => {
+    return getResolutionMetrics();
+  }),
+  exportHistoryCsv: protectedProcedure.query(async () => {
+    const rows = await getAllIncidentHistoryForExport();
+    if (!rows.length) return { csv: "", filename: "historico_incidentes.csv" };
+    const headers = [
+      "ID Histórico",
+      "ID Incidente",
+      "Título Incidente",
+      "Categoria",
+      "Status Atual",
+      "Ação",
+      "Valor Anterior",
+      "Novo Valor",
+      "Comentário",
+      "Alterado Por",
+      "E-mail",
+      "Data/Hora",
+    ];
+    const escape = (v: unknown) => {
+      if (v === null || v === undefined) return "";
+      const s = String(v);
+      if (s.includes(",") || s.includes('"') || s.includes("\n")) {
+        return `"${s.replace(/"/g, '""')}"`;
+      }
+      return s;
+    };
+    const csvRows = rows.map((r) => [
+      r.historyId,
+      r.incidentId,
+      r.incidentTitle ?? "",
+      r.incidentCategory ?? "",
+      r.incidentStatus ?? "",
+      r.action,
+      r.fromValue ?? "",
+      r.toValue ?? "",
+      r.comment ?? "",
+      r.changedBy ?? "",
+      r.changedByEmail ?? "",
+      r.changedAt ? new Date(r.changedAt).toISOString() : "",
+    ].map(escape).join(","));
+    const csv = [headers.join(","), ...csvRows].join("\n");
+    return {
+      csv,
+      filename: `historico_incidentes_${new Date().toISOString().slice(0, 10)}.csv`,
+    };
+  }),
+});
+
+// ─── App Router ──────────────────────────────────────────────────
 export const appRouter = router({
   system: systemRouter,
   auth: authRouter,
@@ -788,6 +890,8 @@ export const appRouter = router({
   categories: categoriesRouter,
   admin: adminRouter,
   reports: reportsRouter,
+  notifications: notificationsRouter,
+  analytics: analyticsRouter,
 });
 
 export type AppRouter = typeof appRouter;
