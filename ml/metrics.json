@@ -1,6 +1,5 @@
 {
   "method": "TF-IDF + Naive Bayes (MultinomialNB)",
-  "dataset_size": 2000,
   "categories": [
     "brute_force",
     "vazamento_de_dados",
@@ -8,6 +7,133 @@
     "malware",
     "phishing"
   ],
+  "training": {
+    "dataset": "incidentes_cybersecurity_2000.xlsx",
+    "dataset_size": 2000,
+    "categories": [
+      "brute_force",
+      "vazamento_de_dados",
+      "ddos",
+      "malware",
+      "phishing"
+    ],
+    "cv_accuracy_mean": 1.0,
+    "cv_accuracy_std": 0.0,
+    "train_accuracy": 1.0,
+    "category_distribution": {
+      "malware": 436,
+      "brute_force": 423,
+      "phishing": 401,
+      "vazamento_de_dados": 371,
+      "ddos": 369
+    },
+    "new_samples_added": 0,
+    "new_categories": []
+  },
+  "evaluation": {
+    "dataset": "incidentes_cybersecurity_100.xlsx",
+    "dataset_size": 100,
+    "eval_accuracy": 0.78,
+    "category_distribution": {
+      "phishing": 20,
+      "malware": 20,
+      "brute_force": 20,
+      "ddos": 20,
+      "vazamento_de_dados": 20
+    },
+    "per_category": {
+      "brute_force": {
+        "precision": 0.8235,
+        "recall": 0.7,
+        "f1_score": 0.7568,
+        "support": 20
+      },
+      "ddos": {
+        "precision": 0.9474,
+        "recall": 0.9,
+        "f1_score": 0.9231,
+        "support": 20
+      },
+      "malware": {
+        "precision": 0.875,
+        "recall": 0.7,
+        "f1_score": 0.7778,
+        "support": 20
+      },
+      "phishing": {
+        "precision": 0.72,
+        "recall": 0.9,
+        "f1_score": 0.8,
+        "support": 20
+      },
+      "vazamento_de_dados": {
+        "precision": 0.6087,
+        "recall": 0.7,
+        "f1_score": 0.6512,
+        "support": 20
+      }
+    },
+    "macro_avg": {
+      "precision": 0.7949,
+      "recall": 0.78,
+      "f1_score": 0.7818
+    },
+    "weighted_avg": {
+      "precision": 0.7949,
+      "recall": 0.78,
+      "f1_score": 0.7818
+    },
+    "confusion_matrix": {
+      "labels": [
+        "brute_force",
+        "ddos",
+        "malware",
+        "phishing",
+        "vazamento_de_dados"
+      ],
+      "matrix": [
+        [
+          14,
+          1,
+          0,
+          2,
+          3
+        ],
+        [
+          1,
+          18,
+          1,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          14,
+          1,
+          5
+        ],
+        [
+          1,
+          0,
+          0,
+          18,
+          1
+        ],
+        [
+          1,
+          0,
+          1,
+          4,
+          14
+        ]
+      ]
+    },
+    "evaluated_at": "2026-04-08T18:26:31.619618+00:00"
+  },
+  "last_updated": "2026-04-08T00:02:28.632675+00:00",
+  "last_evaluated": "2026-04-08T18:26:31.619618+00:00",
+  "dataset_size": 2000,
   "cv_accuracy_mean": 1.0,
   "cv_accuracy_std": 0.0,
   "train_accuracy": 1.0,
@@ -17,6 +143,5 @@
     "phishing": 401,
     "vazamento_de_dados": 371,
     "ddos": 369
-  },
-  "last_updated": "2026-04-08T00:02:28.632675+00:00"
+  }
 }

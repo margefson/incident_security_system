@@ -1,8 +1,8 @@
 # Manual do Usuário
 ## INCIDENT_SYS — Sistema Web Seguro para Registro e Classificação de Incidentes de Segurança Cibernética
 
-**Versão:** 2.2  
-**Data:** Abril de 2026 (Sessão 10 — Documentação de Rotas)  
+**Versão:** 2.3  
+**Data:** Abril de 2026 (Sessão 11 — Separação Metodológica de Datasets)  
 **Repositório:** https://github.com/margefson/incident_security_system  
 **Equipe:** Nattan, Keven, Margefson, Josias
 
@@ -288,18 +288,31 @@ O motor de classificação é composto por um pipeline scikit-learn com duas eta
 
 **Multinomial Naive Bayes**: Classificador probabilístico que calcula a probabilidade posterior de cada categoria dado o vetor TF-IDF. Retorna a categoria com maior probabilidade e o score de confiança associado.
 
-### 8.2 Dataset de Treinamento
+### 8.2 Datasets — Separação Metodológica
 
-O modelo foi treinado com o arquivo `incidentes_cybersecurity_2000.xlsx`, contendo 2000 amostras balanceadas (20 por categoria). Cada amostra possui título, descrição e categoria rotulada.
+Seguindo a metodologia científica para avaliação de modelos de Machine Learning, o sistema utiliza **dois conjuntos de dados distintos e independentes**:
+
+| Papel | Arquivo | Amostras | Uso |
+|---|---|---|---|
+| **Treinamento** | `incidentes_cybersecurity_2000.xlsx` | 2.000 | Treinar o modelo TF-IDF + Naive Bayes |
+| **Avaliação** | `incidentes_cybersecurity_100.xlsx` | 100 | Avaliar o modelo em produção (conjunto independente) |
+
+> **Princípio fundamental:** O dataset de avaliação **nunca é incluído no treino**. Isso garante que as métricas de avaliação reflitam o desempenho real do modelo em dados nunca vistos, evitando o viés de vazamento de dados (*data leakage*).
+
+Ambos os datasets estão disponíveis para download na tela **Machine Learning** (`/admin/ml`), na aba **Treinamento** e na aba **Avaliação**, respectivamente.
 
 ### 8.3 Métricas de Desempenho
 
-| Métrica | Valor |
-|---|---|
-| Acurácia no conjunto de treino | 100% |
-| Acurácia em cross-validation (5-fold) | 97% ± 6% |
-| Número de categorias | 5 |
-| Tamanho do vocabulário TF-IDF | 5.000 features |
+| Métrica | Conjunto | Valor |
+|---|---|---|
+| Acurácia no conjunto de treino | Dataset de Treino (2.000 amostras) | 100% |
+| Acurácia em cross-validation (5-fold) | Dataset de Treino | 97% ± 6% |
+| Acurácia de avaliação | Dataset de Avaliação (100 amostras) | 78% |
+| F1-Score macro | Dataset de Avaliação | 78,18% |
+| Número de categorias | — | 5 |
+| Tamanho do vocabulário TF-IDF | — | 5.000 features |
+
+> A diferença entre acurácia de treino (100%) e acurácia de avaliação (78%) é o comportamento esperado e correto em ML. O modelo aprende os padrões do conjunto de treino e generaliza para dados novos com desempenho ligeiramente inferior.
 
 ### 8.4 Categorias e Mapeamento de Risco
 
@@ -323,15 +336,19 @@ O campo `method` indica a origem da classificação:
 | `"ml"` | Classificação realizada pelo modelo TF-IDF + Naive Bayes (servidor Flask disponível) |
 | `"keyword"` | Classificação por palavras-chave (fallback automático quando o servidor Flask está indisponível) |
 
-### 8.6 Gestão do Dataset e Retreinamento (Admin)
+### 8.6 Gestão dos Datasets e Retreinamento (Admin)
 
-Administradores têm acesso à tela **Machine Learning** (`/admin/ml`) com as seguintes funcionalidades:
+Administradores têm acesso à tela **Machine Learning** (`/admin/ml`) organizada em duas abas principais:
 
-**Download do Dataset de Treinamento:** O botão "Baixar Dataset" disponibiliza o arquivo `incidentes_cybersecurity_2000.xlsx` diretamente no navegador. O arquivo contém as 2000 amostras originais (20 por categoria) usadas para treinar o modelo atual.
+#### Aba Treinamento
 
-**Métricas do Modelo:** A tela exibe as métricas atuais do modelo (acurácia de treino, acurácia CV, tamanho do dataset, distribuição por categoria).
+Exibe informações sobre o dataset de treinamento (`incidentes_cybersecurity_2000.xlsx`) e as métricas do modelo treinado. Um badge azul **DATASET DE TREINO** identifica visualmente o contexto.
 
-**Retreinamento com Novas Categorias:** A seção "Retreinar Modelo" permite que o administrador adicione novas amostras de treinamento para categorias existentes ou novas categorias que não fazem parte das 5 originais. O formulário solicita:
+**Download do Dataset de Treinamento:** O botão "Baixar Dataset de Treino" disponibiliza o arquivo `incidentes_cybersecurity_2000.xlsx` diretamente no navegador.
+
+**Métricas de Treino:** Exibe acurácia de treino (100%), acurácia em cross-validation (97%), tamanho do dataset (2.000 amostras) e distribuição por categoria.
+
+**Retreinamento com Novas Categorias:** A seção "Retreinar Modelo" permite adicionar novas amostras de treinamento. O formulário solicita:
 
 | Campo | Obrigatório | Descrição |
 |---|---|---|
@@ -340,9 +357,29 @@ Administradores têm acesso à tela **Machine Learning** (`/admin/ml`) com as se
 | Categoria | Sim | Rótulo da categoria (ex: `engenharia_social`) |
 | Nível de Risco | Sim | `critical`, `high`, `medium` ou `low` |
 
-Após o retreinamento, o modelo é atualizado imediatamente e as novas categorias passam a ser reconhecidas pelo endpoint `/classify`. As métricas de desempenho são exibidas na tela após o processo.
+> **Nota:** O retreinamento usa **apenas** o dataset de treinamento (2.000 amostras). O dataset de avaliação nunca é incluído no treino.
 
-> **Nota:** O retreinamento é incremental — as novas amostras são adicionadas ao dataset existente antes de retreinar o modelo completo. Recomenda-se fornecer pelo menos 5 amostras por nova categoria para garantir boa acurácia.
+#### Aba Avaliação
+
+Exibe informações sobre o dataset de avaliação (`incidentes_cybersecurity_100.xlsx`) e as métricas de desempenho independente. Um badge verde **DATASET DE AVALIAÇÃO** identifica visualmente o contexto.
+
+**Download do Dataset de Avaliação:** O botão "Baixar Dataset de Avaliação" disponibiliza o arquivo `incidentes_cybersecurity_100.xlsx`.
+
+**Avaliar Modelo:** O botão "Avaliar Modelo Agora" executa a avaliação completa do modelo com as 100 amostras independentes e exibe:
+- Acurácia de avaliação (78%)
+- F1-Score macro e ponderado
+- Precision, Recall e F1 por categoria
+- Matriz de confusão
+
+#### Indicador de Dataset em Uso
+
+Em todas as telas relevantes, o sistema exibe um badge indicando qual dataset está sendo utilizado no contexto atual:
+
+| Badge | Cor | Contexto |
+|---|---|---|
+| **DATASET DE TREINO** | Azul | Tela de retreinamento, métricas de treino |
+| **DATASET DE AVALIAÇÃO** | Verde | Tela de avaliação, métricas de avaliação |
+| **Modelo: TF-IDF + Naive Bayes** | Roxo | Tela de classificação de incidentes |
 
 ---
 

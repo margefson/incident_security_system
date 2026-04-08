@@ -1,8 +1,8 @@
 # Manual de Implantação
 ## INCIDENT_SYS — Sistema Web Seguro para Registro e Classificação de Incidentes de Segurança Cibernética
 
-**Versão:** 2.2  
-**Data:** Abril de 2026 (Sessão 10 — Documentação de Rotas)  
+**Versão:** 2.3  
+**Data:** Abril de 2026 (Sessão 11 — Separação Metodológica de Datasets)  
 **Repositório:** https://github.com/margefson/incident_security_system  
 **Modo de execução:** Desenvolvimento local (localhost)  
 **Equipe:** Nattan, Keven, Margefson, Josias
@@ -325,7 +325,20 @@ pip3 install scikit-learn flask openpyxl joblib pandas
 
 ## 8. Treinamento do Modelo de Machine Learning
 
-O modelo precisa ser treinado antes da primeira execução. O arquivo `model.pkl` já está incluído no repositório (treinado com o dataset de 100 amostras), mas caso queira retreinar:
+### 8.1 Separação Metodológica de Datasets
+
+O sistema utiliza **dois datasets distintos e independentes**, seguindo a metodologia científica de avaliação de modelos de ML:
+
+| Arquivo | Papel | Amostras | Localização |
+|---|---|---|---|
+| `incidentes_cybersecurity_2000.xlsx` | **Treinamento** | 2.000 | `ml/` |
+| `incidentes_cybersecurity_100.xlsx` | **Avaliação** | 100 | `ml/` |
+
+> **Regra fundamental:** O dataset de avaliação (`_100.xlsx`) **nunca é usado no treino**. Isso evita *data leakage* e garante métricas de avaliação confiáveis.
+
+### 8.2 Treinamento do Modelo
+
+O modelo é treinado **exclusivamente** com o dataset de 2.000 amostras. O arquivo `model.pkl` já está incluído no repositório. Para retreinar via script:
 
 ```bash
 # No diretório ml/ (com ambiente virtual ativado, se aplicável)
@@ -334,29 +347,40 @@ python3 train_model.py
 ```
 
 O script executa as seguintes etapas:
-1. Carrega o dataset `incidentes_cybersecurity_100.xlsx` (100 amostras, 5 categorias, 20 por categoria).
+1. Carrega o dataset `incidentes_cybersecurity_2000.xlsx` (2.000 amostras, 5 categorias, 400 por categoria).
 2. Concatena título e descrição em um único campo de texto.
 3. Normaliza o texto (lowercase, strip).
 4. Treina o pipeline TF-IDF + Naive Bayes com cross-validation de 5 folds.
 5. Salva o modelo serializado em `ml/model.pkl`.
-6. Salva as métricas de desempenho em `ml/metrics.json`.
+6. Salva as métricas de desempenho em `ml/metrics.json` (estrutura com campos `training` e `evaluation`).
 
 A saída esperada no terminal é:
 
 ```
-[ML] Carregando dataset...
-[ML] Dataset carregado: 100 amostras
+[ML] Carregando dataset de TREINAMENTO: incidentes_cybersecurity_2000.xlsx
+[ML] Dataset carregado: 2000 amostras
 [ML] Distribuição de categorias:
-phishing              20
-malware               20
-brute_force           20
-ddos                  20
-vazamento_de_dados    20
-[ML] Acurácia CV (5-fold): 0.97 ± 0.06
+phishing              400
+malware               400
+brute_force           400
+ddos                  400
+vazamento_de_dados    400
+[ML] Acurácia CV (5-fold): 1.00 ± 0.00
 [ML] Acurácia no treino: 1.00
 [ML] Modelo salvo em: ml/model.pkl
 [ML] Métricas salvas em: ml/metrics.json
 ```
+
+### 8.3 Avaliação do Modelo
+
+Após o treino, o modelo pode ser avaliado com o dataset independente de 100 amostras via endpoint REST ou pela interface admin:
+
+```bash
+# Avaliar via API (servidor Flask deve estar rodando)
+curl -s -X POST http://localhost:5001/evaluate | python3 -m json.tool
+```
+
+A saída inclui acurácia de avaliação (~78%), F1-Score por categoria e matriz de confusão.
 
 > **Nota:** O arquivo `model.pkl` já está presente no repositório. O retreinamento é necessário apenas se o dataset for atualizado ou se o arquivo for removido.
 
@@ -961,4 +985,4 @@ Os servidores Flask **não devem ser expostos publicamente**. Configure o firewa
 
 ---
 
-*Manual de Implantação v2.2 — Atualizado em Abril de 2026 (Sessão 10 — Documentação de Rotas). Para suporte técnico, consulte o repositório: https://github.com/margefson/incident_security_system*
+*Manual de Implantação v2.2 — Atualizado em Abril de 2026 (Sessão 11 — Separação Metodológica de Datasets). Para suporte técnico, consulte o repositório: https://github.com/margefson/incident_security_system*

@@ -4,8 +4,8 @@
 ![React](https://img.shields.io/badge/React-19-61DAFB?style=flat-square&logo=react)
 ![Python](https://img.shields.io/badge/Python-3.11-3776AB?style=flat-square&logo=python)
 ![MySQL](https://img.shields.io/badge/MySQL-8.x-4479A1?style=flat-square&logo=mysql)
-![ML Accuracy](https://img.shields.io/badge/ML%20Accuracy-97%25-brightgreen?style=flat-square)
-![Tests](https://img.shields.io/badge/tests-499%20passing-brightgreen)
+![ML Accuracy](https://img.shields.io/badge/ML%20Accuracy%20(CV)-97%25%20%7C%20Eval%3A78%25-brightgreen?style=flat-square)
+![Tests](https://img.shields.io/badge/tests-572%20passing-brightgreen)
 ![License](https://img.shields.io/badge/License-MIT-blue?style=flat-square)
 
 Plataforma de gerenciamento de incidentes de segurança cibernética com classificação automática por Machine Learning (TF-IDF + Naive Bayes), painel de administração global, **CRUD de categorias de incidentes (exclusivo para administradores)**, exportação de relatórios em PDF, notificações automáticas de risco crítico e interface SOC Portal — design profissional dark com tipografia Inter, sidebar compacta, badges coloridos por severidade e tabelas operacionais.
@@ -274,7 +274,18 @@ Node.js recebe via tRPC incidents.create
 
 ## Modelo de Machine Learning
 
-O classificador usa um pipeline scikit-learn com vetorização TF-IDF (máximo 5000 features, bigramas) seguido de um classificador Multinomial Naive Bayes (alpha=0.1).
+O classificador usa um pipeline scikit-learn com vetorização TF-IDF (máximo 5000 features, bigramas) seguido de um classificador Multinomial Naive Bayes.
+
+### Separação Metodológica de Datasets
+
+Seguindo a metodologia científica para avaliação de modelos de ML/LLM, o sistema utiliza **dois datasets distintos e independentes**:
+
+| Papel | Arquivo | Amostras | Uso |
+|---|---|---|---|
+| **Treinamento** | `incidentes_cybersecurity_2000.xlsx` | 2.000 | Treinar o modelo TF-IDF + Naive Bayes |
+| **Avaliação** | `incidentes_cybersecurity_100.xlsx` | 100 | Avaliar o modelo em produção (conjunto independente) |
+
+> **Princípio fundamental:** O dataset de avaliação **nunca é incluído no treino**. Isso evita *data leakage* e garante métricas de avaliação confiáveis.
 
 ### Categorias e Níveis de Risco
 
@@ -288,13 +299,22 @@ O classificador usa um pipeline scikit-learn com vetorização TF-IDF (máximo 5
 
 ### Métricas do Modelo
 
-| Métrica | Valor |
-|---|---|
-| Acurácia (Cross-Validation 5-fold) | 97% |
-| Dataset de treinamento | 2000 amostras |
-| Algoritmo | TF-IDF + Multinomial Naive Bayes |
-| Features máximas | 5.000 |
-| N-gramas | Unigramas e bigramas |
+| Métrica | Conjunto | Valor |
+|---|---|---|
+| Acurácia no treino | Dataset de Treino (2.000 amostras) | 100% |
+| Acurácia Cross-Validation (5-fold) | Dataset de Treino | 97% |
+| **Acurácia de Avaliação** | **Dataset de Avaliação (100 amostras)** | **78%** |
+| F1-Score macro | Dataset de Avaliação | 78,18% |
+| Algoritmo | — | TF-IDF + Multinomial Naive Bayes |
+| Features máximas | — | 5.000 |
+| N-gramas | — | Unigramas e bigramas |
+
+### Indicadores Visuais de Dataset
+
+A interface exibe badges coloridos indicando qual dataset está sendo utilizado em cada contexto:
+- **Badge azul "DATASET DE TREINO"** — tela de retreinamento e métricas de treino
+- **Badge verde "DATASET DE AVALIAÇÃO"** — tela de avaliação e métricas independentes
+- **Badge roxo "Modelo: TF-IDF + Naive Bayes"** — tela de classificação de incidentes
 
 ---
 

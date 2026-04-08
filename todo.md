@@ -392,3 +392,15 @@
 - [x] Atualizar manual de implantação com seção de rotas e API
 - [x] Regenerar PDFs dos manuais v2.2
 - [x] Commitar no GitHub
+
+## Sessão 11 — Separação Dataset Treino/Avaliação (Metodologia ML)
+- [x] Analisar código atual do ML (Flask, routers, frontend AdminML)
+- [x] Modificar classifier_server.py: dataset treino=2000, dataset avaliação=100
+- [x] Endpoint /evaluate no Flask para avaliação com dataset de 100 amostras
+- [x] Endpoint /metrics atualizado com info de ambos os datasets
+- [x] Atualizar routers.ts: getMLMetrics com info treino e avaliação separados
+- [x] Atualizar AdminML.tsx: exibir claramente qual dataset está em uso em cada contexto
+- [x] Badge/indicador no Dashboard e NewIncident mostrando dataset ativo
+- [x] Testes individuais S11-x para os novos fluxos
+- [x] Atualizar manuais v2.3 e README
+- [x] Commitar no GitHub

@@ -123,7 +123,9 @@ describe("S6-3: ML — data de última atualização do modelo", () => {
     if (fs.existsSync(adminMLPath)) {
       const adminMLContent = fs.readFileSync(adminMLPath, "utf-8");
       expect(adminMLContent).toContain("last_updated");
-      expect(adminMLContent).toContain("Última atualização");
+      // Aceita tanto "Última atualização" quanto "Último treino" (S11 renomeou o label)
+      const hasDateLabel = adminMLContent.includes("Última atualização") || adminMLContent.includes("Último treino");
+      expect(hasDateLabel).toBe(true);
     } else {
       expect(true).toBe(true);
     }

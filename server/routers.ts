@@ -580,20 +580,43 @@ const adminRouter = router({
   stats: adminProcedure.query(async () => {
     return getGlobalStats();
   }),
-  // ─── ML Procedures ───────────────────────────────────────────────────────
+  //   // ─── ML Procedures ────────────────────────────────────────────
   getMLMetrics: adminProcedure.query(async () => {
     const ML_URL = process.env.ML_SERVICE_URL ?? "http://localhost:5001";
     const response = await fetch(`${ML_URL}/metrics`);
     if (!response.ok) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "ML service unavailable" });
     const data = await response.json() as {
       method: string;
-      dataset_size: number;
       categories: string[];
+      // Nova estrutura com treino e avaliação separados
+      training: {
+        dataset: string;
+        dataset_size: number;
+        categories: string[];
+        cv_accuracy_mean: number;
+        cv_accuracy_std: number;
+        train_accuracy: number;
+        category_distribution: Record<string, number>;
+      };
+      evaluation: {
+        dataset: string;
+        dataset_size: number;
+        eval_accuracy: number;
+        category_distribution: Record<string, number>;
+        per_category: Record<string, { precision: number; recall: number; f1_score: number; support: number }>;
+        macro_avg: { precision: number; recall: number; f1_score: number };
+        weighted_avg: { precision: number; recall: number; f1_score: number };
+        confusion_matrix: { labels: string[]; matrix: number[][] };
+        evaluated_at: string;
+      } | null;
+      last_updated?: string;
+      last_evaluated?: string | null;
+      // Campos legados para compatibilidade
+      dataset_size: number;
       cv_accuracy_mean: number;
       cv_accuracy_std: number;
       train_accuracy: number;
       category_distribution: Record<string, number>;
-      last_updated?: string;
     };
     return data;
   }),
@@ -602,11 +625,49 @@ const adminRouter = router({
     const response = await fetch(`${ML_URL}/dataset`);
     if (!response.ok) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "ML service unavailable" });
     const data = await response.json() as {
+      role: string;
       filename: string;
       base64: string;
       total_samples: number;
       category_distribution: Record<string, number>;
       preview: Array<{ title: string; description: string; category: string }>;
+    };
+    return data;
+  }),
+  getEvalDataset: adminProcedure.query(async () => {
+    const ML_URL = process.env.ML_SERVICE_URL ?? "http://localhost:5001";
+    const response = await fetch(`${ML_URL}/eval-dataset`);
+    if (!response.ok) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "ML service unavailable" });
+    const data = await response.json() as {
+      role: string;
+      filename: string;
+      base64: string;
+      total_samples: number;
+      category_distribution: Record<string, number>;
+      preview: Array<{ title: string; description: string; category: string }>;
+    };
+    return data;
+  }),
+  evaluateModel: adminProcedure.mutation(async () => {
+    const ML_URL = process.env.ML_SERVICE_URL ?? "http://localhost:5001";
+    const response = await fetch(`${ML_URL}/evaluate`, { method: "POST" });
+    if (!response.ok) {
+      const err = await response.json() as { error?: string };
+      throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: err.error ?? "Evaluation failed" });
+    }
+    const data = await response.json() as {
+      success: boolean;
+      evaluation: {
+        dataset: string;
+        dataset_size: number;
+        eval_accuracy: number;
+        category_distribution: Record<string, number>;
+        per_category: Record<string, { precision: number; recall: number; f1_score: number; support: number }>;
+        macro_avg: { precision: number; recall: number; f1_score: number };
+        weighted_avg: { precision: number; recall: number; f1_score: number };
+        confusion_matrix: { labels: string[]; matrix: number[][] };
+        evaluated_at: string;
+      };
     };
     return data;
   }),
