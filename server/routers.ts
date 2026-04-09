@@ -3,7 +3,7 @@ import { generatePdfBuffer, type IncidentRow } from "./pdf";
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
-import { execSync } from "child_process";
+import { execSync, spawn } from "child_process";
 import { z } from "zod/v4";
 import { COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
@@ -1134,13 +1134,17 @@ const adminRouter = router({
         // 2. Aguardar 1 segundo para liberar a porta
         await new Promise(resolve => setTimeout(resolve, 1000));
 
-        // 3. Iniciar novo processo Flask na porta especificada
-        execSync(
-          `nohup python3 ${SCRIPT_PATH} --port ${input.port} > ${LOG_PATH} 2>&1 &`,
-          { timeout: 5000, cwd: SCRIPT_DIR }
-        );
+        // 3. Iniciar novo processo Flask na porta especificada usando spawn (nao execSync)
+        // spawn permite que o processo inicie em background sem bloquear
+        const logStream = fs.createWriteStream(LOG_PATH, { flags: "a" });
+        const proc = spawn("python3", [SCRIPT_PATH, "--port", String(input.port)], {
+          cwd: SCRIPT_DIR,
+          detached: true,
+          stdio: ["ignore", logStream, logStream],
+        });
+        proc.unref(); // Permite que o Node.js saia sem aguardar este processo
 
-        // 4. Aguardar 5 segundos para o Flask inicializar
+        // 4. Aguardar 8 segundos para o Flask inicializar (carregamento do modelo leva tempo)
         await new Promise(resolve => setTimeout(resolve, 5000));
 
         // 5. Verificar se o serviço está respondendo

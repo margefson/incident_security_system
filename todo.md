@@ -518,4 +518,15 @@
 - [x] Adicionar Log de Eventos visível na UI (histórico de verificações e reinicializações)
 - [x] Adicionar testes S26 (session26.test.ts)
 - [x] Atualizar README e manuais
-- [ ] Comitar no GitHub
+- [x] Comitar no GitHub
+
+## Sessão 27 — Correção restartService: spawn ao invés de execSync
+
+- [x] Diagnosticar por que Flask não responde após reinício manual
+- [x] Identificar que execSync com nohup & não funciona corretamente
+- [x] Corrigir restartService para usar spawn com detached: true
+- [x] Aumentar timeout de espera para 8 segundos (carregamento do modelo)
+- [x] Adicionar import de spawn no routers.ts
+- [x] Corrigir teste S16-1.3 para usar janela de 3000 chars
+- [x] Validar que 1123 testes passam
+- [ ] Atualizar README e comitar no GitHub

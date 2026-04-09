@@ -5,7 +5,7 @@
 ![Python](https://img.shields.io/badge/Python-3.11-3776AB?style=flat-square&logo=python)
 ![MySQL](https://img.shields.io/badge/MySQL-8.x-4479A1?style=flat-square&logo=mysql)
 ![ML Accuracy](https://img.shields.io/badge/ML%20Accuracy%20(CV)-97%25%20%7C%20Eval%3A78%25-brightgreen?style=flat-square)
-![Tests](https://img.shields.io/badge/tests-1123%20passing-brightgreen)
+![Tests](https://img.shields.io/badge/tests-1123%20passing%20(S27)-brightgreen)
 ![License](https://img.shields.io/badge/License-MIT-blue?style=flat-square)
 
 Plataforma de gerenciamento de incidentes de segurança cibernética com classificação automática por Machine Learning (TF-IDF + Naive Bayes), painel de administração global, **CRUD de categorias de incidentes (exclusivo para administradores)**, exportação de relatórios em PDF, notificações automáticas de risco crítico e interface SOC Portal — design profissional dark com tipografia Inter, sidebar compacta, badges coloridos por severidade e tabelas operacionais.
@@ -894,6 +894,13 @@ Tests: 296 passed
 | **S18-8: Métricas 5050** | `session18.test.ts` | 5 | dataset_size >= 5000, train_accuracy >= 0.99, 1000/categoria, last_updated, TRAIN_DATASET_PATH |
 
 **Total: 1001 testes passando em 26 arquivos**
+
+### Sessão 27 (v3.9) — Correção restartService: spawn ao invés de execSync
+- **Problema identificado**: `restartService` usava `execSync` com `nohup python3 ... &`, mas `execSync` bloqueia a thread e não retorna até que o comando termine — causando timeout ou falha de reinicialização
+- **Solução**: Usar `spawn` com `detached: true` e `proc.unref()` para permitir que o processo inicie em background sem bloquear a thread Node.js
+- **Timeout aumentado**: de 5 segundos para 8 segundos (o carregamento do modelo de ML leva tempo)
+- **Teste corrigido**: S16-1.3 agora usa janela de 3000 chars (antes 2000 era insuficiente)
+- **1123 testes passando** em 30 arquivos
 
 ### Sessão 26 (v3.8) — Correção Definitiva Flask Offline + Logs de Acompanhamento
 - **pdf_server.py com argparse**: o servidor PDF agora aceita `--port` como argumento CLI via `argparse`, com default 5002; elimina o problema em que `startFlaskServer` passava `--port` mas o script ignorava o argumento

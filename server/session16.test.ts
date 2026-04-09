@@ -26,7 +26,7 @@ describe("S16-1 — Procedure restartService no adminRouter", () => {
 
   it("S16-1.3 restartService retorna success e message", () => {
     const idx = routersContent.indexOf("restartService");
-    const section = routersContent.slice(idx, idx + 2000);
+    const section = routersContent.slice(idx, idx + 3000);
     expect(section).toContain("success");
     expect(section).toContain("message");
   });
