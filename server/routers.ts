@@ -1265,26 +1265,40 @@ const adminRouter = router({
           try {
             const res = await fetch(`${SVC_URL}/health`, { signal: AbortSignal.timeout(5000) });
             
-            // Validar Content-Type antes de chamar .json()
+            // Validar Content-Type e status antes de qualquer processamento
             const contentType = res.headers.get("content-type") || "";
             const isJson = contentType.includes("application/json");
 
-            if (res.ok && isJson) {
-              // Sucesso: status 2xx e Content-Type é JSON
-              return { success: true, message: `Serviço na porta ${input.port} reiniciado com sucesso.`, port: input.port };
-            } else if (res.ok && !isJson) {
-              // Status 2xx mas não é JSON - ainda é sucesso
-              return { success: true, message: `Serviço na porta ${input.port} reiniciado (resposta não-JSON).`, port: input.port };
+            if (res.ok) {
+              // Status 2xx - sucesso
+              if (isJson) {
+                try {
+                  await res.json(); // Validar que é JSON válido
+                  return { success: true, message: `Serviço na porta ${input.port} reiniciado com sucesso.`, port: input.port };
+                } catch {
+                  // JSON inválido mas status 2xx - ainda é sucesso
+                  return { success: true, message: `Serviço na porta ${input.port} reiniciado (resposta não-JSON).`, port: input.port };
+                }
+              } else {
+                // Status 2xx mas não é JSON - sucesso
+                return { success: true, message: `Serviço na porta ${input.port} reiniciado (resposta não-JSON).`, port: input.port };
+              }
             } else if (res.status === 503) {
               // HTTP 503 Service Unavailable - Flask ainda está carregando
               lastError = `Serviço ainda carregando (503). Tentativa ${attempt}/${MAX_RETRIES}`;
               if (attempt < MAX_RETRIES) {
-                // Aguardar 2 segundos antes de tentar novamente
+                await new Promise(resolve => setTimeout(resolve, 2000));
+                continue;
+              }
+            } else if (res.status >= 400 && res.status < 600) {
+              // Outro status de erro HTTP
+              lastError = `Serviço retornou status ${res.status}`;
+              if (attempt < MAX_RETRIES) {
                 await new Promise(resolve => setTimeout(resolve, 2000));
                 continue;
               }
             } else {
-              // Outro status de erro
+              // Status desconhecido
               lastError = `Serviço retornou status ${res.status}`;
               if (attempt < MAX_RETRIES) {
                 await new Promise(resolve => setTimeout(resolve, 2000));
@@ -1292,10 +1306,12 @@ const adminRouter = router({
               }
             }
           } catch (fetchErr) {
-            // Erro de conexão ou timeout
-            lastError = fetchErr instanceof Error ? fetchErr.message : String(fetchErr);
-            if (attempt < MAX_RETRIES && lastError.includes("timeout")) {
-              // Retry em caso de timeout
+            // Erro de conexão, timeout, ou outro erro
+            const errMsg = fetchErr instanceof Error ? fetchErr.message : String(fetchErr);
+            lastError = errMsg;
+            
+            // Retry em caso de timeout ou erro de conexão
+            if (attempt < MAX_RETRIES && (errMsg.includes("timeout") || errMsg.includes("ECONNREFUSED") || errMsg.includes("ENOTFOUND"))) {
               await new Promise(resolve => setTimeout(resolve, 2000));
               continue;
             }
