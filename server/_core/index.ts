@@ -99,29 +99,66 @@ async function startServer() {
   console.log("[ML] Installing Python dependencies...");
   await installPythonDeps(mlDir);
 
-  const mlClassifierAvailable = await isPortAvailable(5001);
-  if (mlClassifierAvailable) {
-    console.log("[ML] Starting classifier server on port 5001...");
-    startFlaskServer("classifier_server.py", 5001);
-    // Wait up to 10s for Flask to be ready
-    const ready = await waitForFlask(5001, 20, 500);
-    if (ready) {
-      console.log("[ML] Classifier server ready on port 5001");
+  // Iniciar Flask ML com retry automático
+  let mlReady = false;
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    const mlClassifierAvailable = await isPortAvailable(5001);
+    if (mlClassifierAvailable) {
+      console.log(`[ML] Starting classifier server on port 5001 (tentativa ${attempt}/3)...`);
+      startFlaskServer("classifier_server.py", 5001);
+      // Wait up to 10s for Flask to be ready
+      const ready = await waitForFlask(5001, 20, 500);
+      if (ready) {
+        console.log("[ML] Classifier server ready on port 5001");
+        mlReady = true;
+        break;
+      } else {
+        console.warn(`[ML] Classifier server did not respond in time (tentativa ${attempt}/3)`);
+        if (attempt < 3) {
+          // Aguardar 2 segundos antes de tentar novamente
+          await new Promise(r => setTimeout(r, 2000));
+        }
+      }
     } else {
-      console.warn("[ML] Classifier server did not respond in time — ML features may be unavailable");
+      console.log("[ML] Classifier server already running on port 5001");
+      mlReady = true;
+      break;
     }
-  } else {
-    console.log("[ML] Classifier server already running on port 5001");
+  }
+  if (!mlReady) {
+    console.error("[ML] Classifier server failed to start after 3 attempts — ML features will use fallback mode");
   }
 
-  const mlPdfAvailable = await isPortAvailable(5002);
-  if (mlPdfAvailable) {
-    console.log("[ML] Starting PDF server on port 5002...");
-    startFlaskServer("pdf_server.py", 5002);
-    await waitForFlask(5002, 10, 500);
-  } else {
-    console.log("[ML] PDF server already running on port 5002");
+  // Iniciar Flask PDF com retry automático
+  let pdfReady = false;
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    const mlPdfAvailable = await isPortAvailable(5002);
+    if (mlPdfAvailable) {
+      console.log(`[ML] Starting PDF server on port 5002 (tentativa ${attempt}/3)...`);
+      startFlaskServer("pdf_server.py", 5002);
+      const ready = await waitForFlask(5002, 10, 500);
+      if (ready) {
+        console.log("[ML] PDF server ready on port 5002");
+        pdfReady = true;
+        break;
+      } else {
+        console.warn(`[ML] PDF server did not respond in time (tentativa ${attempt}/3)`);
+        if (attempt < 3) {
+          await new Promise(r => setTimeout(r, 2000));
+        }
+      }
+    } else {
+      console.log("[ML] PDF server already running on port 5002");
+      pdfReady = true;
+      break;
+    }
   }
+  if (!pdfReady) {
+    console.error("[ML] PDF server failed to start after 3 attempts — PDF export will use fallback mode");
+  }
+
+  console.log(`[ML] Startup complete: Classifier=${mlReady ? "ready" : "fallback"}, PDF=${pdfReady ? "ready" : "fallback"}`);
+  (global as any).ML_STATUS = { classifier: mlReady, pdf: pdfReady };
 
   // ─── Security Middleware (req. 6.5, 6.6, 6.7) ──────────────────────────────
   // Applied BEFORE body parsers and route handlers.
