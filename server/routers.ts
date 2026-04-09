@@ -1189,8 +1189,8 @@ const adminRouter = router({
         });
         proc.unref(); // Permite que o Node.js saia sem aguardar este processo
 
-        // 4. Aguardar 8 segundos para o Flask inicializar (carregamento do modelo leva tempo)
-        await new Promise(resolve => setTimeout(resolve, 5000));
+        // 4. Aguardar 15 segundos para o Flask inicializar (carregamento do modelo leva tempo)
+        await new Promise(resolve => setTimeout(resolve, 15000));
 
         // 5. Verificar se o serviço está respondendo
         const SVC_URL = `http://localhost:${input.port}`;
