@@ -678,3 +678,16 @@
 - [x] Testar página "Avaliar Modelo" sem erros (endpoint /evaluate respondendo)
 - [x] Testar página "Treinamento em Tempo Real" sem erros (endpoint /train-stream respondendo)
 
+## Sessão 40 — Corrigir /train-stream para Frontend
+
+- [x] Identificar que /train-stream enviava formato incorreto
+- [x] Corrigir para enviar {type, ts, message, step, progress, ...}
+- [x] Adicionar tipos: 'progress', 'fold', 'complete'
+- [x] Incluir métricas: train_accuracy, cv_mean, eval_accuracy
+- [x] Adicionar timestamps válidos (ISO format)
+- [x] Testar em desenvolvimento (1137 de 1138 testes passando)
+- [x] Fazer commit e push no GitHub (62f409f)
+- [ ] Deploy em produção (aguardando click em Publish)
+- [ ] Validar que página "Treinamento em Tempo Real" funciona sem erros
+- [ ] Validar que eventos são exibidos com timestamps válidos
+
