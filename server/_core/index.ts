@@ -12,6 +12,7 @@ import { appRouter } from "../routers";
 import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
 import { applySecurityMiddleware } from "../security";
+import { startMLClassifierService } from "./ml-classifier-service";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -99,34 +100,25 @@ async function startServer() {
   console.log("[ML] Installing Python dependencies...");
   await installPythonDeps(mlDir);
 
-  // Iniciar Flask ML com retry automático
+  // Iniciar ML Classifier Service (Node.js em produção, Flask em dev)
   let mlReady = false;
-  for (let attempt = 1; attempt <= 3; attempt++) {
-    const mlClassifierAvailable = await isPortAvailable(5001);
-    if (mlClassifierAvailable) {
-      console.log(`[ML] Starting classifier server on port 5001 (tentativa ${attempt}/3)...`);
-      startFlaskServer("classifier_server.py", 5001);
-      // Wait up to 10s for Flask to be ready
-      const ready = await waitForFlask(5001, 20, 500);
-      if (ready) {
-        console.log("[ML] Classifier server ready on port 5001");
-        mlReady = true;
-        break;
-      } else {
-        console.warn(`[ML] Classifier server did not respond in time (tentativa ${attempt}/3)`);
-        if (attempt < 3) {
-          // Aguardar 2 segundos antes de tentar novamente
-          await new Promise(r => setTimeout(r, 2000));
-        }
-      }
-    } else {
-      console.log("[ML] Classifier server already running on port 5001");
+  const mlClassifierAvailable = await isPortAvailable(5001);
+  if (mlClassifierAvailable) {
+    try {
+      console.log("[ML] Starting ML Classifier Service on port 5001...");
+      await startMLClassifierService(5001);
+      console.log("[ML] ML Classifier Service ready on port 5001");
       mlReady = true;
-      break;
+    } catch (err) {
+      console.error("[ML] Failed to start ML Classifier Service:", err);
+      mlReady = false;
     }
+  } else {
+    console.log("[ML] Classifier server already running on port 5001");
+    mlReady = true;
   }
   if (!mlReady) {
-    console.error("[ML] Classifier server failed to start after 3 attempts — ML features will use fallback mode");
+    console.error("[ML] Classifier server failed to start — ML features will use fallback mode");
   }
 
   // Iniciar Flask PDF com retry automático
