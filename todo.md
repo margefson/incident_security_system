@@ -617,3 +617,16 @@
 - [x] Atualizar RELATORIO_TECNICO.md com informação de S33
 - [x] Atualizar DEPLOYMENT.md com guia de troubleshooting de "Service Unavailable"
 - [x] Fazer commit e push no GitHub
+
+## Sessão 34 — Melhorias no Startup de Flask em Produção
+
+- [x] Diagnosticar por que Flask não inicia em produção
+- [x] Implementar retry automático (até 3 tentativas) para startup
+- [x] Adicionar logging melhorado para diagnosticar problemas
+- [x] Implementar fallback mode quando Flask falha
+- [x] Testar em desenvolvimento (1136 de 1138 testes passando)
+- [x] Fazer commit e push no GitHub (b98c6ba)
+- [ ] Deploy em produção (aguardando click em Publish)
+- [ ] Validar que Flask inicia corretamente em produção
+- [ ] Testar reinício de serviço em produção
+
