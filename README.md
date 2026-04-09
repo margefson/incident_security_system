@@ -893,7 +893,19 @@ Tests: 296 passed
 | **S18-7: Classificação 5050** | `session18.test.ts` | 5 | brute_force, phishing, malware, vazamento_de_dados, Flask online |
 | **S18-8: Métricas 5050** | `session18.test.ts` | 5 | dataset_size >= 5000, train_accuracy >= 0.99, 1000/categoria, last_updated, TRAIN_DATASET_PATH |
 
-**Total: 880 testes passando em 22 arquivos**
+**Total: 933 testes passando em 24 arquivos**
+
+### Sessão 20 (v3.2) — Correção de Bugs: `__dirname` ESM + `fetch failed` no Treinamento
+- **Bug `__dirname is not defined` corrigido**: a procedure `restartService` usava `__dirname` (inexistente em ESM/`"type":"module"`); substituído por `fileURLToPath(import.meta.url)` + `path.dirname()` para compatibilidade total com ESM
+- **Bug `fetch failed` no Treinamento em Tempo Real corrigido**: o endpoint `/train-stream` do Flask usava nomes de colunas em português (`Categoria`, `Titulo`, `Descricao`) que não existem no dataset de 5000 amostras (colunas em inglês: `category`, `title`, `description`); adicionada detecção automática de colunas com fallback bilíngue
+- **27 novos testes S20** cobrindo ESM `__dirname`, `fileURLToPath`, `SCRIPT_DIR`, detecção de colunas bilíngue e fallbacks
+
+### Sessão 19 (v3.1) — Retreinamento Automático + Analistas + Confiança
+- **Retreinamento automático pós-upload**: ao enviar novo dataset, o sistema chama automaticamente o Flask para retreinar o modelo e reclassifica todos os incidentes cadastrados no banco
+- **Dataset de treino substituído**: arquivo disponível para download agora é `dataset_cybersecurity_5000_amostras.xlsx` (5000 amostras, 1000/categoria)
+- **Analistas veem todos os incidentes**: perfil `security-analyst` tem nova seção "Analista" na sidebar com acesso a `/analyst/incidents` — listagem global com filtros e botões "Atender" e "Concluir"
+- **Coluna Confiança no admin**: tela `/admin/incidents` exibe confiança do ML para cada incidente (verde ≥85%, amarelo ≥60%, vermelho <60%)
+- **26 novos testes S19** cobrindo retreinamento automático, listagem de analistas e coluna confiança
 
 ### Sessão 18 (v3.0) — Dataset 5000 Amostras + Resiliência de Upload
 - **Upload de dataset com 5000 amostras**: novo arquivo `dataset_cybersecurity_treinamento_5000.xlsx` carregado via interface web; 5000 amostras balanceadas (1000/categoria) para ddos, malware, phishing, brute_force, vazamento_de_dados
@@ -937,6 +949,8 @@ Tests: 296 passed
 | Métricas de resolução vazias | Nenhum incidente resolvido | Resolva incidentes para gerar dados de tempo médio |
 | Acuácia ML aparece 0% | Cache antigo do esbuild no dev server | Reinicie o servidor com `pnpm dev` para limpar o cache |
 | Erro "fetch failed" nas operações ML | Flask offline ou porta 5001 ocupada | getMLMetrics usa fallback do `metrics.json`; retrainModel e evaluateModel mostram mensagem clara |
+| Erro "fetch failed" no Treinamento em Tempo Real | Dataset com colunas em inglês (`category`/`title`/`description`) | Corrigido na S20: `/train-stream` agora detecta automaticamente colunas em inglês e português |
+| Erro `__dirname is not defined` ao Reiniciar Serviço | Projeto usa ESM (`"type":"module"`) onde `__dirname` não existe | Corrigido na S20: substituído por `fileURLToPath(import.meta.url)` + `path.dirname()` |
 | Download do dataset de avaliação falha | Flask offline (endpoint /eval-dataset) | Download agora usa URL CDN direta, sem dependência do Flask |
 | Erro ao alterar status do incidente | Usuário sem perfil security-analyst ou admin | Admin deve promover o usuário em `/admin/users` |
 | Usuário não pode alterar status | Role `user` não tem permissão | Apenas `security-analyst` e `admin` podem alterar status |

@@ -1158,3 +1158,29 @@ O botão "Exportar PDF" agora abre um modal com filtros avançados antes de gera
 - **Nível de risco:** crítico, alto, médio, baixo
 
 Deixe os campos em branco para incluir todos os incidentes no relatório.
+
+---
+
+## Sessão 20 — Correção de Bugs Críticos (v3.2)
+
+### Treinamento em Tempo Real — Correção do Erro `fetch failed`
+
+**Problema resolvido:** Ao iniciar o treinamento em tempo real (`/admin/ml-training`), o sistema exibia o erro "Erro no treinamento fetch failed".
+
+**Causa:** O endpoint `/train-stream` do Flask tentava acessar colunas com nomes em português (`Categoria`, `Titulo`, `Descricao`), mas o dataset atual de 5000 amostras usa nomes em inglês (`category`, `title`, `description`).
+
+**Solução:** O Flask agora detecta automaticamente o formato das colunas do dataset (português ou inglês) e usa o nome correto. Datasets com qualquer um dos dois formatos são suportados.
+
+**Como usar:** Acesse Menu Admin → Treinamento ao Vivo → clique em "Iniciar Treinamento". O progresso será exibido em tempo real com 8 etapas.
+
+---
+
+### Reiniciar Serviço Flask — Correção do Erro `__dirname is not defined`
+
+**Problema resolvido:** Ao clicar em "Reiniciar Serviço" no painel de Saúde do Sistema (portas 5001 e 5002), o sistema exibia o erro `__dirname is not defined`.
+
+**Causa:** O projeto usa o padrão ESM (`"type": "module"` no `package.json`), onde a variável `__dirname` do Node.js CommonJS não está disponível.
+
+**Solução:** O código foi atualizado para usar `fileURLToPath(import.meta.url)` + `path.dirname()`, que é a forma correta de obter o diretório atual em projetos ESM.
+
+**Como usar:** Acesse Menu Admin → Saúde do Sistema → clique em "Reiniciar Serviço" quando um servidor Flask estiver offline. O serviço será reiniciado automaticamente.

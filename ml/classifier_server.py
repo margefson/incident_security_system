@@ -562,17 +562,21 @@ def train_stream():
             time.sleep(0.2)
             df = pd.read_excel(TRAIN_DATASET_PATH)
             n_samples = len(df)
-            cats = df['Categoria'].value_counts().to_dict()
+            # Suporte a colunas em português (Categoria/Titulo/Descricao) e inglês (category/title/description)
+            col_cat  = 'Categoria' if 'Categoria' in df.columns else 'category'
+            col_title = 'Titulo' if 'Titulo' in df.columns else 'title'
+            col_desc  = 'Descricao' if 'Descricao' in df.columns else 'description'
+            cats = df[col_cat].value_counts().to_dict()
             yield emit("log", step=1, total=8,
-                       message=f"Dataset carregado: {n_samples} amostras em {len(cats)} categorias",
+                       message=f"Dataset carregado: {n_samples} amostras em {len(cats)} categorias (colunas: {col_cat}, {col_title}, {col_desc})",
                        details=cats)
             time.sleep(0.2)
 
             # 2. Pré-processamento
             yield emit("log", step=2, total=8, message="Pré-processando textos (normalização, remoção de acentos)...")
             time.sleep(0.3)
-            X = (df['Titulo'].apply(_normalize_text) + ' ' + df['Descricao'].apply(_normalize_text)).values
-            y = df['Categoria'].str.lower().str.replace(' ', '_').values
+            X = (df[col_title].apply(_normalize_text) + ' ' + df[col_desc].apply(_normalize_text)).values
+            y = df[col_cat].str.lower().str.replace(' ', '_').values
             unique_cats = sorted(set(y))
             yield emit("log", step=2, total=8,
                        message=f"Pré-processamento concluído: {len(X)} amostras, categorias: {unique_cats}")

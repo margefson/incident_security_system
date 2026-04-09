@@ -1144,3 +1144,64 @@ O botão "Exportar PDF" agora abre um modal com filtros avançados.
 - S15-8: PDF com Filtros (10 testes)
 
 **Total após S15: 773 testes passando em 19 arquivos**
+
+---
+
+## Sessão 20 — Correção de Bugs Críticos (v3.2)
+
+### Bug 1: `__dirname is not defined` no `restartService`
+
+**Arquivo afetado:** `server/routers.ts`
+
+**Causa técnica:** O projeto usa `"type": "module"` no `package.json`, configurando o runtime como ESM (ECMAScript Modules). Neste modo, as variáveis globais `__dirname` e `__filename` do Node.js CommonJS não estão disponíveis.
+
+**Correção aplicada:**
+```typescript
+// ANTES (quebrava em ESM):
+const SCRIPT_DIR = path.resolve(__dirname, "..", "ml");
+
+// DEPOIS (compatível com ESM):
+import { fileURLToPath } from "url";
+const __filename_esm = fileURLToPath(import.meta.url);
+const __dirname_esm = path.dirname(__filename_esm);
+const SCRIPT_DIR = path.resolve(__dirname_esm, "..", "ml");
+```
+
+---
+
+### Bug 2: `fetch failed` no Treinamento em Tempo Real
+
+**Arquivo afetado:** `ml/classifier_server.py` (endpoint `/train-stream`)
+
+**Causa técnica:** O endpoint `/train-stream` usava nomes de colunas fixos em português (`Categoria`, `Titulo`, `Descricao`), mas o dataset de 5000 amostras usa colunas em inglês (`category`, `title`, `description`).
+
+**Correção aplicada:**
+```python
+# ANTES (quebrava com dataset em inglês):
+cats = df['Categoria'].value_counts().to_dict()
+X = (df['Titulo'].apply(_normalize_text) + ' ' + df['Descricao'].apply(_normalize_text)).values
+y = df['Categoria'].str.lower().str.replace(' ', '_').values
+
+# DEPOIS (detecção automática bilíngue):
+col_cat   = 'Categoria' if 'Categoria' in df.columns else 'category'
+col_title = 'Titulo'    if 'Titulo'    in df.columns else 'title'
+col_desc  = 'Descricao' if 'Descricao' in df.columns else 'description'
+cats = df[col_cat].value_counts().to_dict()
+X = (df[col_title].apply(_normalize_text) + ' ' + df[col_desc].apply(_normalize_text)).values
+y = df[col_cat].str.lower().str.replace(' ', '_').values
+```
+
+### Testes S20
+
+- S20.1: ESM `__dirname` — usa `import.meta.url` (3 testes)
+- S20.2: `fileURLToPath` importado corretamente (3 testes)
+- S20.3: `SCRIPT_DIR` calculado via `__dirname_esm` (3 testes)
+- S20.4: `/train-stream` suporte a colunas em inglês (3 testes)
+- S20.5: `/train-stream` suporte a colunas em português (3 testes)
+- S20.6: Fallback para coluna de categoria (3 testes)
+- S20.7: Fallback para coluna de título (2 testes)
+- S20.8: Fallback para coluna de descrição (2 testes)
+- S20.9: Lógica de detecção de colunas (3 testes)
+- S20.10: Sem `__dirname` literal (3 testes)
+
+**Total após S20: 933 testes passando em 24 arquivos**

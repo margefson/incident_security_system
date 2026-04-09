@@ -448,3 +448,12 @@
 - [x] Endpoint Flask /train-stream com SSE para logs em tempo real
 - [x] Página AdminMLTraining.tsx com acompanhamento do treino em tempo real
 - [x] Testes S17 e checkpoint
+
+## Sessão 20 — Correção de Bugs (Flask Restart + Fetch Failed)
+
+- [ ] Corrigir __dirname is not defined ao reiniciar serviço Flask 5001
+- [ ] Corrigir __dirname is not defined ao reiniciar serviço Flask 5002
+- [ ] Corrigir fetch failed no Treinamento em Tempo Real (AdminMLTraining)
+- [ ] Adicionar testes S20 (session20.test.ts)
+- [ ] Atualizar README e manuais com as correções
+- [ ] Comitar no GitHub

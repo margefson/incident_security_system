@@ -2,6 +2,7 @@ import { TRPCError } from "@trpc/server";
 import { generatePdfBuffer, type IncidentRow } from "./pdf";
 import fs from "fs";
 import path from "path";
+import { fileURLToPath } from "url";
 import { execSync } from "child_process";
 import { z } from "zod/v4";
 import { COOKIE_NAME } from "@shared/const";
@@ -1005,7 +1006,10 @@ const adminRouter = router({
       port: z.number().int().min(1024).max(65535), // porta do serviço a reiniciar
     }))
     .mutation(async ({ input }) => {
-      const SCRIPT_DIR = path.resolve(__dirname, "..", "ml");
+      // ESM: __dirname não existe, usar import.meta.url
+      const __filename_esm = fileURLToPath(import.meta.url);
+      const __dirname_esm = path.dirname(__filename_esm);
+      const SCRIPT_DIR = path.resolve(__dirname_esm, "..", "ml");
       const SCRIPT_PATH = path.join(SCRIPT_DIR, "classifier_server.py");
       const LOG_PATH = path.join(SCRIPT_DIR, `flask_${input.port}.log`);
 
