@@ -1199,9 +1199,12 @@ const adminRouter = router({
           if (res.ok) {
             return { success: true, message: `Serviço na porta ${input.port} reiniciado com sucesso.`, port: input.port };
           }
-          return { success: false, message: `Serviço iniciado mas não respondeu ao health check. Verifique os logs.`, port: input.port };
-        } catch {
-          return { success: false, message: `Serviço iniciado mas ainda não responde. Aguarde alguns segundos e atualize.`, port: input.port };
+          // Se o status não for 2xx, retornar sucesso parcial
+          return { success: false, message: `Serviço iniciado mas retornou status ${res.status}. Aguarde alguns segundos.`, port: input.port };
+        } catch (fetchErr) {
+          // Erro de conexão ou timeout
+          const errMsg = fetchErr instanceof Error ? fetchErr.message : String(fetchErr);
+          return { success: false, message: `Serviço iniciado mas ainda não responde: ${errMsg}`, port: input.port };
         }
       } catch (err) {
         throw new TRPCError({
