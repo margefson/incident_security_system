@@ -722,7 +722,11 @@ def train_status():
 
 
 if __name__ == "__main__":
-    port = int(os.environ.get("ML_PORT", 5001))
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--port", type=int, default=int(os.environ.get("ML_PORT", 5001)))
+    args = parser.parse_args()
+    port = args.port
     print(f"[Classifier] Iniciando servidor na porta {port}...")
     print(f"[Classifier] Dataset de TREINAMENTO: {TRAIN_DATASET_PATH}")
     print(f"[Classifier] Dataset de AVALIAÇÃO:   {EVAL_DATASET_PATH}")
