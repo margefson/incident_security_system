@@ -202,7 +202,7 @@ curl http://localhost:5002/health
 2. Instalar dependências manualmente: `cd ml && pip install -r requirements.txt`
 3. Verificar logs: `cat ml/flask_5001.log`
 
-### Erro "Service Unavailable" ao reiniciar (Sessão 33-35)
+### Erro "Service Unavailable" ao reiniciar (Sessão 33-37)
 **Sintoma**: Ao clicar em "Reiniciar Serviço", recebe erro "Unexpected token 'S', 'Service Unavailable' is not valid JSON"
 
 **Causa Raiz**: O Flask retorna HTTP 503 com corpo HTML durante o carregamento do modelo. O código tentava fazer `.json()` sem validar o Content-Type.

@@ -642,3 +642,15 @@
 - [x] Atualizar RELATORIO_TECNICO.md
 - [x] Atualizar todo.md
 
+## Sessão 37 — ML Classifier Service em Node.js
+
+- [x] Identificar que Python não está disponível em produção
+- [x] Criar ML Classifier Service em Node.js puro
+- [x] Implementar endpoints compatíveis com Flask
+- [x] Testar em desenvolvimento (1136 de 1138 testes passando)
+- [x] Fazer commit e push no GitHub (f294c23)
+- [ ] Deploy em produção (aguardando click em Publish)
+- [ ] Validar que Flask ML inicia e responde
+- [ ] Validar que classificação funciona em produção
+- [ ] Validar que status mostra 'Online' ao logar
+
