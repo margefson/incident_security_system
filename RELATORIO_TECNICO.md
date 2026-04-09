@@ -3,7 +3,7 @@
 
 **Data de Elaboração**: 09 de Abril de 2026  
 **Versão**: 1.0  
-**Autor**: Manus AI  
+**Autor**: ISS Team  
 **Status**: Produção  
 **Testes Passando**: 1121 de 1123 (99.82%)
 
@@ -683,7 +683,7 @@ Com 1.121 testes passando (99.82%) e implementação de boas práticas de segura
 
 ---
 
-**Documento Preparado por**: Manus AI  
+**Documento Preparado por**: ISS Team  
 **Data**: 09 de Abril de 2026  
 **Versão**: 1.0  
 **Status**: Aprovado para Produção
