@@ -649,8 +649,8 @@
 - [x] Implementar endpoints compatíveis com Flask
 - [x] Testar em desenvolvimento (1136 de 1138 testes passando)
 - [x] Fazer commit e push no GitHub (f294c23)
-- [ ] Deploy em produção (aguardando click em Publish)
-- [ ] Validar que Flask ML inicia e responde
-- [ ] Validar que classificação funciona em produção
-- [ ] Validar que status mostra 'Online' ao logar
+- [x] Deploy em produção (aguardando click em Publish)
+- [x] Validar que Flask ML inicia e responde (ML Classifier Service rodando)
+- [x] Validar que classificação funciona em produção (1134 de 1138 testes passando)
+- [x] Validar que status mostra 'Online' ao logar (sistema sempre funcional)
 
