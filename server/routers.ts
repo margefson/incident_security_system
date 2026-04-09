@@ -1102,11 +1102,8 @@ const adminRouter = router({
   }),
 
   // ─── Obter Status dos Serviços Flask ──────────────────────────────────────────────────────────────────────────────
-getFlaskStatus: publicProcedure
+  getFlaskStatus: publicProcedure
     .query(async () => {
-      // Verificar status de ML armazenado no global (definido no startup)
-      const mlStatus = (global as any).ML_STATUS || { classifier: false, pdf: false };
-      
       const services = [
         { name: "Flask ML", port: 5001 },
         { name: "Flask PDF", port: 5002 },
@@ -1116,43 +1113,28 @@ getFlaskStatus: publicProcedure
         try {
           const res = await fetch(`http://localhost:${svc.port}/health`, { signal: AbortSignal.timeout(2000) });
           if (res.ok) {
-            try {
-              const data = await res.json() as Record<string, unknown>;
-              results.push({
-                name: svc.name,
-                port: svc.port,
-                status: "online" as const,
-                latency: 0,
-                details: data,
-              });
-            } catch {
-              results.push({
-                name: svc.name,
-                port: svc.port,
-                status: "online" as const,
-                latency: 0,
-              });
-            }
-          } else {
-            // Se Flask não responde, verificar se está em fallback mode
-            const isFallback = svc.port === 5001 ? !mlStatus.classifier : !mlStatus.pdf;
+            const data = await res.json() as Record<string, unknown>;
             results.push({
               name: svc.name,
               port: svc.port,
-              status: isFallback ? ("online" as const) : ("offline" as const),
+              status: "online" as const,
+              latency: 0,
+              details: data,
+            });
+          } else {
+            results.push({
+              name: svc.name,
+              port: svc.port,
+              status: "offline" as const,
               latency: null,
-              mode: isFallback ? "fallback" : "error",
             });
           }
         } catch {
-          // Se Flask não responde, verificar se está em fallback mode
-          const isFallback = svc.port === 5001 ? !mlStatus.classifier : !mlStatus.pdf;
           results.push({
             name: svc.name,
             port: svc.port,
-            status: isFallback ? ("online" as const) : ("offline" as const),
+            status: "offline" as const,
             latency: null,
-            mode: isFallback ? "fallback" : "error",
           });
         }
       }
