@@ -560,3 +560,13 @@
 - [x] Atualizar README.md com seção de pré-requisitos e tempos de inicialização
 - [x] Testar inicialização automática dos serviços Flask
 - [x] Validar que 1121 testes passam (2 não relacionados falhando)
+
+
+## Sessão 31 — Retry Automático + Relatório Técnico + Commit GitHub
+
+- [ ] Implementar retry automático com backoff (1s, 2s, 4s) após 3 falhas consecutivas
+- [ ] Adicionar tracking de falhas consecutivas por serviço
+- [ ] Criar relatório técnico completo em Markdown
+- [ ] Gerar PDF do relatório técnico
+- [ ] Fazer commit no GitHub com todas as mudanças
+- [ ] Validar que repositório está atualizado
