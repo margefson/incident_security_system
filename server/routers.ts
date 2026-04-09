@@ -1256,20 +1256,54 @@ const adminRouter = router({
         // 4. Aguardar 15 segundos para o Flask inicializar (carregamento do modelo leva tempo)
         await new Promise(resolve => setTimeout(resolve, 15000));
 
-        // 5. Verificar se o serviço está respondendo
+        // 5. Verificar se o serviço está respondendo com retry automático
         const SVC_URL = `http://localhost:${input.port}`;
-        try {
-          const res = await fetch(`${SVC_URL}/health`, { signal: AbortSignal.timeout(5000) });
-          if (res.ok) {
-            return { success: true, message: `Serviço na porta ${input.port} reiniciado com sucesso.`, port: input.port };
+        const MAX_RETRIES = 3;
+        let lastError: string | null = null;
+
+        for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+          try {
+            const res = await fetch(`${SVC_URL}/health`, { signal: AbortSignal.timeout(5000) });
+            
+            // Validar Content-Type antes de chamar .json()
+            const contentType = res.headers.get("content-type") || "";
+            const isJson = contentType.includes("application/json");
+
+            if (res.ok && isJson) {
+              // Sucesso: status 2xx e Content-Type é JSON
+              return { success: true, message: `Serviço na porta ${input.port} reiniciado com sucesso.`, port: input.port };
+            } else if (res.ok && !isJson) {
+              // Status 2xx mas não é JSON - ainda é sucesso
+              return { success: true, message: `Serviço na porta ${input.port} reiniciado (resposta não-JSON).`, port: input.port };
+            } else if (res.status === 503) {
+              // HTTP 503 Service Unavailable - Flask ainda está carregando
+              lastError = `Serviço ainda carregando (503). Tentativa ${attempt}/${MAX_RETRIES}`;
+              if (attempt < MAX_RETRIES) {
+                // Aguardar 2 segundos antes de tentar novamente
+                await new Promise(resolve => setTimeout(resolve, 2000));
+                continue;
+              }
+            } else {
+              // Outro status de erro
+              lastError = `Serviço retornou status ${res.status}`;
+              if (attempt < MAX_RETRIES) {
+                await new Promise(resolve => setTimeout(resolve, 2000));
+                continue;
+              }
+            }
+          } catch (fetchErr) {
+            // Erro de conexão ou timeout
+            lastError = fetchErr instanceof Error ? fetchErr.message : String(fetchErr);
+            if (attempt < MAX_RETRIES && lastError.includes("timeout")) {
+              // Retry em caso de timeout
+              await new Promise(resolve => setTimeout(resolve, 2000));
+              continue;
+            }
           }
-          // Se o status não for 2xx, retornar sucesso parcial
-          return { success: false, message: `Serviço iniciado mas retornou status ${res.status}. Aguarde alguns segundos.`, port: input.port };
-        } catch (fetchErr) {
-          // Erro de conexão ou timeout
-          const errMsg = fetchErr instanceof Error ? fetchErr.message : String(fetchErr);
-          return { success: false, message: `Serviço iniciado mas ainda não responde: ${errMsg}`, port: input.port };
         }
+
+        // Se chegou aqui, todas as tentativas falharam
+        return { success: false, message: `Serviço iniciado mas não respondeu após ${MAX_RETRIES} tentativas: ${lastError}`, port: input.port };
       } catch (err) {
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",

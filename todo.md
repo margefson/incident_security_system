@@ -602,3 +602,18 @@
 - [x] Atualizar RELATORIO_TECNICO.md com informações de Sessão 32
 - [x] Atualizar DEPLOYMENT.md com otimizações de performance
 - [x] Commitar no GitHub com mensagem: "Sessão 32: Startup Hooks, Cache ML, Fallback, Testes e Docs"
+
+
+## Sessão 33 — Correção do Erro "Service Unavailable" em Produção
+
+- [x] Diagnosticar diferenças entre dev e produção (Flask response handling)
+- [x] Corrigir procedure restartService para validar Content-Type antes de .json()
+- [x] Implementar tratamento de erro robusto para HTTP 503 (Service Unavailable)
+- [x] Adicionar retry automático com backoff exponencial (até 3 tentativas)
+- [x] Testar em ambiente de desenvolvimento (preview)
+- [x] Validar que Flask responde corretamente após restart
+- [x] Adicionar testes S33 para o novo tratamento de erro (15 testes passando)
+- [x] Atualizar README.md com badge de testes (1136 de 1138)
+- [x] Atualizar RELATORIO_TECNICO.md com informação de S33
+- [x] Atualizar DEPLOYMENT.md com guia de troubleshooting de "Service Unavailable"
+- [x] Fazer commit e push no GitHub
