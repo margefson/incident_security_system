@@ -233,34 +233,6 @@ export default function AdminML() {
           <p className="soc-page-sub">
             Classificação automática de incidentes via TF-IDF + Naive Bayes
           </p>
-          {/* Badges de dataset ativos */}
-          <div className="flex flex-wrap gap-2 mt-3">
-            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-blue-500/10 border border-blue-500/20">
-              <BookOpen className="w-3.5 h-3.5 text-blue-400" />
-              <span className="text-xs font-mono text-blue-400 font-semibold">TREINO</span>
-              <button onClick={handleDownloadDataset} className="text-xs font-mono text-blue-300 hover:text-blue-200 underline underline-offset-2 cursor-pointer">dataset_cybersecurity_5000_amostras.xlsx</button>
-              <Badge variant="outline" className="text-xs font-mono border-blue-500/30 text-blue-400 ml-1">
-                {trainingMetrics?.dataset_size ?? metrics?.dataset_size ?? "2000"} amostras
-              </Badge>
-            </div>
-            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-purple-500/10 border border-purple-500/20">
-              <FlaskConical className="w-3.5 h-3.5 text-purple-400" />
-              <span className="text-xs font-mono text-purple-400 font-semibold">AVALIAÇÃO</span>
-              <button onClick={handleDownloadEvalDataset} className="text-xs font-mono text-purple-300 hover:text-purple-200 underline underline-offset-2 cursor-pointer">incidentes_cybersecurity_100.xlsx</button>
-              <Badge variant="outline" className="text-xs font-mono border-purple-500/30 text-purple-400 ml-1">
-                {evalDataset?.total_samples ?? "100"} amostras
-              </Badge>
-              {evaluationMetrics ? (
-                <Badge className="text-xs font-mono bg-green-500/20 text-green-400 border-green-500/30 ml-1">
-                  Avaliado: {Math.round(evaluationMetrics.eval_accuracy * 100)}%
-                </Badge>
-              ) : (
-                <Badge variant="outline" className="text-xs font-mono border-yellow-500/30 text-yellow-400 ml-1">
-                  Não avaliado
-                </Badge>
-              )}
-            </div>
-          </div>
         </div>
 
         {/* Tabs de navegação */}
@@ -383,7 +355,10 @@ export default function AdminML() {
                     <p className="text-xs text-muted-foreground font-mono">Carregando...</p>
                   ) : (
                     <div className="flex flex-wrap gap-2">
-                      {(metrics?.categories ?? []).map((cat: string) => (
+                      {(Object.keys(dataset?.category_distribution ?? trainingMetrics?.category_distribution ?? metrics?.category_distribution ?? {}).length > 0
+                        ? Object.keys(dataset?.category_distribution ?? trainingMetrics?.category_distribution ?? {})
+                        : (metrics?.categories ?? [])
+                      ).map((cat: string) => (
                         <Badge key={cat} variant="outline" className="font-mono text-xs">
                           {cat}
                         </Badge>
@@ -398,7 +373,9 @@ export default function AdminML() {
                   <CardTitle className="text-sm font-mono font-semibold text-foreground flex items-center gap-2">
                     <BarChart2 className="w-4 h-4 text-blue-400" />
                     Distribuição — Dataset de Treino
-                    <Badge variant="outline" className="text-xs font-mono border-blue-500/30 text-blue-400">2000 amostras</Badge>
+                    <Badge variant="outline" className="text-xs font-mono border-blue-500/30 text-blue-400">
+                      {Object.values(trainingMetrics?.category_distribution ?? metrics?.category_distribution ?? {}).reduce((acc, v) => acc + Number(v), 0) || (trainingMetrics?.dataset_size ?? metrics?.dataset_size ?? 0)} amostras
+                    </Badge>
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
@@ -428,75 +405,7 @@ export default function AdminML() {
               </Card>
             </div>
 
-            {/* Upload de Dataset de Avaliação */}
-            <Card className="bg-card border-border">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-mono font-semibold text-foreground flex items-center gap-2">
-                  <Upload className="w-4 h-4 text-purple-400" />
-                  Substituir Dataset de Avaliação
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <p className="text-xs font-mono text-muted-foreground">
-                  Envie um novo arquivo <span className="text-foreground font-semibold">.xlsx</span> para substituir o dataset de avaliação atual.
-                  Após o upload, execute a avaliação para ver as novas métricas.
-                </p>
-                <div
-                  className={`border-2 border-dashed rounded-lg p-4 text-center transition-colors cursor-pointer ${
-                    isDraggingEval ? "border-purple-400 bg-purple-500/5" : "border-border hover:border-purple-500/50"
-                  }`}
-                  onDragOver={(e) => { e.preventDefault(); setIsDraggingEval(true); }}
-                  onDragLeave={() => setIsDraggingEval(false)}
-                  onDrop={(e) => {
-                    e.preventDefault();
-                    setIsDraggingEval(false);
-                    const file = e.dataTransfer.files[0];
-                    if (file && file.name.endsWith(".xlsx")) setUploadEvalFile(file);
-                    else toast.error("Apenas arquivos .xlsx são aceitos");
-                  }}
-                  onClick={() => document.getElementById("upload-eval-input")?.click()}
-                >
-                  <input
-                    id="upload-eval-input"
-                    type="file"
-                    accept=".xlsx"
-                    className="hidden"
-                    onChange={(e) => {
-                      const file = e.target.files?.[0];
-                      if (file) setUploadEvalFile(file);
-                    }}
-                  />
-                  {uploadEvalFile ? (
-                    <div className="flex items-center justify-center gap-2 text-sm font-mono text-foreground">
-                      <FileSpreadsheet className="w-4 h-4 text-green-400" />
-                      <span>{uploadEvalFile.name}</span>
-                      <span className="text-muted-foreground">({(uploadEvalFile.size / 1024).toFixed(1)} KB)</span>
-                    </div>
-                  ) : (
-                    <div className="text-muted-foreground">
-                      <Upload className="w-6 h-6 mx-auto mb-1 opacity-50" />
-                      <p className="text-xs font-mono">Arraste um arquivo .xlsx ou clique para selecionar</p>
-                    </div>
-                  )}
-                </div>
-                {uploadEvalFile && (
-                  <div className="flex gap-2">
-                    <Button
-                      size="sm"
-                      className="font-mono text-xs gap-1.5 bg-purple-600 hover:bg-purple-700 text-white"
-                      onClick={handleUploadEval}
-                      disabled={uploadEvalMutation.isPending}
-                    >
-                      {uploadEvalMutation.isPending ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Upload className="w-3.5 h-3.5" />}
-                      {uploadEvalMutation.isPending ? "Enviando..." : "Enviar Dataset"}
-                    </Button>
-                    <Button size="sm" variant="ghost" className="font-mono text-xs" onClick={() => setUploadEvalFile(null)}>
-                      Cancelar
-                    </Button>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+
 
             {/* Botão de avaliação rápida */}
             <Card className="bg-card border-border border-purple-500/20">
@@ -845,6 +754,76 @@ export default function AdminML() {
                         </tbody>
                       </table>
                     </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Upload de Dataset de Avaliação */}
+            <Card className="bg-card border-border">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-mono font-semibold text-foreground flex items-center gap-2">
+                  <Upload className="w-4 h-4 text-purple-400" />
+                  Substituir Dataset de Avaliação
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <p className="text-xs font-mono text-muted-foreground">
+                  Envie um novo arquivo <span className="text-foreground font-semibold">.xlsx</span> para substituir o dataset de avaliação atual.
+                  Após o upload, execute a avaliação para ver as novas métricas.
+                </p>
+                <div
+                  className={`border-2 border-dashed rounded-lg p-4 text-center transition-colors cursor-pointer ${
+                    isDraggingEval ? "border-purple-400 bg-purple-500/5" : "border-border hover:border-purple-500/50"
+                  }`}
+                  onDragOver={(e) => { e.preventDefault(); setIsDraggingEval(true); }}
+                  onDragLeave={() => setIsDraggingEval(false)}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    setIsDraggingEval(false);
+                    const file = e.dataTransfer.files[0];
+                    if (file && file.name.endsWith(".xlsx")) setUploadEvalFile(file);
+                    else toast.error("Apenas arquivos .xlsx são aceitos");
+                  }}
+                  onClick={() => document.getElementById("upload-eval-input")?.click()}
+                >
+                  <input
+                    id="upload-eval-input"
+                    type="file"
+                    accept=".xlsx"
+                    className="hidden"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) setUploadEvalFile(file);
+                    }}
+                  />
+                  {uploadEvalFile ? (
+                    <div className="flex items-center justify-center gap-2 text-sm font-mono text-foreground">
+                      <FileSpreadsheet className="w-4 h-4 text-green-400" />
+                      <span>{uploadEvalFile.name}</span>
+                      <span className="text-muted-foreground">({(uploadEvalFile.size / 1024).toFixed(1)} KB)</span>
+                    </div>
+                  ) : (
+                    <div className="text-muted-foreground">
+                      <Upload className="w-6 h-6 mx-auto mb-1 opacity-50" />
+                      <p className="text-xs font-mono">Arraste um arquivo .xlsx ou clique para selecionar</p>
+                    </div>
+                  )}
+                </div>
+                {uploadEvalFile && (
+                  <div className="flex gap-2">
+                    <Button
+                      size="sm"
+                      className="font-mono text-xs gap-1.5 bg-purple-600 hover:bg-purple-700 text-white"
+                      onClick={handleUploadEval}
+                      disabled={uploadEvalMutation.isPending}
+                    >
+                      {uploadEvalMutation.isPending ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Upload className="w-3.5 h-3.5" />}
+                      {uploadEvalMutation.isPending ? "Enviando..." : "Enviar Dataset"}
+                    </Button>
+                    <Button size="sm" variant="ghost" className="font-mono text-xs" onClick={() => setUploadEvalFile(null)}>
+                      Cancelar
+                    </Button>
                   </div>
                 )}
               </CardContent>

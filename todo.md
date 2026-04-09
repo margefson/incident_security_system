@@ -471,9 +471,19 @@
 
 ## Sessão 22 — Reclassificação Unknown + Filtro Status + PDF Analista
 
-- [ ] Reclassificar incidentes unknown do banco com modelo S21
-- [ ] Adicionar filtro de status em /admin/incidents (aberto/em andamento/resolvido)
-- [ ] Adicionar exportação PDF em /analyst/incidents
-- [ ] Adicionar testes S22 (session22.test.ts)
+- [x] Reclassificar incidentes unknown do banco com modelo S21
+- [x] Adicionar filtro de status em /admin/incidents (aberto/em andamento/resolvido)
+- [x] Adicionar exportação PDF em /analyst/incidents
+- [x] Adicionar testes S22 (session22.test.ts)
+- [x] Atualizar README e manuais
+- [x] Comitar no GitHub
+
+## Sessão 23 — Correções AdminML (UI)
+
+- [ ] Remover barra de status duplicada (TREINO/AVALIAÇÃO com links) do AdminML.tsx
+- [ ] Tornar total de amostras na Distribuição dinâmico (soma da distribuição real)
+- [ ] Categorias do Modelo: buscar dinamicamente do último dataset de treino
+- [ ] Mover "Substituir Dataset de Avaliação" para a aba Avaliação
+- [ ] Adicionar testes S23 (session23.test.ts)
 - [ ] Atualizar README e manuais
 - [ ] Comitar no GitHub

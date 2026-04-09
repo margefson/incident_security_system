@@ -1251,3 +1251,15 @@ A tela `/analyst/incidents` agora possui o botão **"Exportar PDF (N)"** que:
 - Exporta os incidentes visíveis com os filtros ativos (categoria, risco, status)
 - Gera um PDF com todos os incidentes do sistema (não apenas os do analista)
 - O número entre parênteses indica o total de incidentes que serão incluídos no PDF
+
+## Sessão 23 (v3.5) — Correções no Painel de Machine Learning
+
+### Melhorias na Interface AdminML
+
+**Barra de status removida**: A barra duplicada com badges TREINO/AVALIAÇÃO que aparecia no topo do painel foi removida. As informações de dataset e métricas já estão disponíveis nas respectivas abas.
+
+**Total de amostras dinâmico**: O contador de amostras na seção "Distribuição — Dataset de Treino" agora reflete automaticamente o total real do dataset atual (soma das amostras por categoria), sem valor fixo.
+
+**Categorias dinâmicas**: A seção "Categorias do Modelo" agora exibe sempre as categorias do último dataset de treino carregado, atualizando automaticamente após upload de novo dataset.
+
+**Upload de Avaliação na aba correta**: O card "Substituir Dataset de Avaliação" foi movido para a aba **Avaliação**, antes do botão "Executar Avaliação". Agora o fluxo é: (1) fazer upload do dataset → (2) executar avaliação → (3) ver resultados.

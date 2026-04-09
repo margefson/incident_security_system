@@ -895,6 +895,14 @@ Tests: 296 passed
 
 **Total: 1001 testes passando em 26 arquivos**
 
+### Sessão 23 (v3.5) — Correções AdminML: Barra Duplicada, Amostras Dinâmicas, Categorias Dinâmicas, Upload Avaliação
+- **Barra de status duplicada removida**: eliminado o bloco de badges TREINO/AVALIAÇÃO que aparecia no topo do AdminML (duplicava informações já exibidas nas abas)
+- **Total de amostras dinâmico**: a badge "2000 amostras" na Distribuição do Dataset de Treino agora soma dinamicamente os valores de `category_distribution` via `Object.values().reduce()`
+- **Categorias do Modelo dinâmicas**: a seção "Categorias do Modelo" agora usa `Object.keys(dataset?.category_distribution)` como fonte primária, sempre refletindo o último dataset de treino
+- **Upload de Dataset de Avaliação movido**: o card "Substituir Dataset de Avaliação" foi movido para a aba Avaliação (antes do botão "Executar Avaliação"), simetricamente ao upload de treino na aba Treinamento
+- **27 novos testes S23** cobrindo as 4 correções, integridade geral do AdminML e ordenação dos elementos
+- **1028 testes passando** em 27 arquivos
+
 ### Sessão 22 (v3.4) — Reclassificação de Unknowns + Filtro de Status + PDF Analista
 - **Reclassificação automática de incidentes `unknown`**: nova procedure `reclassifyUnknown` no adminRouter percorre todos os incidentes com categoria `unknown`, chama o modelo S21 via Flask e atualiza categoria + confiança para incidentes com confiança ≥ 30%; botão "Reclassificar Unknowns" no painel admin exibe contagem em tempo real
 - **Filtro de status em `/admin/incidents`**: novo filtro "Status" (Aberto / Em Andamento / Resolvido) na tela de todos os incidentes do admin; badges coloridos por status (azul=aberto, amarelo=em andamento, verde=resolvido); filtro integrado ao exportPdf
