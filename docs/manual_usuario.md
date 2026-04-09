@@ -1215,3 +1215,39 @@ Incidentes que antes eram classificados incorretamente agora são reconhecidos:
 - Chamadas telefônicas solicitando código → **Phishing**
 - Manipulação psicológica → **Phishing** (antes: Malware)
 - Estrangulamento de disponibilidade → **DDoS** (antes: Malware)
+
+---
+
+## Sessão 22 (v3.4) — Reclassificação de Unknowns + Filtro de Status + PDF Analista
+
+### Reclassificar Incidentes Desconhecidos (Admin)
+
+O painel **Todos os Incidentes** (`/admin/incidents`) agora possui o botão **"Reclassificar Unknowns"** que:
+
+- Percorre todos os incidentes com categoria `unknown` no banco
+- Chama o modelo ML S21 para reclassificar cada um
+- Atualiza automaticamente a categoria e a confiança dos incidentes que atingirem confiança ≥ 30%
+- Exibe o número de unknowns encontrados no rótulo do botão (ex: "Reclassificar Unknowns (4)")
+- Ao concluir, exibe um toast com o resultado (ex: "3 de 4 incidente(s) reclassificado(s) com sucesso")
+
+**Nota:** O serviço Flask (porta 5001) precisa estar em execução para que a reclassificação funcione.
+
+### Filtro de Status em Todos os Incidentes (Admin)
+
+A tela `/admin/incidents` agora possui um quarto filtro: **Status**. Os valores disponíveis são:
+
+| Valor | Exibição | Cor |
+|---|---|---|
+| `open` | Aberto | Azul |
+| `in_progress` | Em Andamento | Amarelo |
+| `resolved` | Resolvido | Verde |
+
+O filtro de status também é aplicado na **exportação de PDF** — o relatório exportado conterá apenas os incidentes que correspondem aos filtros ativos.
+
+### Exportação de PDF no Perfil Analista
+
+A tela `/analyst/incidents` agora possui o botão **"Exportar PDF (N)"** que:
+
+- Exporta os incidentes visíveis com os filtros ativos (categoria, risco, status)
+- Gera um PDF com todos os incidentes do sistema (não apenas os do analista)
+- O número entre parênteses indica o total de incidentes que serão incluídos no PDF

@@ -893,7 +893,13 @@ Tests: 296 passed
 | **S18-7: Classificação 5050** | `session18.test.ts` | 5 | brute_force, phishing, malware, vazamento_de_dados, Flask online |
 | **S18-8: Métricas 5050** | `session18.test.ts` | 5 | dataset_size >= 5000, train_accuracy >= 0.99, 1000/categoria, last_updated, TRAIN_DATASET_PATH |
 
-**Total: 971 testes passando em 25 arquivos**
+**Total: 1001 testes passando em 26 arquivos**
+
+### Sessão 22 (v3.4) — Reclassificação de Unknowns + Filtro de Status + PDF Analista
+- **Reclassificação automática de incidentes `unknown`**: nova procedure `reclassifyUnknown` no adminRouter percorre todos os incidentes com categoria `unknown`, chama o modelo S21 via Flask e atualiza categoria + confiança para incidentes com confiança ≥ 30%; botão "Reclassificar Unknowns" no painel admin exibe contagem em tempo real
+- **Filtro de status em `/admin/incidents`**: novo filtro "Status" (Aberto / Em Andamento / Resolvido) na tela de todos os incidentes do admin; badges coloridos por status (azul=aberto, amarelo=em andamento, verde=resolvido); filtro integrado ao exportPdf
+- **Exportação PDF no analista**: botão "Exportar PDF" adicionado à tela `/analyst/incidents`, respeitando os filtros ativos (categoria, risco, status) e exportando apenas os incidentes visíveis
+- **30 novos testes S22** cobrindo reclassifyUnknown, filtro de status, getAllIncidentsForReclassify, exportPdf com status, STATUS_LABELS/STATUS_COLORS, integração com Flask offline e botão de reclassificação
 
 ### Sessão 21 (v3.3) — Melhoria de Acurácia ML + Exportação de PDF com Filtros
 - **Análise dos 33 incidentes do banco**: identificados 4 incidentes `unknown` (vishing/telefone), 2 com categoria errada (manipulação psicológica como malware, estrangulamento como malware) e 12 com confiança < 60%

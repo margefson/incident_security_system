@@ -158,6 +158,7 @@ export async function getIncidentRiskStatsByUser(userId: number) {
 export async function getAllIncidents(filters?: {
   category?: string;
   riskLevel?: string;
+  status?: string;
   userId?: number;
   limit?: number;
   offset?: number;
@@ -169,6 +170,7 @@ export async function getAllIncidents(filters?: {
   const conditions: ReturnType<typeof eq>[] = [];
   if (filters?.category) conditions.push(eq(incidents.category, filters.category as Incident["category"]));
   if (filters?.riskLevel) conditions.push(eq(incidents.riskLevel, filters.riskLevel as Incident["riskLevel"]));
+  if (filters?.status) conditions.push(eq(incidents.status, filters.status as Incident["status"]));
   if (filters?.userId) conditions.push(eq(incidents.userId, filters.userId));
   if (filters?.dateFrom) conditions.push(sql`${incidents.createdAt} >= ${new Date(filters.dateFrom)}` as unknown as ReturnType<typeof eq>);
   if (filters?.dateTo) conditions.push(sql`${incidents.createdAt} <= ${new Date(filters.dateTo)}` as unknown as ReturnType<typeof eq>);
@@ -198,6 +200,7 @@ export async function getAllIncidents(filters?: {
 export async function countAllIncidents(filters?: {
   category?: string;
   riskLevel?: string;
+  status?: string;
   userId?: number;
 }) {
   const db = await getDb();
@@ -205,6 +208,7 @@ export async function countAllIncidents(filters?: {
   const conditions: ReturnType<typeof eq>[] = [];
   if (filters?.category) conditions.push(eq(incidents.category, filters.category as Incident["category"]));
   if (filters?.riskLevel) conditions.push(eq(incidents.riskLevel, filters.riskLevel as Incident["riskLevel"]));
+  if (filters?.status) conditions.push(eq(incidents.status, filters.status as Incident["status"]));
   if (filters?.userId) conditions.push(eq(incidents.userId, filters.userId));
   const result = await db
     .select({ count: sql<number>`count(*)` })
@@ -659,5 +663,6 @@ export async function getAllIncidentsForReclassify() {
     id: incidents.id,
     title: incidents.title,
     description: incidents.description,
+    category: incidents.category,
   }).from(incidents).orderBy(incidents.id);
 }

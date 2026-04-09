@@ -460,11 +460,20 @@
 
 ## Sessão 21 — Melhoria de Acurácia ML + Exportação PDF Admin
 
-- [ ] Analisar incidentes do banco de dados (títulos, categorias, confiança)
-- [ ] Gerar dataset de treinamento aprimorado (acurácia treino ≥100%)
-- [ ] Gerar dataset de avaliação aprimorado (acurácia avaliação ≥80%)
-- [ ] Retreinar modelo e validar métricas
-- [ ] Implementar exportação PDF com filtros na área admin (/admin/incidents)
-- [ ] Adicionar testes S21 (session21.test.ts)
+- [x] Analisar incidentes do banco de dados (títulos, categorias, confiança)
+- [x] Gerar dataset de treinamento aprimorado (acurácia treino ≥100%)
+- [x] Gerar dataset de avaliação aprimorado (acurácia avaliação ≥80%)
+- [x] Retreinar modelo e validar métricas
+- [x] Implementar exportação PDF com filtros na área admin (/admin/incidents)
+- [x] Adicionar testes S21 (session21.test.ts)
+- [x] Atualizar README e manuais
+- [x] Comitar no GitHub
+
+## Sessão 22 — Reclassificação Unknown + Filtro Status + PDF Analista
+
+- [ ] Reclassificar incidentes unknown do banco com modelo S21
+- [ ] Adicionar filtro de status em /admin/incidents (aberto/em andamento/resolvido)
+- [ ] Adicionar exportação PDF em /analyst/incidents
+- [ ] Adicionar testes S22 (session22.test.ts)
 - [ ] Atualizar README e manuais
 - [ ] Comitar no GitHub

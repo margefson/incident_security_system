@@ -591,6 +591,7 @@ const adminRouter = router({
     .input(z.object({
       category: z.string().optional(),
       riskLevel: z.string().optional(),
+      status: z.string().optional(),
       userId: z.number().optional(),
       limit: z.number().min(1).max(500).default(100),
       offset: z.number().min(0).default(0),
@@ -1059,6 +1060,53 @@ const adminRouter = router({
         });
       }
     }),
+
+  // Reclassify all 'unknown' incidents using the current ML model
+  reclassifyUnknown: adminProcedure
+    .mutation(async () => {
+      const ML_URL_LOCAL = process.env.ML_SERVICE_URL ?? "http://localhost:5001";
+      const allIncidents = await getAllIncidentsForReclassify();
+      const unknownIncidents = allIncidents.filter((i) => i.category === "unknown");
+      let reclassifiedCount = 0;
+      const results: Array<{ id: number; title: string; newCategory: string; confidence: number }> = [];
+
+      for (const inc of unknownIncidents) {
+        try {
+          const clsRes = await fetch(`${ML_URL_LOCAL}/classify`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ title: inc.title, description: inc.description }),
+            signal: AbortSignal.timeout(5000),
+          });
+          if (clsRes.ok) {
+            const cls = await clsRes.json() as { category: string; confidence: number };
+            if (cls.category !== "unknown" && cls.confidence >= 0.30) {
+              const riskLevel = (CATEGORY_RISK[cls.category] ?? "medium") as "critical" | "high" | "medium" | "low";
+              await updateIncidentML(
+                inc.id,
+                cls.category as "phishing" | "malware" | "brute_force" | "ddos" | "vazamento_de_dados" | "unknown",
+                riskLevel,
+                cls.confidence
+              );
+              results.push({ id: inc.id, title: inc.title, newCategory: cls.category, confidence: cls.confidence });
+              reclassifiedCount++;
+            }
+          }
+        } catch { /* skip individual failure */ }
+      }
+
+      return {
+        total: unknownIncidents.length,
+        reclassified: reclassifiedCount,
+        skipped: unknownIncidents.length - reclassifiedCount,
+        results,
+        message: reclassifiedCount > 0
+          ? `${reclassifiedCount} de ${unknownIncidents.length} incidente(s) unknown reclassificado(s) com sucesso.`
+          : unknownIncidents.length === 0
+            ? "Nenhum incidente unknown encontrado no banco."
+            : `${unknownIncidents.length} incidente(s) unknown encontrado(s), mas nenhum atingiu confiança mínima de 30%.`,
+      };
+    }),
 });
 // ─── Reports Routerr ───────────────────────────────────────────────────────
 const reportsRouter = router({
@@ -1066,6 +1114,7 @@ const reportsRouter = router({
     .input(z.object({
       category: z.string().optional(),
       riskLevel: z.string().optional(),
+      status: z.string().optional(),
       adminMode: z.boolean().optional().default(false),
       dateFrom: z.string().optional(), // ISO date string e.g. "2025-01-01"
       dateTo: z.string().optional(),   // ISO date string e.g. "2025-12-31"
@@ -1079,6 +1128,7 @@ const reportsRouter = router({
         incidents = await getAllIncidents({
           category: input.category,
           riskLevel: input.riskLevel,
+          status: input.status,
           limit: 500,
           dateFrom,
           dateTo,

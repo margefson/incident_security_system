@@ -15,7 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from "sonner";
 import {
   List, RefreshCw, Search, Filter, Shield, AlertTriangle,
-  CheckCircle2, Clock, ChevronLeft, ChevronRight, User,
+  CheckCircle2, Clock, ChevronLeft, ChevronRight, User, FileDown, Loader2,
 } from "lucide-react";
 import { useLocation } from "wouter";
 
@@ -68,6 +68,44 @@ export default function AnalystIncidents() {
   const [filterStatus, setFilterStatus] = useState<string>("all");
   const [search, setSearch] = useState("");
   const [searchInput, setSearchInput] = useState("");
+
+  const [isExporting, setIsExporting] = useState(false);
+
+  const exportPdfMutation = trpc.reports.exportPdf.useMutation({
+    onSuccess: (data) => {
+      const byteCharacters = atob(data.base64);
+      const byteNumbers = new Array(byteCharacters.length);
+      for (let i = 0; i < byteCharacters.length; i++) {
+        byteNumbers[i] = byteCharacters.charCodeAt(i);
+      }
+      const byteArray = new Uint8Array(byteNumbers);
+      const blob = new Blob([byteArray], { type: "application/pdf" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = data.filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      toast.success(`PDF exportado com sucesso \u2014 ${data.incidentCount} incidente(s) incluídos.`);
+      setIsExporting(false);
+    },
+    onError: (err) => {
+      toast.error(`Erro ao exportar PDF: ${err.message}`);
+      setIsExporting(false);
+    },
+  });
+
+  const handleExportPdf = () => {
+    setIsExporting(true);
+    exportPdfMutation.mutate({
+      category: filterCategory !== "all" ? filterCategory : undefined,
+      riskLevel: filterRisk !== "all" ? filterRisk : undefined,
+      status: filterStatus !== "all" ? filterStatus : undefined,
+      adminMode: false,
+    });
+  };
 
   const listQuery = trpc.incidents.listAll.useQuery({
     category: filterCategory !== "all" ? filterCategory : undefined,
@@ -182,12 +220,26 @@ export default function AnalystIncidents() {
           </Button>
         </div>
 
-        {/* Contador */}
+        {/* Contador + Exportar PDF */}
         <div className="flex items-center justify-between">
           <p className="text-xs font-mono text-muted-foreground">
             {total} incidente(s) encontrado(s)
             {search && ` — filtrando por "${search}"`}
           </p>
+          <Button
+            size="sm"
+            variant="outline"
+            className="h-8 font-mono text-xs gap-2 border-primary/40 text-primary hover:bg-primary/10"
+            onClick={handleExportPdf}
+            disabled={isExporting || total === 0}
+          >
+            {isExporting ? (
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+            ) : (
+              <FileDown className="w-3.5 h-3.5" />
+            )}
+            {isExporting ? "Gerando PDF..." : `Exportar PDF (${total})`}
+          </Button>
           {totalPages > 1 && (
             <div className="flex items-center gap-2">
               <Button

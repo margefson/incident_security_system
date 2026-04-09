@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Link } from "wouter";
 import { toast } from "sonner";
 import {
-  List, ChevronLeft, ChevronRight, Search, Filter, ExternalLink, FileDown, Loader2,
+  List, ChevronLeft, ChevronRight, Search, Filter, ExternalLink, FileDown, Loader2, RefreshCw,
 } from "lucide-react";
 
 const RISK_COLORS: Record<string, string> = {
@@ -23,25 +23,42 @@ const RISK_LABELS: Record<string, string> = {
   critical: "Crítico", high: "Alto", medium: "Médio", low: "Baixo",
 };
 
+const STATUS_COLORS: Record<string, string> = {
+  open: "bg-blue-500/10 text-blue-400 border-blue-500/20",
+  in_progress: "bg-yellow-500/10 text-yellow-400 border-yellow-500/20",
+  resolved: "bg-green-500/10 text-green-400 border-green-500/20",
+};
+
+const STATUS_LABELS: Record<string, string> = {
+  open: "Aberto",
+  in_progress: "Em Andamento",
+  resolved: "Resolvido",
+};
+
 const PAGE_SIZE = 20;
 
 export default function AdminIncidents() {
   const [page, setPage] = useState(0);
   const [category, setCategory] = useState<string>("");
   const [riskLevel, setRiskLevel] = useState<string>("");
+  const [status, setStatus] = useState<string>("");
   const [search, setSearch] = useState<string>("");
   const [searchInput, setSearchInput] = useState<string>("");
   const [isExporting, setIsExporting] = useState(false);
+  const [isReclassifying, setIsReclassifying] = useState(false);
+
+  const utils = trpc.useUtils();
+
   const query = trpc.admin.listIncidents.useQuery({
     limit: PAGE_SIZE,
     offset: page * PAGE_SIZE,
     category: category || undefined,
     riskLevel: riskLevel || undefined,
+    status: status || undefined,
   });
 
   const exportPdfMutation = trpc.reports.exportPdf.useMutation({
     onSuccess: (data) => {
-      // Decodificar base64 e fazer download
       const byteCharacters = atob(data.base64);
       const byteNumbers = new Array(byteCharacters.length);
       for (let i = 0; i < byteCharacters.length; i++) {
@@ -63,6 +80,18 @@ export default function AdminIncidents() {
     onError: (err) => {
       toast.error(`Erro ao exportar PDF: ${err.message}`);
       setIsExporting(false);
+    },
+  });
+
+  const reclassifyUnknownMutation = trpc.admin.reclassifyUnknown.useMutation({
+    onSuccess: (data) => {
+      toast.success(data.message, { duration: 6000 });
+      utils.admin.listIncidents.invalidate();
+      setIsReclassifying(false);
+    },
+    onError: (err) => {
+      toast.error(`Erro ao reclassificar: ${err.message}`, { duration: 8000 });
+      setIsReclassifying(false);
     },
   });
 
@@ -91,15 +120,25 @@ export default function AdminIncidents() {
     exportPdfMutation.mutate({
       category: category || undefined,
       riskLevel: riskLevel || undefined,
+      status: status || undefined,
       adminMode: true,
     });
+  };
+
+  const handleReclassifyUnknown = () => {
+    setIsReclassifying(true);
+    reclassifyUnknownMutation.mutate();
   };
 
   // Label dos filtros ativos para o botão de exportar
   const filterLabel = [
     category ? category.replace("_", " ") : null,
     riskLevel ? RISK_LABELS[riskLevel] : null,
+    status ? STATUS_LABELS[status] : null,
   ].filter(Boolean).join(", ");
+
+  // Contar unknowns para exibir no botão
+  const unknownCount = incidents.filter((i: Record<string, unknown>) => i.category === "unknown").length;
 
   return (
     <DashboardLayout>
@@ -114,25 +153,47 @@ export default function AdminIncidents() {
               {total} incidentes no total • Página {page + 1} de {Math.max(1, totalPages)}
             </p>
           </div>
-          {/* Botão Exportar PDF */}
-          <Button
-            size="sm"
-            variant="outline"
-            className="h-8 font-mono text-xs gap-2 border-primary/40 text-primary hover:bg-primary/10"
-            onClick={handleExportPdf}
-            disabled={isExporting || total === 0}
-          >
-            {isExporting ? (
-              <Loader2 className="w-3.5 h-3.5 animate-spin" />
-            ) : (
-              <FileDown className="w-3.5 h-3.5" />
-            )}
-            {isExporting
-              ? "Gerando PDF..."
-              : filterLabel
-              ? `Exportar PDF (${filterLabel})`
-              : `Exportar PDF (${total} incidentes)`}
-          </Button>
+          <div className="flex items-center gap-2 flex-wrap">
+            {/* Botão Reclassificar Unknowns */}
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-8 font-mono text-xs gap-2 border-yellow-500/40 text-yellow-400 hover:bg-yellow-500/10"
+              onClick={handleReclassifyUnknown}
+              disabled={isReclassifying}
+              title="Reclassifica todos os incidentes com categoria 'unknown' usando o modelo ML atual"
+            >
+              {isReclassifying ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              ) : (
+                <RefreshCw className="w-3.5 h-3.5" />
+              )}
+              {isReclassifying
+                ? "Reclassificando..."
+                : unknownCount > 0
+                ? `Reclassificar Unknowns (${unknownCount})`
+                : "Reclassificar Unknowns"}
+            </Button>
+            {/* Botão Exportar PDF */}
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-8 font-mono text-xs gap-2 border-primary/40 text-primary hover:bg-primary/10"
+              onClick={handleExportPdf}
+              disabled={isExporting || total === 0}
+            >
+              {isExporting ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              ) : (
+                <FileDown className="w-3.5 h-3.5" />
+              )}
+              {isExporting
+                ? "Gerando PDF..."
+                : filterLabel
+                ? `Exportar PDF (${filterLabel})`
+                : `Exportar PDF (${total} incidentes)`}
+            </Button>
+          </div>
         </div>
 
         {/* Filtros */}
@@ -186,9 +247,23 @@ export default function AdminIncidents() {
                   </SelectContent>
                 </Select>
               </div>
-              {(category || riskLevel || search) && (
+              <div className="min-w-[150px]">
+                <label className="text-xs font-mono text-muted-foreground mb-1 block">Status</label>
+                <Select value={status || "all"} onValueChange={(v) => { setStatus(v === "all" ? "" : v); handleFilterChange(); }}>
+                  <SelectTrigger className="h-8 font-mono text-xs">
+                    <SelectValue placeholder="Todos" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos</SelectItem>
+                    <SelectItem value="open">Aberto</SelectItem>
+                    <SelectItem value="in_progress">Em Andamento</SelectItem>
+                    <SelectItem value="resolved">Resolvido</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              {(category || riskLevel || status || search) && (
                 <Button size="sm" variant="ghost" className="h-8 font-mono text-xs gap-1" onClick={() => {
-                  setCategory(""); setRiskLevel(""); setSearch(""); setSearchInput(""); setPage(0);
+                  setCategory(""); setRiskLevel(""); setStatus(""); setSearch(""); setSearchInput(""); setPage(0);
                 }}>
                   <Filter className="w-3 h-3" />
                   Limpar
@@ -237,7 +312,7 @@ export default function AdminIncidents() {
                         <td className="px-3 py-2 text-muted-foreground">#{incident.id as number}</td>
                         <td className="px-3 py-2 text-foreground max-w-[200px] truncate">{incident.title as string}</td>
                         <td className="px-3 py-2">
-                          <Badge variant="outline" className="text-xs border-blue-500/30 text-blue-400">
+                          <Badge variant="outline" className={`text-xs ${(incident.category as string) === "unknown" ? "border-yellow-500/30 text-yellow-400" : "border-blue-500/30 text-blue-400"}`}>
                             {(incident.category as string)?.replace("_", " ") ?? "—"}
                           </Badge>
                         </td>
@@ -252,15 +327,16 @@ export default function AdminIncidents() {
                           {(incident as Record<string, unknown>).confidence !== undefined && (incident as Record<string, unknown>).confidence !== null ? (
                             <span className={`font-mono font-semibold text-xs ${
                               Number((incident as Record<string, unknown>).confidence) >= 0.85 ? "text-green-400" :
-                              Number((incident as Record<string, unknown>).confidence) >= 0.60 ? "text-yellow-400" : "text-red-400"
+                              Number((incident as Record<string, unknown>).confidence) >= 0.60 ? "text-yellow-400" :
+                              "text-red-400"
                             }`}>
                               {Math.round(Number((incident as Record<string, unknown>).confidence) * 100)}%
                             </span>
                           ) : <span className="text-muted-foreground">—</span>}
                         </td>
                         <td className="px-3 py-2">
-                          <Badge variant="outline" className="text-xs border-muted-foreground/30 text-muted-foreground">
-                            {(incident as Record<string, unknown>).status as string ?? "open"}
+                          <Badge variant="outline" className={`text-xs ${STATUS_COLORS[(incident as Record<string, unknown>).status as string] ?? "border-muted-foreground/30 text-muted-foreground"}`}>
+                            {STATUS_LABELS[(incident as Record<string, unknown>).status as string] ?? (incident as Record<string, unknown>).status as string ?? "open"}
                           </Badge>
                         </td>
                         <td className="px-3 py-2 text-muted-foreground">
