@@ -506,4 +506,16 @@
 - [x] Botão "Reiniciar Serviço" deve acionar ensureFlaskRunning e atualizar status imediatamente
 - [x] Adicionar testes S25 (session25.test.ts)
 - [x] Atualizar README e manuais
+- [x] Comitar no GitHub
+
+## Sessão 26 — Correção Definitiva Flask Offline + Logs de Acompanhamento
+
+- [x] Diagnosticar causa raiz: por que Flask aparece Offline mesmo após ensureFlaskRunning
+- [x] Corrigir pdf_server.py para aceitar --port via argparse
+- [x] Corrigir startFlaskServer para passar --port como argumento CLI
+- [x] Criar endpoint /api/flask-status para diagnóstico direto (sem tRPC/auth)
+- [x] Reescrever AdminSystemHealth.tsx para usar /api/flask-status como fonte primária
+- [x] Adicionar Log de Eventos visível na UI (histórico de verificações e reinicializações)
+- [x] Adicionar testes S26 (session26.test.ts)
+- [x] Atualizar README e manuais
 - [ ] Comitar no GitHub

@@ -5,7 +5,7 @@
 ![Python](https://img.shields.io/badge/Python-3.11-3776AB?style=flat-square&logo=python)
 ![MySQL](https://img.shields.io/badge/MySQL-8.x-4479A1?style=flat-square&logo=mysql)
 ![ML Accuracy](https://img.shields.io/badge/ML%20Accuracy%20(CV)-97%25%20%7C%20Eval%3A78%25-brightgreen?style=flat-square)
-![Tests](https://img.shields.io/badge/tests-1084%20passing-brightgreen)
+![Tests](https://img.shields.io/badge/tests-1123%20passing-brightgreen)
 ![License](https://img.shields.io/badge/License-MIT-blue?style=flat-square)
 
 Plataforma de gerenciamento de incidentes de segurança cibernética com classificação automática por Machine Learning (TF-IDF + Naive Bayes), painel de administração global, **CRUD de categorias de incidentes (exclusivo para administradores)**, exportação de relatórios em PDF, notificações automáticas de risco crítico e interface SOC Portal — design profissional dark com tipografia Inter, sidebar compacta, badges coloridos por severidade e tabelas operacionais.
@@ -894,6 +894,15 @@ Tests: 296 passed
 | **S18-8: Métricas 5050** | `session18.test.ts` | 5 | dataset_size >= 5000, train_accuracy >= 0.99, 1000/categoria, last_updated, TRAIN_DATASET_PATH |
 
 **Total: 1001 testes passando em 26 arquivos**
+
+### Sessão 26 (v3.8) — Correção Definitiva Flask Offline + Logs de Acompanhamento
+- **pdf_server.py com argparse**: o servidor PDF agora aceita `--port` como argumento CLI via `argparse`, com default 5002; elimina o problema em que `startFlaskServer` passava `--port` mas o script ignorava o argumento
+- **startFlaskServer corrigido**: passa `--port {port}` como argumento CLI ao `spawn`, além de manter `ML_PORT` via env para retrocompatibilidade
+- **Endpoint `/api/flask-status`**: novo endpoint Express público (sem tRPC/auth) que verifica diretamente os dois Flask via `/health`, retorna `overall`, `services` e `checked_at`; usado pela tela de Saúde como fonte primária de status
+- **AdminSystemHealth.tsx reescrito**: usa `fetch('/api/flask-status')` diretamente (sem overhead de tRPC/autenticação), exibe detalhes brutos do health check (model_loaded, método, dataset_size, train_accuracy, service), mensagem de erro quando offline, e painel de Log de Eventos colapsável com scroll automático
+- **Log de Eventos**: painel colapsável com até 50 entradas, registra cada verificação (latência), reinicializações e erros com timestamp e código de cor por tipo
+- **39 novos testes S26** cobrindo pdf_server.py argparse, startFlaskServer --port, endpoint flask-status, AdminSystemHealth dinâmico e Log de Eventos
+- **1123 testes passando** em 30 arquivos
 
 ### Sessão 25 (v3.7) — Correção Saúde do Sistema + Tela Dinâmica
 - **FLASK_SCRIPTS**: mapeamento centralizado `porta → script Python` (`5001 → classifier_server.py`, `5002 → pdf_server.py`); `ensureFlaskRunning(port)` e `restartService` agora usam este mapa para escolher o script correto, eliminando o comportamento anterior que sempre usava `classifier_server.py` para qualquer porta

@@ -7,6 +7,7 @@ Porta: 5002
 
 import io
 import json
+import argparse
 from datetime import datetime
 from flask import Flask, request, jsonify, send_file
 from reportlab.lib.pagesizes import A4
@@ -323,5 +324,8 @@ def generate_pdf():
 
 
 if __name__ == "__main__":
-    print("[PDF Server] Starting on port 5002...")
-    app.run(host="0.0.0.0", port=5002, debug=False)
+    parser = argparse.ArgumentParser(description="PDF Report Generator Server")
+    parser.add_argument("--port", type=int, default=5002, help="Port to listen on (default: 5002)")
+    args = parser.parse_args()
+    print(f"[PDF Server] Starting on port {args.port}...")
+    app.run(host="0.0.0.0", port=args.port, debug=False)

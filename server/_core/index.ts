@@ -59,7 +59,7 @@ async function waitForFlask(port: number, maxRetries = 20, delayMs = 500): Promi
 
 function startFlaskServer(scriptName: string, port: number) {
   const mlDir = path.resolve(__dirname, "../../ml");
-  const proc = spawn("python3", [path.join(mlDir, scriptName)], {
+  const proc = spawn("python3", [path.join(mlDir, scriptName), "--port", String(port)], {
     cwd: mlDir,
     detached: false,
     stdio: ["ignore", "pipe", "pipe"],
@@ -160,6 +160,36 @@ async function startServer() {
       res.write(`data: {"type":"error","message":${JSON.stringify(msg)}}\n\n`);
     }
     res.end();
+  });
+
+  // ─── Endpoint público de status Flask (diagnóstico direto sem tRPC/auth) ──────
+  app.get("/api/flask-status", async (_req, res) => {
+    const services = [
+      { name: "Flask ML", port: 5001, url: "http://localhost:5001" },
+      { name: "Flask PDF", port: 5002, url: "http://localhost:5002" },
+    ];
+    const results = await Promise.all(
+      services.map(async (svc) => {
+        const start = Date.now();
+        try {
+          const r = await fetch(`${svc.url}/health`, { signal: AbortSignal.timeout(3000) });
+          const latency = Date.now() - start;
+          if (r.ok) {
+            const body = await r.json().catch(() => ({})) as Record<string, unknown>;
+            return { ...svc, status: "online", latency, details: body };
+          }
+          return { ...svc, status: "degraded", latency, details: null, httpStatus: r.status };
+        } catch (err: unknown) {
+          return { ...svc, status: "offline", latency: Date.now() - start, error: String(err) };
+        }
+      })
+    );
+    const allOnline = results.every(r => r.status === "online");
+    res.json({
+      overall: allOnline ? "online" : "degraded",
+      checked_at: new Date().toISOString(),
+      services: results,
+    });
   });
 
   // Endpoint temporário de análise de incidentes (apenas dev)

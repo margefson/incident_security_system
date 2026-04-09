@@ -175,8 +175,11 @@ describe("S15-5: Dashboard de Saude — Frontend", () => {
   it("S15-5.1: AdminSystemHealth.tsx existe", () => {
     expect(fs.existsSync(ADMIN_HEALTH_TSX)).toBe(true);
   });
-  it("S15-5.2: AdminSystemHealth usa trpc.admin.getSystemHealth", () => {
-    expect(adminHealthSrc).toContain("trpc.admin.getSystemHealth");
+  it("S15-5.2: AdminSystemHealth usa fonte de dados para status dos serviços Flask", () => {
+    // Aceita tanto trpc.admin.getSystemHealth quanto /api/flask-status como fonte primária
+    const hasFlaskStatus = adminHealthSrc.includes("/api/flask-status");
+    const hasTrpcHealth = adminHealthSrc.includes("trpc.admin.getSystemHealth");
+    expect(hasFlaskStatus || hasTrpcHealth).toBe(true);
   });
   it("S15-5.3: AdminSystemHealth tem auto-refresh de 30 segundos", () => {
     expect(adminHealthSrc).toContain("30000");
