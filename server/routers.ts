@@ -59,6 +59,12 @@ import { sdk } from "./_core/sdk";
 import { notifyOwner } from "./_core/notification";
 
 // ─── Flask Auto-Restart Helper ───────────────────────────────────────────
+// Mapeamento de porta → script Python
+const FLASK_SCRIPTS: Record<number, string> = {
+  5001: "classifier_server.py",
+  5002: "pdf_server.py",
+};
+
 async function ensureFlaskRunning(port = 5001): Promise<void> {
   const url = `http://localhost:${port}/health`;
   try {
@@ -72,11 +78,15 @@ async function ensureFlaskRunning(port = 5001): Promise<void> {
     const __filename_esm = fileURLToPath(import.meta.url);
     const __dirname_esm = path.dirname(__filename_esm);
     const SCRIPT_DIR = path.resolve(__dirname_esm, "..", "ml");
-    const SCRIPT_PATH = path.join(SCRIPT_DIR, "classifier_server.py");
+    const scriptName = FLASK_SCRIPTS[port] ?? "classifier_server.py";
+    const SCRIPT_PATH = path.join(SCRIPT_DIR, scriptName);
     const LOG_PATH = path.join(SCRIPT_DIR, `flask_${port}.log`);
-    if (!fs.existsSync(SCRIPT_PATH)) return;
+    if (!fs.existsSync(SCRIPT_PATH)) {
+      console.warn(`[ensureFlaskRunning] Script não encontrado: ${SCRIPT_PATH}`);
+      return;
+    }
     try {
-      execSync(`pkill -f "classifier_server.py.*${port}" 2>/dev/null || true`, { timeout: 5000 });
+      execSync(`pkill -f "${scriptName}" 2>/dev/null || true`, { timeout: 5000 });
       execSync(`fuser -k ${port}/tcp 2>/dev/null || true`, { timeout: 5000 });
     } catch { /* ignora */ }
     await new Promise(r => setTimeout(r, 1000));
@@ -1050,23 +1060,38 @@ const adminRouter = router({
   getSystemHealth: adminProcedure.query(async () => {
     const ML_URL = process.env.ML_SERVICE_URL ?? "http://localhost:5001";
     const ML_URL2 = process.env.ML_SERVICE_URL2 ?? "http://localhost:5002";
-    const checkService = async (url: string, name: string) => {
+
+    // Garantir que ambos os serviços estejam rodando antes de verificar
+    await Promise.allSettled([
+      ensureFlaskRunning(5001),
+      ensureFlaskRunning(5002),
+    ]);
+
+    const checkService = async (url: string, name: string, port: number) => {
       try {
         const start = Date.now();
-        const res = await fetch(`${url}/health`, { signal: AbortSignal.timeout(3000) });
+        const res = await fetch(`${url}/health`, { signal: AbortSignal.timeout(4000) });
         const latency = Date.now() - start;
         if (res.ok) {
-          const data = await res.json() as Record<string, unknown>;
-          return { name, status: "online" as const, latency, details: data };
+          const raw = await res.json() as Record<string, unknown>;
+          // Extrair apenas campos relevantes para exibição
+          const details: Record<string, unknown> = {};
+          if (raw.status) details["status"] = raw.status;
+          if (raw.model_loaded !== undefined) details["modelo_carregado"] = raw.model_loaded ? "sim" : "não";
+          if (raw.service) details["serviço"] = raw.service;
+          const metricsRaw = raw.metrics as Record<string, unknown> | undefined;
+          if (metricsRaw?.method) details["método"] = metricsRaw.method;
+          if (metricsRaw?.dataset_size) details["amostras_treino"] = metricsRaw.dataset_size;
+          return { name, status: "online" as const, latency, port, details };
         }
-        return { name, status: "degraded" as const, latency, details: null };
+        return { name, status: "degraded" as const, latency, port, details: null };
       } catch {
-        return { name, status: "offline" as const, latency: null as number | null, details: null };
+        return { name, status: "offline" as const, latency: null as number | null, port, details: null };
       }
     };
     const [primary, secondary] = await Promise.all([
-      checkService(ML_URL, "Flask ML (porta 5001)"),
-      checkService(ML_URL2, "Flask ML (porta 5002)"),
+      checkService(ML_URL, "Flask ML (porta 5001)", 5001),
+      checkService(ML_URL2, "Flask PDF (porta 5002)", 5002),
     ]);
     const metrics = readMetricsJson();
     return {
@@ -1086,7 +1111,8 @@ const adminRouter = router({
       const __filename_esm = fileURLToPath(import.meta.url);
       const __dirname_esm = path.dirname(__filename_esm);
       const SCRIPT_DIR = path.resolve(__dirname_esm, "..", "ml");
-      const SCRIPT_PATH = path.join(SCRIPT_DIR, "classifier_server.py");
+      const scriptName = FLASK_SCRIPTS[input.port] ?? "classifier_server.py";
+      const SCRIPT_PATH = path.join(SCRIPT_DIR, scriptName);
       const LOG_PATH = path.join(SCRIPT_DIR, `flask_${input.port}.log`);
 
       if (!fs.existsSync(SCRIPT_PATH)) {
@@ -1099,7 +1125,7 @@ const adminRouter = router({
       try {
         // 1. Matar processo existente na porta
         try {
-          execSync(`pkill -f "classifier_server.py.*${input.port}" 2>/dev/null || true`, { timeout: 5000 });
+          execSync(`pkill -f "${scriptName}" 2>/dev/null || true`, { timeout: 5000 });
           execSync(`fuser -k ${input.port}/tcp 2>/dev/null || true`, { timeout: 5000 });
         } catch {
           // Ignora erros ao matar processo (pode não existir)
@@ -1114,15 +1140,15 @@ const adminRouter = router({
           { timeout: 5000, cwd: SCRIPT_DIR }
         );
 
-        // 4. Aguardar 3 segundos para o Flask inicializar
-        await new Promise(resolve => setTimeout(resolve, 3000));
+        // 4. Aguardar 5 segundos para o Flask inicializar
+        await new Promise(resolve => setTimeout(resolve, 5000));
 
         // 5. Verificar se o serviço está respondendo
-        const ML_URL = `http://localhost:${input.port}`;
+        const SVC_URL = `http://localhost:${input.port}`;
         try {
-          const res = await fetch(`${ML_URL}/health`, { signal: AbortSignal.timeout(4000) });
+          const res = await fetch(`${SVC_URL}/health`, { signal: AbortSignal.timeout(5000) });
           if (res.ok) {
-            return { success: true, message: `Serviço Flask na porta ${input.port} reiniciado com sucesso.`, port: input.port };
+            return { success: true, message: `Serviço na porta ${input.port} reiniciado com sucesso.`, port: input.port };
           }
           return { success: false, message: `Serviço iniciado mas não respondeu ao health check. Verifique os logs.`, port: input.port };
         } catch {

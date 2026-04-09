@@ -5,7 +5,7 @@
 ![Python](https://img.shields.io/badge/Python-3.11-3776AB?style=flat-square&logo=python)
 ![MySQL](https://img.shields.io/badge/MySQL-8.x-4479A1?style=flat-square&logo=mysql)
 ![ML Accuracy](https://img.shields.io/badge/ML%20Accuracy%20(CV)-97%25%20%7C%20Eval%3A78%25-brightgreen?style=flat-square)
-![Tests](https://img.shields.io/badge/tests-880%20passing-brightgreen)
+![Tests](https://img.shields.io/badge/tests-1084%20passing-brightgreen)
 ![License](https://img.shields.io/badge/License-MIT-blue?style=flat-square)
 
 Plataforma de gerenciamento de incidentes de segurança cibernética com classificação automática por Machine Learning (TF-IDF + Naive Bayes), painel de administração global, **CRUD de categorias de incidentes (exclusivo para administradores)**, exportação de relatórios em PDF, notificações automáticas de risco crítico e interface SOC Portal — design profissional dark com tipografia Inter, sidebar compacta, badges coloridos por severidade e tabelas operacionais.
@@ -894,6 +894,13 @@ Tests: 296 passed
 | **S18-8: Métricas 5050** | `session18.test.ts` | 5 | dataset_size >= 5000, train_accuracy >= 0.99, 1000/categoria, last_updated, TRAIN_DATASET_PATH |
 
 **Total: 1001 testes passando em 26 arquivos**
+
+### Sessão 25 (v3.7) — Correção Saúde do Sistema + Tela Dinâmica
+- **FLASK_SCRIPTS**: mapeamento centralizado `porta → script Python` (`5001 → classifier_server.py`, `5002 → pdf_server.py`); `ensureFlaskRunning(port)` e `restartService` agora usam este mapa para escolher o script correto, eliminando o comportamento anterior que sempre usava `classifier_server.py` para qualquer porta
+- **getSystemHealth com auto-reinício**: a procedure `getSystemHealth` agora chama `Promise.allSettled([ensureFlaskRunning(5001), ensureFlaskRunning(5002)])` antes de verificar o status, garantindo que ambos os serviços sejam iniciados automaticamente se estiverem offline
+- **AdminSystemHealth.tsx dinâmico**: tela de Saúde do Sistema completamente reescrita com estado de carregamento (Loader2 animado), detalhes do serviço (modelo carregado, método, amostras de treino), latência colorida por faixa, botão Reiniciar Serviço para serviços online e offline, função `extractPort()` e mensagem de auto-reinício automático
+- **31 novos testes S25** cobrindo FLASK_SCRIPTS, ensureFlaskRunning multi-script, getSystemHealth com auto-reinício, restartService com script correto e AdminSystemHealth dinâmico
+- **1084 testes passando** em 29 arquivos
 
 ### Sessão 24 (v3.6) — Auto-Reinício Flask + Notificações Críticas + Dashboard Analista + Histórico de Reclassificação
 - **Auto-reinício do Flask**: função `ensureFlaskRunning(port)` implementada em todas as 5 procedures ML do adminRouter (`uploadTrainDataset`, `uploadEvalDataset`, `retrain`, `evaluate`, `reclassifyUnknown`); detecta ECONNREFUSED via health check e reinicia o processo Flask automaticamente antes de qualquer operação ML, aguardando até 8s para inicialização

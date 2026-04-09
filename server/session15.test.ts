@@ -157,11 +157,11 @@ describe("S15-4: Dashboard de Saude — Backend", () => {
     expect(section).toContain("5002");
   });
   it("S15-4.5: getSystemHealth retorna services array", () => {
-    const section = routersSrc.split("getSystemHealth")[1]?.substring(0, 1500) ?? "";
+    const section = routersSrc.split("getSystemHealth")[1]?.substring(0, 2500) ?? "";
     expect(section).toContain("services");
   });
   it("S15-4.6: getSystemHealth retorna metrics_cache", () => {
-    const section = routersSrc.split("getSystemHealth")[1]?.substring(0, 1500) ?? "";
+    const section = routersSrc.split("getSystemHealth")[1]?.substring(0, 2500) ?? "";
     expect(section).toContain("metrics_cache");
   });
   it("S15-4.7: getSystemHealth usa AbortSignal.timeout para evitar travamento", () => {

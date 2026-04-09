@@ -497,3 +497,13 @@
 - [x] Adicionar testes S24 (session24.test.ts)
 - [x] Atualizar README e manuais
 - [x] Comitar no GitHub
+
+## Sessão 25 — Correção Saúde do Sistema + Tela Dinâmica
+
+- [x] Diagnosticar por que Flask 5001/5002 aparecem como Offline na tela de Saúde
+- [x] Corrigir procedure systemHealth para usar ensureFlaskRunning e retornar status real
+- [x] Atualizar AdminSystemHealth.tsx para exibir status dinâmico e real dos serviços
+- [x] Botão "Reiniciar Serviço" deve acionar ensureFlaskRunning e atualizar status imediatamente
+- [x] Adicionar testes S25 (session25.test.ts)
+- [x] Atualizar README e manuais
+- [ ] Comitar no GitHub
