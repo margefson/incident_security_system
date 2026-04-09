@@ -702,3 +702,15 @@
 - [x] Deploy em produção (publicado com sucesso)
 - [x] Validar que página "Avaliar Modelo" funciona sem erros (endpoint /evaluate respondendo)
 
+## Sessão 42 — Sincronizar /metrics com /evaluate
+
+- [x] Identificar que /metrics retornava evaluation incompleto
+- [x] Atualizar /metrics para retornar estrutura completa
+- [x] Incluir eval_accuracy, per_category, macro_avg, weighted_avg
+- [x] Incluir confusion_matrix, dataset, dataset_size, evaluated_at
+- [x] Sincronizar /metrics com /evaluate
+- [x] Testar em desenvolvimento (1137 de 1138 testes passando)
+- [x] Fazer commit e push no GitHub (8ed18c5)
+- [ ] Deploy em produção (aguardando click em Publish)
+- [ ] Validar que página atualiza dados após avaliação
+
