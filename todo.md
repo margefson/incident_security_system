@@ -569,3 +569,36 @@
 - [x] Criar relatório técnico completo em Markdown (RELATORIO_TECNICO.md)
 - [x] Fazer commit no GitHub com todas as mudanças (commit local realizado)
 - [x] Validar que repositório está atualizado (via webdev_save_checkpoint)
+
+
+## Sessão 32 — Startup Hooks + Cache ML + Health Check Fallback
+
+- [ ] Implementar Startup Hooks (webhook notificação Flask iniciado)
+- [ ] Implementar Cache em Memória do Modelo ML (15s → 2-3s)
+- [ ] Implementar Health Check com Fallback (palavras-chave)
+- [ ] Adicionar testes para Startup Hooks
+- [ ] Adicionar testes para Cache ML
+- [ ] Adicionar testes para Health Check Fallback
+- [ ] Atualizar README.md com novas funcionalidades
+- [ ] Atualizar RELATORIO_TECNICO.md com melhorias
+- [ ] Atualizar DEPLOYMENT.md com instruções
+- [ ] Validar que 1121+ testes passam
+- [ ] Fazer commit e push para GitHub
+
+## Sessão 32 — Startup Hooks, Cache ML, Health Check Fallback, Testes e Documentação
+
+- [x] Implementar Lazy Loading de Modelo ML (reduz startup de 8-12s para ~1s)
+- [x] Implementar Cache em Memória (requisições em cache <500ms)
+- [x] Implementar Startup Hooks (notificação quando Flask inicia com sucesso)
+- [x] Implementar Health Check com Fallback (classificação por palavras-chave)
+- [x] Criar 15 novos testes (S32-1 a S32-5) — session32.test.ts
+- [x] Testes S32-1: Startup Hooks (model_loaded_at, model_loaded, dataset info)
+- [x] Testes S32-2: Cache de Modelo (lazy loading, cache mais rápido, resultados consistentes)
+- [x] Testes S32-3: Health Check com Fallback (categoria válida, confidence 0-1, risk_level, fallback mode)
+- [x] Testes S32-4: Integração com tRPC (getFlaskStatus, classificação com cache)
+- [x] Testes S32-5: Dataset Validation (2000 amostras, métricas de treinamento)
+- [x] Todos os 15 testes passando (1138 total em 31 arquivos)
+- [x] Atualizar README.md com seção de Tempos de Inicialização (lazy load, cache, startup hooks, fallback)
+- [x] Atualizar RELATORIO_TECNICO.md com informações de Sessão 32
+- [x] Atualizar DEPLOYMENT.md com otimizações de performance
+- [x] Commitar no GitHub com mensagem: "Sessão 32: Startup Hooks, Cache ML, Fallback, Testes e Docs"

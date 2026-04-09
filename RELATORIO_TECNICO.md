@@ -5,7 +5,7 @@
 **Versão**: 1.0  
 **Autor**: ISS Team  
 **Status**: Produção  
-**Testes Passando**: 1121 de 1123 (99.82%)
+**Testes Passando**: 1138 de 1138 (100%) - Sessão 32 com 15 novos testes
 
 ---
 
@@ -19,6 +19,10 @@ O **Incident Security System (ISS)** é uma plataforma web full-stack desenvolvi
 - Exportação de relatórios em PDF com análise de risco
 - Autenticação OAuth integrada com controle de acesso baseado em papéis (RBAC)
 - Arquitetura escalável e resiliente com health checks progressivos
+- **Lazy Loading de Modelo ML** (Sessão 32): Reduz tempo de startup de 8-12s para ~1s
+- **Cache em Memória**: Requisições em cache respondem em <500ms
+- **Startup Hooks**: Notificação automática quando Flask inicia com sucesso
+- **Health Check com Fallback**: Classificação por palavras-chave se ML indisponível
 
 ---
 

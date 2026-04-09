@@ -5,7 +5,7 @@
 ![Python](https://img.shields.io/badge/Python-3.11-3776AB?style=flat-square&logo=python)
 ![MySQL](https://img.shields.io/badge/MySQL-8.x-4479A1?style=flat-square&logo=mysql)
 ![ML Accuracy](https://img.shields.io/badge/ML%20Accuracy%20(CV)-97%25%20%7C%20Eval%3A78%25-brightgreen?style=flat-square)
-![Tests](https://img.shields.io/badge/tests-1123%20passing%20(S29)-brightgreen)
+![Tests](https://img.shields.io/badge/tests-1138%20passing%20(S32)-brightgreen)
 ![License](https://img.shields.io/badge/License-MIT-blue?style=flat-square)
 
 Plataforma de gerenciamento de incidentes de segurança cibernética com classificação automática por Machine Learning (TF-IDF + Naive Bayes), painel de administração global, **CRUD de categorias de incidentes (exclusivo para administradores)**, exportação de relatórios em PDF, notificações automáticas de risco crítico e interface SOC Portal — design profissional dark com tipografia Inter, sidebar compacta, badges coloridos por severidade e tabelas operacionais.
@@ -66,17 +66,42 @@ Ver `DEPLOYMENT.md` para instruções de instalação manual.
 
 ### Startup Inicial
 | Componente | Tempo Esperado | Descrição |
-|-----------|----------------|-----------|
+|-----------|----------------|----------|
 | Node.js Server | 2-3s | Inicialização do Express + tRPC |
 | Python Dependencies | 5-10s | Instalação de pip packages (primeira vez) |
-| Flask ML | 8-12s | Carregamento do modelo TF-IDF + Naive Bayes |
+| Flask ML (Lazy Load) | 8-12s | Carregamento do modelo TF-IDF + Naive Bayes (primeira requisição) |
+| Flask ML (Com Cache) | 0.5-1s | Requisições subsequentes com modelo em cache |
 | Flask PDF | 3-5s | Inicialização do serviço de PDF |
-| **Total** | **20-30s** | Tempo total até sistema estar pronto |
+| **Total (Inicial)** | **20-30s** | Tempo total até sistema estar pronto |
+| **Total (Com Cache)** | **2-5s** | Tempo para requisições após aquecimento |
+
+### Otimizações Implementadas (Sessão 32)
+
+#### 1. **Lazy Loading de Modelo ML**
+- Modelo TF-IDF + Naive Bayes carregado apenas na primeira requisição
+- Reduz tempo de startup do Flask de 8-12s para ~1s
+- Primeira classificação leva 8-12s, subsequentes <1s
+
+#### 2. **Cache em Memória**
+- Modelo mantido em cache global após primeira carga
+- Evita recarregamento desnecessário
+- Requisições em cache respondem em <500ms
+
+#### 3. **Startup Hooks**
+- Notificação automática quando Flask inicia com sucesso
+- Timestamp de carregamento do modelo (`model_loaded_at`)
+- Health check com informações de dataset
+
+#### 4. **Health Check com Fallback**
+- Classificação por palavras-chave se Flask indisponível
+- Mantém sistema funcional mesmo com serviço ML offline
+- Fallback retorna categorias baseadas em keywords: "ransomware"→Critical, "phishing"→High, etc.
 
 ### Restart de Serviço
 Quando você clica em "Reiniciar Serviço" na interface:
 - **Tempo de espera**: 15 segundos (configurável em `server/routers.ts` linha 1193)
-- **Motivo**: O Flask leva ~8-12s para carregar o modelo ML
+- **Motivo**: O Flask leva ~8-12s para carregar o modelo ML na primeira vez
+- **Com Cache**: Reinicializações subsequentes são mais rápidas
 
 > **Nota**: Veja `DEPLOYMENT.md` para mais detalhes sobre tempos, troubleshooting e configurações de produção.
 

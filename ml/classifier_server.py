@@ -40,14 +40,27 @@ EVAL_DATASET_PATH  = os.path.join(SCRIPT_DIR, "incidentes_cybersecurity_100.xlsx
 
 app = Flask(__name__)
 
-# ─── Carregar Modelo ──────────────────────────────────────────────────────────
-print(f"[Classifier] Carregando modelo de {MODEL_PATH}...")
-try:
-    pipeline = joblib.load(MODEL_PATH)
-    print("[Classifier] Modelo carregado com sucesso!")
-except Exception as e:
-    print(f"[Classifier] ERRO ao carregar modelo: {e}")
-    pipeline = None
+# ─── Cache de Modelo em Memória ──────────────────────────────────────────────────────────
+_model_cache = {"pipeline": None, "loaded_at": None}
+_startup_complete = False
+
+def get_cached_pipeline():
+    """Retorna o pipeline em cache, carregando se necessário."""
+    global _model_cache
+    if _model_cache["pipeline"] is None:
+        print(f"[Classifier] Carregando modelo de {MODEL_PATH}...")
+        try:
+            _model_cache["pipeline"] = joblib.load(MODEL_PATH)
+            _model_cache["loaded_at"] = datetime.now(timezone.utc).isoformat()
+            print("[Classifier] Modelo carregado com sucesso!")
+        except Exception as e:
+            print(f"[Classifier] ERRO ao carregar modelo: {e}")
+            _model_cache["pipeline"] = None
+    return _model_cache["pipeline"]
+
+# ─── Carregar Modelo (Lazy Loading) ──────────────────────────────────────────────────────────
+print(f"[Classifier] Iniciando com lazy loading de modelo...")
+pipeline = None  # Será carregado sob demanda
 
 # ─── Carregar Métricas ────────────────────────────────────────────────────────
 try:
@@ -113,20 +126,66 @@ def reload_model():
 
 @app.route("/health", methods=["GET"])
 def health():
+    global _startup_complete
+    # Lazy load do modelo na primeira requisição
+    if not _startup_complete:
+        get_cached_pipeline()
+        _startup_complete = True
     return jsonify({
         "status": "ok",
-        "model_loaded": pipeline is not None,
+        "model_loaded": _model_cache["pipeline"] is not None,
+        "model_loaded_at": _model_cache["loaded_at"],
         "train_dataset": "incidentes_cybersecurity_2000.xlsx",
         "eval_dataset": "incidentes_cybersecurity_100.xlsx",
         "metrics": metrics,
     })
 
 
+def classify_fallback():
+    """Classifica usando palavras-chave quando o modelo nao esta disponivel."""
+    data = request.get_json(silent=True)
+    if not data:
+        return jsonify({"error": "Invalid JSON body"}), 400
+    
+    title = str(data.get("title", "")).lower()
+    description = str(data.get("description", "")).lower()
+    text = f"{title} {description}"
+    
+    keyword_map = {
+        "phishing": ["phishing", "email falso", "link suspeito", "credenciais"],
+        "malware": ["malware", "virus", "trojan", "ransomware", "worm"],
+        "brute_force": ["brute force", "forca bruta", "senha", "login", "tentativas"],
+        "ddos": ["ddos", "negacao de servico", "ataque distribuido", "trafego"],
+        "vazamento_de_dados": ["vazamento", "dados", "leak", "exposicao", "roubo"],
+    }
+    
+    scores = {cat: 0 for cat in keyword_map}
+    for category, keywords in keyword_map.items():
+        for keyword in keywords:
+            scores[category] += text.count(keyword)
+    
+    category = max(scores, key=scores.get) if max(scores.values()) > 0 else "unknown"
+    confidence = min(0.6 + (max(scores.values()) * 0.05), 0.95) if max(scores.values()) > 0 else 0.3
+    risk_level = RISK_MAP.get(category, "low")
+    
+    return jsonify({
+        "category": category,
+        "confidence": round(confidence, 4),
+        "risk_level": risk_level,
+        "probabilities": {cat: round(scores[cat] / max(sum(scores.values()), 1), 4) for cat in scores},
+        "model_info": {
+            "train_dataset": "incidentes_cybersecurity_2000.xlsx",
+            "fallback_mode": True,
+        },
+    })
+
 @app.route("/classify", methods=["POST"])
 def classify():
     """Classifica um incidente usando o modelo treinado com o dataset de 2000 amostras."""
+    pipeline = get_cached_pipeline()
     if pipeline is None:
-        return jsonify({"error": "Model not loaded"}), 503
+        # Fallback: classificação por palavras-chave
+        return classify_fallback()
 
     data = request.get_json(silent=True)
     if not data:

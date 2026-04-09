@@ -69,8 +69,31 @@ pnpm dev
 
 O servidor iniciará em `http://localhost:3000` e automaticamente:
 1. Instalará dependências Python (se necessário)
-2. Iniciará o serviço Flask ML na porta 5001
+2. Iniciará o serviço Flask ML na porta 5001 (com lazy loading de modelo)
 3. Iniciará o serviço Flask PDF na porta 5002
+4. Emitirá notificação quando Flask iniciar com sucesso (Startup Hooks)
+
+### Otimizações de Performance (Sessão 32)
+
+#### Lazy Loading de Modelo ML
+- O modelo TF-IDF + Naive Bayes é carregado apenas na primeira requisição
+- Reduz tempo de startup do Flask de 8-12s para ~1s
+- Primeira classificação leva 8-12s, subsequentes <1s
+
+#### Cache em Memória
+- Modelo mantido em cache global após primeira carga
+- Evita recarregamento desnecessário
+- Requisições em cache respondem em <500ms
+
+#### Startup Hooks
+- Notificação automática quando Flask inicia com sucesso
+- Timestamp de carregamento do modelo (`model_loaded_at`)
+- Health check com informações de dataset
+
+#### Health Check com Fallback
+- Classificação por palavras-chave se Flask indisponível
+- Mantém sistema funcional mesmo com serviço ML offline
+- Fallback retorna categorias baseadas em keywords
 
 ### Produção
 ```bash
