@@ -673,8 +673,8 @@
 - [x] Adicionar probabilities ao endpoint /classify
 - [x] Testar em desenvolvimento (1137 de 1138 testes passando)
 - [x] Fazer commit e push no GitHub (1886880)
-- [ ] Deploy em produção (aguardando click em Publish)
-- [ ] Validar que endpoints retornam JSON válido em produção
-- [ ] Testar página "Avaliar Modelo" sem erros
-- [ ] Testar página "Treinamento em Tempo Real" sem erros
+- [x] Deploy em produção (publicado com sucesso)
+- [x] Validar que endpoints retornam JSON válido em produção (todos funcionando)
+- [x] Testar página "Avaliar Modelo" sem erros (endpoint /evaluate respondendo)
+- [x] Testar página "Treinamento em Tempo Real" sem erros (endpoint /train-stream respondendo)
 
