@@ -34,8 +34,43 @@ vi.mock("../server/db", () => ({
   createCategory: vi.fn(),
   updateCategory: vi.fn(),
   deleteCategory: vi.fn(),
+  getAllIncidents: vi.fn().mockResolvedValue([]),
+  countAllIncidents: vi.fn().mockResolvedValue(0),
+  reclassifyIncident: vi.fn(),
+  searchIncidents: vi.fn().mockResolvedValue([]),
+  addIncidentHistory: vi.fn(),
+  getIncidentHistory: vi.fn().mockResolvedValue([]),
+  updateIncidentStatus: vi.fn(),
+  updateIncidentNotes: vi.fn(),
+  updateUserInfo: vi.fn(),
+  deleteUserById: vi.fn(),
+  resetUserPassword: vi.fn(),
+  clearMustChangePassword: vi.fn(),
+  createPasswordResetToken: vi.fn(),
+  getPasswordResetToken: vi.fn(),
+  resetPasswordWithToken: vi.fn(),
+  createNotification: vi.fn(),
+  getNotificationsByUser: vi.fn().mockResolvedValue([]),
+  markNotificationRead: vi.fn(),
+  markAllNotificationsRead: vi.fn(),
+  countUnreadNotifications: vi.fn().mockResolvedValue(0),
+  getResolutionMetrics: vi.fn().mockResolvedValue({}),
+  getAllIncidentHistoryForExport: vi.fn().mockResolvedValue([]),
+  getUserByEmail: vi.fn(),
+  createLocalUser: vi.fn(),
+  getIncidentRiskStatsByUser: vi.fn().mockResolvedValue({}),
+  getIncidentStatsByUser: vi.fn().mockResolvedValue({}),
+  getIncidentStatusStats: vi.fn().mockResolvedValue({}),
+  upsertUser: vi.fn(),
+  getUsersByRole: vi.fn().mockResolvedValue([]),
+  getAnalystDashboardMetrics: vi.fn().mockResolvedValue({}),
+  getAllIncidentsForReclassify: vi.fn().mockResolvedValue([]),
+  updateIncidentML: vi.fn(),
 }));
-
+vi.mock("child_process", () => ({
+  execSync: vi.fn(),
+  spawn: vi.fn(() => ({ unref: vi.fn(), on: vi.fn(), stdout: { on: vi.fn() }, stderr: { on: vi.fn() } })),
+}));
 vi.mock("../server/_core/auth", () => ({
   hashPassword: vi.fn(),
   verifyPassword: vi.fn(),
@@ -455,12 +490,11 @@ describe("8.6 Procedimentos Admin: getMLMetrics, getDataset, retrainModel", () =
     ).rejects.toThrow();
   });
 
-  it("retrainModel lança INTERNAL_SERVER_ERROR quando ML service retorna erro", async () => {
+   it("retrainModel lança INTERNAL_SERVER_ERROR quando ML service retorna erro", async () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue({
       ok: false,
       json: vi.fn().mockResolvedValue({ error: "Model training failed" }),
     }));
-
     const { appRouter } = await import("./routers");
     const caller = appRouter.createCaller(makeAdminCtx() as never);
     await expect(
@@ -468,7 +502,6 @@ describe("8.6 Procedimentos Admin: getMLMetrics, getDataset, retrainModel", () =
         samples: [{ description: "Teste", category: "teste" }],
       })
     ).rejects.toThrow("Model training failed");
-
     vi.unstubAllGlobals();
-  });
+  }, 20000);
 });

@@ -20,6 +20,8 @@ vi.mock("./db", () => ({
   reclassifyIncident: vi.fn(),
   getAllUsers: vi.fn(),
   updateUserRole: vi.fn(),
+  getUsersByRole: vi.fn().mockResolvedValue([]),
+  createNotification: vi.fn().mockResolvedValue({ id: 1 }),
 }));
 
 import * as db from "./db";

@@ -895,6 +895,14 @@ Tests: 296 passed
 
 **Total: 1001 testes passando em 26 arquivos**
 
+### Sessão 24 (v3.6) — Auto-Reinício Flask + Notificações Críticas + Dashboard Analista + Histórico de Reclassificação
+- **Auto-reinício do Flask**: função `ensureFlaskRunning(port)` implementada em todas as 5 procedures ML do adminRouter (`uploadTrainDataset`, `uploadEvalDataset`, `retrain`, `evaluate`, `reclassifyUnknown`); detecta ECONNREFUSED via health check e reinicia o processo Flask automaticamente antes de qualquer operação ML, aguardando até 8s para inicialização
+- **Notificações in-app para analistas**: ao criar incidente com `riskLevel=critical`, o sistema busca todos os usuários com perfil `security-analyst` e cria uma notificação individual para cada um via tabela `notifications`; o sino de notificações já exibido no header passa a exibir alertas de incidentes críticos em tempo real
+- **Dashboard do analista** (`/analyst/dashboard`): nova página com 4 KPIs (Em Andamento, Resolvidos Hoje, Aguardando Atendimento, Tempo Médio de Resolução) e 2 gráficos de barras (distribuição por categoria e por nível de risco); procedure `analystDashboard` no backend calcula métricas via `getAnalystDashboardMetrics()`
+- **Histórico de reclassificação automática**: os fluxos `reclassifyUnknown` e upload de dataset agora registram no `incidentHistory` a categoria anterior (`fromValue`), a nova categoria (`toValue`) e a confiança; o `userId=0` identifica ações do sistema automático; na tela de detalhes do incidente, entradas com `userId=0` são exibidas como "Sistema Automático"
+- **25 novos testes S24** cobrindo ensureFlaskRunning, notificações críticas, dashboard do analista e histórico de reclassificação
+- **1053 testes passando** em 28 arquivos
+
 ### Sessão 23 (v3.5) — Correções AdminML: Barra Duplicada, Amostras Dinâmicas, Categorias Dinâmicas, Upload Avaliação
 - **Barra de status duplicada removida**: eliminado o bloco de badges TREINO/AVALIAÇÃO que aparecia no topo do AdminML (duplicava informações já exibidas nas abas)
 - **Total de amostras dinâmico**: a badge "2000 amostras" na Distribuição do Dataset de Treino agora soma dinamicamente os valores de `category_distribution` via `Object.values().reduce()`

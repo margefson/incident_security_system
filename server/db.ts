@@ -666,3 +666,76 @@ export async function getAllIncidentsForReclassify() {
     category: incidents.category,
   }).from(incidents).orderBy(incidents.id);
 }
+
+/**
+ * Retorna todos os usuários com um determinado role.
+ * Usado para enviar notificações a todos os analistas quando incidente crítico é criado.
+ */
+export async function getUsersByRole(role: "user" | "security-analyst" | "admin") {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select({
+    id: users.id,
+    name: users.name,
+    email: users.email,
+    role: users.role,
+  }).from(users).where(eq(users.role, role));
+}
+
+/**
+ * Retorna métricas do dashboard do analista.
+ */
+export async function getAnalystDashboardMetrics() {
+  const db = await getDb();
+  if (!db) return null;
+
+  const now = new Date();
+  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
+
+  const allIncidents = await db.select({
+    id: incidents.id,
+    status: incidents.status,
+    category: incidents.category,
+    riskLevel: incidents.riskLevel,
+    createdAt: incidents.createdAt,
+    updatedAt: incidents.updatedAt,
+  }).from(incidents);
+
+  const inProgress = allIncidents.filter(i => i.status === "in_progress").length;
+  const resolvedToday = allIncidents.filter(i =>
+    i.status === "resolved" && i.updatedAt >= todayStart
+  ).length;
+  const totalOpen = allIncidents.filter(i => i.status === "open").length;
+  const totalResolved = allIncidents.filter(i => i.status === "resolved").length;
+
+  // Distribuição por categoria dos incidentes em andamento
+  const categoryDist: Record<string, number> = {};
+  for (const inc of allIncidents.filter(i => i.status === "in_progress")) {
+    categoryDist[inc.category] = (categoryDist[inc.category] ?? 0) + 1;
+  }
+
+  // Distribuição por risco dos incidentes abertos
+  const riskDist: Record<string, number> = {};
+  for (const inc of allIncidents.filter(i => i.status === "open")) {
+    riskDist[inc.riskLevel] = (riskDist[inc.riskLevel] ?? 0) + 1;
+  }
+
+  // Tempo médio de resolução
+  const resolved = allIncidents.filter(i => i.status === "resolved" && i.updatedAt && i.createdAt);
+  let avgResolutionHours = 0;
+  if (resolved.length > 0) {
+    const totalMs = resolved.reduce((sum, i) => sum + (i.updatedAt.getTime() - i.createdAt.getTime()), 0);
+    avgResolutionHours = Math.round((totalMs / resolved.length) / (1000 * 60 * 60) * 10) / 10;
+  }
+
+  return {
+    inProgress,
+    resolvedToday,
+    totalOpen,
+    totalResolved,
+    avgResolutionHours,
+    categoryDistribution: categoryDist,
+    riskDistribution: riskDist,
+    total: allIncidents.length,
+  };
+}

@@ -1263,3 +1263,56 @@ A tela `/analyst/incidents` agora possui o botão **"Exportar PDF (N)"** que:
 **Categorias dinâmicas**: A seção "Categorias do Modelo" agora exibe sempre as categorias do último dataset de treino carregado, atualizando automaticamente após upload de novo dataset.
 
 **Upload de Avaliação na aba correta**: O card "Substituir Dataset de Avaliação" foi movido para a aba **Avaliação**, antes do botão "Executar Avaliação". Agora o fluxo é: (1) fazer upload do dataset → (2) executar avaliação → (3) ver resultados.
+
+---
+## Sessão 24 (v3.6) — Auto-Reinício Flask + Notificações Críticas + Dashboard Analista + Histórico de Reclassificação
+
+### Auto-Reinício Automático do Serviço Flask
+
+A partir da v3.6, o sistema **não requer mais que o Flask esteja rodando** antes de executar operações de Machine Learning. Antes de qualquer operação ML (upload de dataset, retreinamento, avaliação, reclassificação), o sistema:
+
+1. Verifica automaticamente se o Flask está respondendo na porta 5001
+2. Se não estiver, tenta reiniciar o processo automaticamente
+3. Aguarda até 8 segundos para o Flask inicializar
+4. Só então executa a operação solicitada
+
+**Impacto para o usuário:** Operações ML que antes falhavam com "Serviço ML offline" agora são recuperadas automaticamente sem intervenção manual.
+
+### Notificações In-App para Analistas — Incidentes Críticos
+
+Quando qualquer usuário registra um incidente classificado como **Crítico** (malware, vazamento de dados), o sistema automaticamente:
+
+- Identifica todos os usuários com perfil `security-analyst`
+- Cria uma notificação individual para cada analista
+- A notificação aparece no **sino de notificações** (🔔) no cabeçalho da aplicação
+
+**Para analistas:** Fique atento ao badge vermelho no sino de notificações — ele indica incidentes críticos que precisam de atenção imediata.
+
+### Dashboard do Analista
+
+A nova página `/analyst/dashboard` oferece uma visão consolidada das atividades de segurança:
+
+| KPI | Descrição |
+|---|---|
+| **Em Andamento** | Incidentes com status `in_progress` |
+| **Resolvidos Hoje** | Incidentes resolvidos no dia atual |
+| **Aguardando Atendimento** | Incidentes com status `open` |
+| **Tempo Médio de Resolução** | Média em horas dos incidentes resolvidos |
+
+Além dos KPIs, a página exibe dois gráficos de barras:
+- **Distribuição por Categoria**: quantidade de incidentes por tipo (phishing, malware, DDoS, etc.)
+- **Distribuição por Risco**: quantidade de incidentes por nível de risco (crítico, alto, médio, baixo)
+
+**Acesso:** Menu Analista → Dashboard (ou diretamente via `/analyst/dashboard`)
+
+### Histórico de Reclassificação Automática
+
+Quando o sistema reclassifica incidentes automaticamente (via "Reclassificar Unknowns" ou após upload de novo dataset), o histórico do incidente agora registra:
+
+- **Ação**: `category_changed` — indica mudança de categoria
+- **De**: categoria anterior (normalmente `unknown`)
+- **Para**: nova categoria classificada pelo modelo
+- **Confiança**: percentual de confiança do modelo na nova classificação
+- **Responsável**: exibido como **"Sistema Automático"** (distingue de ações manuais de usuários)
+
+**Para visualizar:** Acesse os detalhes de um incidente → seção "Histórico de Alterações" → entradas com "Sistema Automático" indicam reclassificações automáticas.

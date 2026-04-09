@@ -36,6 +36,7 @@ const adminItems = [
   { path: "/admin/ml-training",   label: "Treinamento ao Vivo", icon: MonitorPlay },
 ];
 const analystItems = [
+  { path: "/analyst/dashboard", label: "Dashboard Analista", icon: BarChart2 },
   { path: "/analyst/incidents", label: "Todos Incidentes", icon: List },
 ];
 

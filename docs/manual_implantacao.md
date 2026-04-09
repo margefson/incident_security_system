@@ -1205,3 +1205,52 @@ y = df[col_cat].str.lower().str.replace(' ', '_').values
 - S20.10: Sem `__dirname` literal (3 testes)
 
 **Total após S20: 933 testes passando em 24 arquivos**
+
+
+---
+## Sessão 24 — Auto-Reinício Flask + Notificações Críticas + Dashboard Analista + Histórico de Reclassificação (v3.6)
+
+### Funcionalidade 1: Auto-Reinício do Flask (ensureFlaskRunning)
+
+**Arquivo afetado:** server/routers.ts
+
+A função ensureFlaskRunning(port) é chamada no início de cada procedure ML. Ela verifica o endpoint /health do Flask com timeout de 3 segundos. Se o Flask não responder, tenta reiniciar o processo Python automaticamente e aguarda até 8 segundos para a inicialização.
+
+Procedures que usam ensureFlaskRunning: uploadTrainDataset, uploadEvalDataset, retrain/retrainModel, evaluate/evaluateModel, reclassifyUnknown.
+
+---
+
+### Funcionalidade 2: Notificações In-App para Analistas
+
+**Arquivo afetado:** server/routers.ts (procedure incidents.create)
+
+Após criar incidente com riskLevel === critical, o sistema busca todos os usuários com perfil security-analyst via getUsersByRole e cria uma notificação individual para cada um. As notificações aparecem no sino no cabeçalho da aplicação com badge de contagem.
+
+---
+
+### Funcionalidade 3: Dashboard do Analista
+
+**Rota frontend:** /analyst/dashboard
+
+KPIs exibidos: Em Andamento, Resolvidos Hoje, Aguardando Atendimento, Tempo Médio de Resolução (horas). Gráficos: distribuição por categoria e por nível de risco.
+
+---
+
+### Funcionalidade 4: Histórico de Reclassificação Automática
+
+Convenção: userId=0 identifica ações do sistema automático. Campos registrados: action=category_changed, fromValue (categoria anterior), toValue (nova categoria), comment (confiança do modelo).
+
+Exibição no frontend: Entradas com userId=0 são exibidas como Sistema Automatico na tela de detalhes do incidente.
+
+---
+
+### Testes S24
+
+| Grupo | Arquivo | Testes | Cobertura |
+|---|---|---|---|
+| S24-1: ensureFlaskRunning | session24.test.ts | 5 | health check, ECONNREFUSED, reinicio, porta 5001, timeout |
+| S24-2: Notificacoes criticas | session24.test.ts | 6 | critical trigger, non-critical skip, getUsersByRole, conteudo, loop analistas, CATEGORY_RISK |
+| S24-3: Dashboard analista | session24.test.ts | 7 | in_progress, resolvidos hoje, tempo medio, avg=0, por categoria, por risco, rota |
+| S24-4: Historico reclassificacao | session24.test.ts | 7 | userId=0, comentario, fromValue, displayName, mudanca necessaria, action, comentarios distintos |
+
+**Total apos S24: 1053 testes passando em 28 arquivos**

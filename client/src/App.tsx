@@ -23,6 +23,7 @@ import Profile from "./pages/Profile";
 import ResetPassword from "./pages/ResetPassword";
 import ResolutionMetrics from "./pages/ResolutionMetrics";
 import AnalystIncidents from "./pages/AnalystIncidents";
+import AnalystDashboard from "./pages/AnalystDashboard";
 function Router() {
   return (
     <Switch>
@@ -45,6 +46,7 @@ function Router() {
       <Route path="/profile" component={Profile} />
       <Route path="/metrics" component={ResolutionMetrics} />
       <Route path="/analyst/incidents" component={AnalystIncidents} />
+      <Route path="/analyst/dashboard" component={AnalystDashboard} />
       <Route path="/404" component={NotFound} />
       <Route component={NotFound} />
     </Switch>

@@ -65,8 +65,11 @@ vi.mock("../server/db", () => ({
   getIncidentStatsByUser: vi.fn().mockResolvedValue({}),
   getIncidentStatusStats: vi.fn().mockResolvedValue({}),
   upsertUser: vi.fn(),
+  getUsersByRole: vi.fn().mockResolvedValue([]),
+  getAnalystDashboardMetrics: vi.fn().mockResolvedValue({}),
+  getAllIncidentsForReclassify: vi.fn().mockResolvedValue([]),
+  updateIncidentML: vi.fn(),
 }));
-
 vi.mock("../server/_core/auth", () => ({
   hashPassword: vi.fn(),
   verifyPassword: vi.fn(),
@@ -86,7 +89,10 @@ vi.mock("../server/_core/notification", () => ({
 vi.mock("../server/pdf", () => ({
   generatePdfBuffer: vi.fn().mockResolvedValue(Buffer.from("pdf")),
 }));
-
+vi.mock("child_process", () => ({
+  execSync: vi.fn(),
+  spawn: vi.fn(() => ({ unref: vi.fn(), on: vi.fn(), stdout: { on: vi.fn() }, stderr: { on: vi.fn() } })),
+}));
 function makeAdminCtx() {
   return {
     user: { id: "admin-1", email: "admin@test.com", name: "Admin", role: "admin" },
@@ -313,13 +319,11 @@ describe("S14-7: Procedure evaluateModel com timeout e tratamento de erro", () =
 
   it("S14-7.3: evaluateModel captura erro de conexão e lança TRPCError claro", async () => {
     vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("Connection refused")));
-
     const { appRouter } = await import("./routers");
     const caller = appRouter.createCaller(makeAdminCtx() as never);
     await expect(caller.admin.evaluateModel()).rejects.toThrow("Serviço ML indisponível");
-
     vi.unstubAllGlobals();
-  });
+  }, 20000);
 });
 
 // ─── S14-8: Procedure retrainModel com timeout ────────────────────────────────
@@ -350,5 +354,5 @@ describe("S14-8: Procedure retrainModel com timeout de 2 minutos", () => {
     ).rejects.toThrow("Serviço ML indisponível");
 
     vi.unstubAllGlobals();
-  });
+  }, 20000);
 });

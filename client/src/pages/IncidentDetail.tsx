@@ -353,9 +353,9 @@ export default function IncidentDetail() {
                           <p className="text-xs font-mono font-semibold text-foreground">
                             {actionLabels[entry.action] ?? entry.action}
                           </p>
-                          {entry.userName && (
+                          {(entry.userName || entry.userId === 0) && (
                             <span className="flex items-center gap-1 text-[10px] text-muted-foreground font-mono">
-                              <User className="w-2.5 h-2.5" />{entry.userName}
+                              <User className="w-2.5 h-2.5" />{entry.userId === 0 ? "Sistema Automático" : entry.userName}
                             </span>
                           )}
                         </div>

@@ -47,6 +47,8 @@ import {
   getAllIncidentHistoryForExport,
   updateIncidentML,
   getAllIncidentsForReclassify,
+  getUsersByRole,
+  getAnalystDashboardMetrics,
 } from "./db";
 import { sendPasswordResetEmail } from "./email";
 import crypto from "crypto";
@@ -55,6 +57,45 @@ import bcrypt from "bcryptjs";
 import { v4 as uuidv4 } from "uuid";
 import { sdk } from "./_core/sdk";
 import { notifyOwner } from "./_core/notification";
+
+// ─── Flask Auto-Restart Helper ───────────────────────────────────────────
+async function ensureFlaskRunning(port = 5001): Promise<void> {
+  const url = `http://localhost:${port}/health`;
+  try {
+    const res = await fetch(url, { signal: AbortSignal.timeout(3000) });
+    if (res.ok) return; // Flask está respondendo
+  } catch {
+    // Flask não responde — tentar reiniciar
+  }
+  // Reiniciar o Flask
+  try {
+    const __filename_esm = fileURLToPath(import.meta.url);
+    const __dirname_esm = path.dirname(__filename_esm);
+    const SCRIPT_DIR = path.resolve(__dirname_esm, "..", "ml");
+    const SCRIPT_PATH = path.join(SCRIPT_DIR, "classifier_server.py");
+    const LOG_PATH = path.join(SCRIPT_DIR, `flask_${port}.log`);
+    if (!fs.existsSync(SCRIPT_PATH)) return;
+    try {
+      execSync(`pkill -f "classifier_server.py.*${port}" 2>/dev/null || true`, { timeout: 5000 });
+      execSync(`fuser -k ${port}/tcp 2>/dev/null || true`, { timeout: 5000 });
+    } catch { /* ignora */ }
+    await new Promise(r => setTimeout(r, 1000));
+    execSync(
+      `nohup python3 ${SCRIPT_PATH} --port ${port} > ${LOG_PATH} 2>&1 &`,
+      { timeout: 5000, cwd: SCRIPT_DIR }
+    );
+    // Aguardar até 8s para o Flask inicializar
+    for (let i = 0; i < 8; i++) {
+      await new Promise(r => setTimeout(r, 1000));
+      try {
+        const res = await fetch(url, { signal: AbortSignal.timeout(2000) });
+        if (res.ok) return;
+      } catch { /* ainda não respondeu */ }
+    }
+  } catch (err) {
+    console.error(`[ensureFlaskRunning] Falha ao reiniciar Flask na porta ${port}:`, err);
+  }
+}
 
 // ─── ML Metrics Fallback ─────────────────────────────────────────────────
 const METRICS_JSON_PATH = path.resolve(process.cwd(), "ml", "metrics.json");
@@ -324,8 +365,19 @@ const incidentsRouter = router({
         }).catch((err) =>
           console.warn("[Notification] Failed to notify owner:", err)
         );
+        // 🔔 Notificar in-app todos os analistas de segurança
+        getUsersByRole("security-analyst").then(async (analysts) => {
+          for (const analyst of analysts) {
+            await createNotification({
+              userId: analyst.id,
+              type: "risk_changed",
+              title: `🚨 Incidente CRÍTICO: ${validated.title}`,
+              message: `Um novo incidente de risco CRÍTICO foi registrado.\nCategoria: ${category}\nConfiça ML: ${Math.round(confidence * 100)}%\nReportado por: ${ctx.user.name ?? ctx.user.email ?? "Usuário"}`,
+              incidentId: incident?.id,
+            }).catch((err) => console.warn("[Notification] Failed to notify analyst:", err));
+          }
+        }).catch((err) => console.warn("[Notification] Failed to get analysts:", err));
       }
-
       return incident;
     }),
 
@@ -548,6 +600,11 @@ const incidentsRouter = router({
       const filtered = input.status ? rows.filter(r => (r as { status?: string }).status === input.status) : rows;
       return { incidents: filtered, total };
     }),
+
+  // ─── Dashboard do Analista ─────────────────────────────────────────────────
+  analystDashboard: analystProcedure.query(async () => {
+    return getAnalystDashboardMetrics();
+  }),
 });
 // ─── Categories Router ────────────────────────────────────────────────────────────
 const categoriesRouter = router({
@@ -768,12 +825,14 @@ const adminRouter = router({
     }
   }),
   evaluateModel: adminProcedure.mutation(async () => {
+    // Auto-reiniciar Flask se não estiver respondendo
+    await ensureFlaskRunning(5001);
     const ML_URL = process.env.ML_SERVICE_URL ?? "http://localhost:5001";
     let response: Response;
     try {
       response = await fetch(`${ML_URL}/evaluate`, { method: "POST", signal: AbortSignal.timeout(30000) });
     } catch {
-      throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Serviço ML indisponível. Verifique se o servidor Flask está rodando na porta 5001." });
+      throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Serviço ML indisponível após tentativa de reinicialização automática. Acesse Admin → Saúde do Sistema para reiniciar manualmente." });
     }
     if (!response.ok) {
       const err = await response.json() as { error?: string };
@@ -806,6 +865,8 @@ const adminRouter = router({
       includeAllIncidents: z.boolean().optional().default(false),
     }))
     .mutation(async ({ input }) => {
+      // Auto-reiniciar Flask se não estiver respondendo
+      await ensureFlaskRunning(5001);
       const ML_URL = process.env.ML_SERVICE_URL ?? "http://localhost:5001";
       // If includeAllIncidents=true, fetch all incidents from DB and merge with new samples
       let allSamples = [...input.samples];
@@ -861,6 +922,7 @@ const adminRouter = router({
       filename: z.string(),
     }))
     .mutation(async ({ input }) => {
+      await ensureFlaskRunning(5001);
       const ML_URL = process.env.ML_SERVICE_URL ?? "http://localhost:5001";
       // Converter base64 para Buffer e enviar como multipart/form-data
       const fileBuffer = Buffer.from(input.fileBase64, "base64");
@@ -908,7 +970,19 @@ const adminRouter = router({
                 if (clsRes.ok) {
                   const cls = await clsRes.json() as { category: string; confidence: number };
                   const riskLevel = (CATEGORY_RISK[cls.category] ?? "medium") as "critical" | "high" | "medium" | "low";
+                  const oldCategory = inc.category;
                   await updateIncidentML(inc.id, cls.category as "phishing" | "malware" | "brute_force" | "ddos" | "vazamento_de_dados" | "unknown", riskLevel, cls.confidence);
+                  // Registrar reclassificação automática no histórico
+                  if (oldCategory !== cls.category) {
+                    await addIncidentHistory({
+                      incidentId: inc.id,
+                      userId: 0, // 0 = sistema automático
+                      action: "category_changed",
+                      fromValue: oldCategory ?? "unknown",
+                      toValue: cls.category,
+                      comment: `Reclassificado automaticamente após upload de novo dataset (confiança: ${Math.round(cls.confidence * 100)}%)`,
+                    }).catch(() => {});
+                  }
                   reclassifiedCount++;
                 }
               } catch { /* pular incidente individual se falhar */ }
@@ -939,6 +1013,7 @@ const adminRouter = router({
       filename: z.string(),
     }))
     .mutation(async ({ input }) => {
+      await ensureFlaskRunning(5001);
       const ML_URL = process.env.ML_SERVICE_URL ?? "http://localhost:5001";
       const fileBuffer = Buffer.from(input.fileBase64, "base64");
       const boundary = `----FormBoundary${Date.now()}`;
@@ -1064,6 +1139,7 @@ const adminRouter = router({
   // Reclassify all 'unknown' incidents using the current ML model
   reclassifyUnknown: adminProcedure
     .mutation(async () => {
+      await ensureFlaskRunning(5001);
       const ML_URL_LOCAL = process.env.ML_SERVICE_URL ?? "http://localhost:5001";
       const allIncidents = await getAllIncidentsForReclassify();
       const unknownIncidents = allIncidents.filter((i) => i.category === "unknown");
@@ -1088,6 +1164,15 @@ const adminRouter = router({
                 riskLevel,
                 cls.confidence
               );
+              // Registrar reclassificação no histórico do incidente
+              await addIncidentHistory({
+                incidentId: inc.id,
+                userId: 0, // 0 = sistema automático
+                action: "category_changed",
+                fromValue: inc.category ?? "unknown",
+                toValue: cls.category,
+                comment: `Reclassificado automaticamente pelo modelo S21 (confiança: ${Math.round(cls.confidence * 100)}%)`,
+              }).catch(() => {});
               results.push({ id: inc.id, title: inc.title, newCategory: cls.category, confidence: cls.confidence });
               reclassifiedCount++;
             }

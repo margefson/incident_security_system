@@ -329,7 +329,7 @@ describe("S11-8: Backend Node.js — procedure evaluateModel", () => {
     // Verifica que o tipo de retorno de evaluateModel inclui confusion_matrix
     // Busca em uma janela maior pois o tipo pode ser extenso
     const idx = src.indexOf("evaluateModel:");
-    const section = src.substring(idx, idx + 1200);
+    const section = src.substring(idx, idx + 1500);
     expect(section).toContain("confusion_matrix");
   });
 });
