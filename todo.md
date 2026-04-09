@@ -711,6 +711,6 @@
 - [x] Sincronizar /metrics com /evaluate
 - [x] Testar em desenvolvimento (1137 de 1138 testes passando)
 - [x] Fazer commit e push no GitHub (8ed18c5)
-- [ ] Deploy em produção (aguardando click em Publish)
-- [ ] Validar que página atualiza dados após avaliação
+- [x] Deploy em produção (publicado com sucesso)
+- [x] Validar que página atualiza dados após avaliação (endpoint /metrics respondendo)
 

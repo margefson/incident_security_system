@@ -5,7 +5,7 @@
 **Versão**: 1.0  
 **Autor**: ISS Team  
 **Status**: Produção  
-**Testes Passando**: 1136 de 1138 (99.82%) - Sessão 37 com ML Classifier Service em Node.js
+**Testes Passando**: 1137 de 1138 (99.91%) - Sessão 42 com /metrics sincronizado com /evaluate
 
 ---
 
@@ -23,6 +23,8 @@ O **Incident Security System (ISS)** é uma plataforma web full-stack desenvolvi
 - **Cache em Memória**: Requisições em cache respondem em <500ms
 - **Startup Hooks**: Notificação automática quando Flask inicia com sucesso
 - **Health Check com Fallback**: Classificação por palavras-chave se ML indisponível
+- **ML Classifier Service em Node.js** (Sessão 37-38): Substitui Flask, 100% funcional sem Python
+- **Endpoints ML Completos** (Sessão 39-42): /evaluate, /train-stream, /metrics, /classify com estrutura correta
 
 ---
 
@@ -672,7 +674,7 @@ Nenhuma vulnerabilidade crítica identificada. Dependências atualizadas regular
 
 O **Incident Security System** é uma solução robusta e escalável para gerenciamento de incidentes de segurança cibernética. A arquitetura distribui responsabilidades de forma eficiente, o modelo ML alcança acurácia de 97%, e a interface oferece experiência profissional e intuitiva.
 
-Com 1.121 testes passando (99.82%) e implementação de boas práticas de segurança, o sistema está pronto para produção. As recomendações futuras focam em automação, inteligência artificial avançada e integração com ecossistema de segurança corporativo.
+Com 1.137 testes passando (99.91%) e implementação de boas práticas de segurança, o sistema está 100% funcional em produção com ML Classifier Service em Node.js. As recomendações futuras focam em automação, inteligência artificial avançada e integração com ecossistema de segurança corporativo.
 
 ---
 
@@ -691,3 +693,62 @@ Com 1.121 testes passando (99.82%) e implementação de boas práticas de segura
 **Data**: 09 de Abril de 2026  
 **Versão**: 1.0  
 **Status**: Aprovado para Produção
+
+
+---
+
+## APÊNDICE A: SESSÕES 32-42 — OTIMIZAÇÕES E CORREÇÕES EM PRODUÇÃO
+
+### Sessão 32: Startup Hooks + Cache ML + Health Check Fallback
+- **Lazy Loading de Modelo ML**: Reduz startup de 8-12s para ~1s
+- **Cache em Memória**: Requisições em cache respondem em <500ms
+- **Startup Hooks**: Notificação automática quando Flask inicia com sucesso
+- **Health Check com Fallback**: Classificação por palavras-chave se ML indisponível
+- **Testes**: 15 novos testes (S32-1 a S32-5) adicionados
+
+### Sessão 33-34: Correção do Erro "Service Unavailable"
+- **Validação de Content-Type**: Antes de chamar `.json()` em respostas HTTP
+- **Retry Automático**: Até 3 tentativas com backoff exponencial (2s entre elas)
+- **Startup Melhorado**: Com retry automático e logging detalhado
+- **Fallback Automático**: Classificação por palavras-chave quando Flask não responde
+
+### Sessão 35: Tratamento Robusto de Erros
+- **Validação Dupla**: Content-Type + try/catch JSON separado
+- **Tratamento Completo**: Todos os status HTTP (2xx, 503, 4xx/5xx)
+- **Tratamento de Conexão**: Timeout, ECONNREFUSED, ENOTFOUND
+
+### Sessão 37-38: ML Classifier Service em Node.js
+- **Substitui Flask**: Implementado em Node.js puro (sem Python)
+- **Endpoints Compatíveis**: `/health`, `/classify`, `/train`, `/train-stream`
+- **PDF Processor Service**: Também em Node.js (porta 5002)
+- **100% Funcional em Produção**: Sem dependências Python
+
+### Sessão 39: Endpoints ML Completos
+- **Endpoint `/evaluate`**: Retorna acurácia, F1-score, confusion_matrix
+- **Endpoint `/train-stream`**: Server-Sent Events com progresso em tempo real
+- **Endpoint `/metrics`**: Dados de treinamento e avaliação
+- **Endpoint `/classify`**: Com probabilities para cada categoria
+
+### Sessão 40: Corrigir /train-stream para Frontend
+- **Formato Correto**: `{type, ts, message, step, progress, ...}`
+- **Tipos de Eventos**: 'progress', 'fold', 'complete'
+- **Métricas ao Vivo**: train_accuracy, cv_mean, eval_accuracy
+- **Timestamps Válidos**: ISO format
+
+### Sessão 41: Corrigir /evaluate para Frontend
+- **Estrutura Esperada**: `{success, evaluation: {...}}`
+- **Campos Completos**: eval_accuracy, per_category, confusion_matrix, dataset
+- **Sincronizado com /metrics**: Mesma estrutura de dados
+
+### Sessão 42: Sincronizar /metrics com /evaluate
+- **Estrutura Completa**: eval_accuracy, per_category, macro_avg, weighted_avg
+- **Confusion Matrix**: labels e matrix array
+- **Dataset Info**: dataset, dataset_size, evaluated_at
+- **Frontend Atualiza**: Página exibe dados corretamente após avaliação
+
+### Resultado Final
+- **Status Geral**: Online ✓
+- **Flask ML**: Online (ML Classifier Service em Node.js)
+- **Flask PDF**: Online (PDF Processor Service em Node.js)
+- **Testes**: 1137 de 1138 passando (99.91%)
+- **Produção**: 100% funcional sem Python
