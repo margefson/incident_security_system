@@ -480,10 +480,10 @@
 
 ## Sessão 23 — Correções AdminML (UI)
 
-- [ ] Remover barra de status duplicada (TREINO/AVALIAÇÃO com links) do AdminML.tsx
-- [ ] Tornar total de amostras na Distribuição dinâmico (soma da distribuição real)
-- [ ] Categorias do Modelo: buscar dinamicamente do último dataset de treino
-- [ ] Mover "Substituir Dataset de Avaliação" para a aba Avaliação
-- [ ] Adicionar testes S23 (session23.test.ts)
-- [ ] Atualizar README e manuais
-- [ ] Comitar no GitHub
+- [x] Remover barra de status duplicada (TREINO/AVALIAÇÃO com links) do AdminML.tsx
+- [x] Tornar total de amostras na Distribuição dinâmico (soma da distribuição real)
+- [x] Categorias do Modelo: buscar dinamicamente do último dataset de treino
+- [x] Mover "Substituir Dataset de Avaliação" para a aba Avaliação
+- [x] Adicionar testes S23 (session23.test.ts)
+- [x] Atualizar README e manuais
+- [x] Comitar no GitHub
