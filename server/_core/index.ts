@@ -164,6 +164,11 @@ async function startServer() {
 
   // ─── Endpoint público de status Flask (diagnóstico direto sem tRPC/auth) ──────
   app.get("/api/flask-status", async (_req, res) => {
+    // Adicionar CORS headers para permitir requisições do navegador
+    res.setHeader("Access-Control-Allow-Origin", "*");
+    res.setHeader("Access-Control-Allow-Methods", "GET, OPTIONS");
+    res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+    res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
     const services = [
       { name: "Flask ML", port: 5001, url: "http://localhost:5001" },
       { name: "Flask PDF", port: 5002, url: "http://localhost:5002" },
@@ -185,11 +190,20 @@ async function startServer() {
       })
     );
     const allOnline = results.every(r => r.status === "online");
+    res.setHeader("Content-Type", "application/json");
     res.json({
       overall: allOnline ? "online" : "degraded",
       checked_at: new Date().toISOString(),
       services: results,
     });
+  });
+
+  // OPTIONS preflight para CORS
+  app.options("/api/flask-status", (_req, res) => {
+    res.setHeader("Access-Control-Allow-Origin", "*");
+    res.setHeader("Access-Control-Allow-Methods", "GET, OPTIONS");
+    res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+    res.status(200).end();
   });
 
   // Endpoint temporário de análise de incidentes (apenas dev)

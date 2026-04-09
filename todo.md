@@ -529,4 +529,15 @@
 - [x] Adicionar import de spawn no routers.ts
 - [x] Corrigir teste S16-1.3 para usar janela de 3000 chars
 - [x] Validar que 1123 testes passam
+- [x] Atualizar README e comitar no GitHub
+
+## Sessão 28 — Correção TypeError: fetch failed + CORS
+
+- [x] Diagnosticar por que o fetch falha no frontend (TypeError: fetch failed)
+- [x] Adicionar CORS headers ao endpoint /api/flask-status
+- [x] Adicionar handler OPTIONS para preflight CORS
+- [x] Corrigir AdminSystemHealth.tsx para usar AbortController ao invés de AbortSignal.timeout
+- [x] Adicionar console.error para logging de erro
+- [x] Corrigir testes S26-3.4, S26-3.6 e S26-3.8 (janela aumentada para 2000 chars)
+- [x] Validar que 1123 testes passam
 - [ ] Atualizar README e comitar no GitHub

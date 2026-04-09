@@ -5,7 +5,7 @@
 ![Python](https://img.shields.io/badge/Python-3.11-3776AB?style=flat-square&logo=python)
 ![MySQL](https://img.shields.io/badge/MySQL-8.x-4479A1?style=flat-square&logo=mysql)
 ![ML Accuracy](https://img.shields.io/badge/ML%20Accuracy%20(CV)-97%25%20%7C%20Eval%3A78%25-brightgreen?style=flat-square)
-![Tests](https://img.shields.io/badge/tests-1123%20passing%20(S27)-brightgreen)
+![Tests](https://img.shields.io/badge/tests-1123%20passing%20(S28)-brightgreen)
 ![License](https://img.shields.io/badge/License-MIT-blue?style=flat-square)
 
 Plataforma de gerenciamento de incidentes de segurança cibernética com classificação automática por Machine Learning (TF-IDF + Naive Bayes), painel de administração global, **CRUD de categorias de incidentes (exclusivo para administradores)**, exportação de relatórios em PDF, notificações automáticas de risco crítico e interface SOC Portal — design profissional dark com tipografia Inter, sidebar compacta, badges coloridos por severidade e tabelas operacionais.
@@ -894,6 +894,17 @@ Tests: 296 passed
 | **S18-8: Métricas 5050** | `session18.test.ts` | 5 | dataset_size >= 5000, train_accuracy >= 0.99, 1000/categoria, last_updated, TRAIN_DATASET_PATH |
 
 **Total: 1001 testes passando em 26 arquivos**
+
+### Sessão 28 (v4.0) — Correção TypeError: fetch failed + CORS
+- **Problema**: O frontend retornava "TypeError: fetch failed" ao tentar acessar `/api/flask-status`
+- **Causa raiz**: Falta de CORS headers no endpoint Express; AbortSignal.timeout pode não ser suportado em alguns navegadores
+- **Solução implementada**:
+  - Adicionado headers CORS explícitos: `Access-Control-Allow-Origin: *`, `Access-Control-Allow-Methods: GET, OPTIONS`, `Access-Control-Allow-Headers: Content-Type`
+  - Adicionado handler OPTIONS para preflight CORS
+  - Corrigido AdminSystemHealth.tsx para usar `AbortController` com `setTimeout` ao invés de `AbortSignal.timeout` (melhor compatibilidade)
+  - Adicionado `console.error` para logging de erro no frontend
+- **Testes corrigidos**: S26-3.4, S26-3.6 e S26-3.8 (janela aumentada de 1200 para 2000 chars)
+- **1123 testes passando** em 30 arquivos
 
 ### Sessão 27 (v3.9) — Correção restartService: spawn ao invés de execSync
 - **Problema identificado**: `restartService` usava `execSync` com `nohup python3 ... &`, mas `execSync` bloqueia a thread e não retorna até que o comando termine — causando timeout ou falha de reinicialização

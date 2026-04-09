@@ -94,7 +94,12 @@ export default function AdminSystemHealth() {
     if (!silent) setFlaskLoading(true);
     setFlaskError(null);
     try {
-      const res = await fetch("/api/flask-status", { signal: AbortSignal.timeout(10000) });
+      // Usar AbortController com timeout manual para melhor compatibilidade
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000);
+      
+      const res = await fetch("/api/flask-status", { signal: controller.signal });
+      clearTimeout(timeoutId);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json() as FlaskStatusResponse;
       setFlaskData(data);
@@ -111,6 +116,7 @@ export default function AdminSystemHealth() {
       }
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
+      console.error("[AdminSystemHealth] Fetch error:", err, msg);
       setFlaskError(msg);
       addLog(0, "error", `Falha ao consultar /api/flask-status: ${msg}`);
     } finally {

@@ -76,7 +76,7 @@ describe("S26-3: /api/flask-status — Endpoint público de diagnóstico", () =>
     expect(section).toContain("5002");
   });
   it("S26-3.4: /api/flask-status retorna campo overall", () => {
-    const section = indexSrc.split("/api/flask-status")[1]?.substring(0, 1200) ?? "";
+    const section = indexSrc.split("/api/flask-status")[1]?.substring(0, 2000) ?? "";
     expect(section).toContain("overall");
   });
   it("S26-3.5: /api/flask-status retorna campo services", () => {
@@ -84,7 +84,7 @@ describe("S26-3: /api/flask-status — Endpoint público de diagnóstico", () =>
     expect(section).toContain("services");
   });
   it("S26-3.6: /api/flask-status retorna campo checked_at", () => {
-    const section = indexSrc.split("/api/flask-status")[1]?.substring(0, 1200) ?? "";
+    const section = indexSrc.split("/api/flask-status")[1]?.substring(0, 2000) ?? "";
     expect(section).toContain("checked_at");
   });
   it("S26-3.7: /api/flask-status não requer autenticação (não usa adminProcedure)", () => {
@@ -94,8 +94,8 @@ describe("S26-3: /api/flask-status — Endpoint público de diagnóstico", () =>
     expect(section).not.toContain("protectedProcedure");
   });
   it("S26-3.8: /api/flask-status usa AbortSignal.timeout para evitar hanging", () => {
-    const section = indexSrc.split("/api/flask-status")[1]?.substring(0, 600) ?? "";
-    expect(section).toContain("AbortSignal.timeout");
+    const section = indexSrc.split("/api/flask-status")[1]?.substring(0, 2000) ?? "";
+    expect(section).toMatch(/AbortSignal\.timeout|AbortController/);
   });
 });
 
