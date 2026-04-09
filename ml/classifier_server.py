@@ -726,4 +726,4 @@ if __name__ == "__main__":
     print(f"[Classifier] Iniciando servidor na porta {port}...")
     print(f"[Classifier] Dataset de TREINAMENTO: {TRAIN_DATASET_PATH}")
     print(f"[Classifier] Dataset de AVALIAÇÃO:   {EVAL_DATASET_PATH}")
-    app.run(host="127.0.0.1", port=port, debug=False)
+    app.run(host="0.0.0.0", port=port, debug=False)
