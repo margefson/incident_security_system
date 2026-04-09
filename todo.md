@@ -654,3 +654,14 @@
 - [x] Validar que classificação funciona em produção (1134 de 1138 testes passando)
 - [x] Validar que status mostra 'Online' ao logar (sistema sempre funcional)
 
+## Sessão 38 — PDF Processor Service em Node.js
+
+- [x] Criar PDF Processor Service em Node.js (porta 5002)
+- [x] Implementar endpoints: /health, /extract, /convert
+- [x] Ambos os serviços (ML Classifier + PDF Processor) em Node.js
+- [x] Testar em desenvolvimento (1134 de 1138 testes passando)
+- [x] Fazer commit e push no GitHub (d1b081a)
+- [ ] Deploy em produção (aguardando click em Publish)
+- [ ] Validar que Flask ML e PDF estão Online
+- [ ] Validar que status geral mostra 'Online'
+
