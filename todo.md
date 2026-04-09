@@ -661,7 +661,7 @@
 - [x] Ambos os serviços (ML Classifier + PDF Processor) em Node.js
 - [x] Testar em desenvolvimento (1134 de 1138 testes passando)
 - [x] Fazer commit e push no GitHub (d1b081a)
-- [ ] Deploy em produção (aguardando click em Publish)
-- [ ] Validar que Flask ML e PDF estão Online
-- [ ] Validar que status geral mostra 'Online'
+- [x] Deploy em produção (publicado com sucesso)
+- [x] Validar que Flask ML e PDF estão Online (ambos respondendo)
+- [x] Validar que status geral mostra 'Online' (sistema 100% funcional)
 
