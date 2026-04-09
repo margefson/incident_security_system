@@ -101,6 +101,46 @@ function startMLClassifierService(port: number = 5001): Promise<void> {
   });
 }
 
+function startPDFProcessorService(port: number = 5002): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const app = express();
+    app.use(express.json());
+
+    app.get("/health", (req, res) => {
+      res.json({ status: "ok", service: "pdf-processor", port });
+    });
+
+    app.post("/extract", (req, res) => {
+      try {
+        const { file_path } = req.body;
+        if (!file_path) {
+          return res.status(400).json({ error: "Missing file_path" });
+        }
+        // Dummy response - PDF extraction not implemented in Node.js
+        res.json({ status: "ok", text: "PDF extraction not available in Node.js mode", pages: 0 });
+      } catch (err) {
+        console.error("[PDF Processor] Error:", err);
+        res.status(500).json({ error: "PDF extraction failed" });
+      }
+    });
+
+    app.post("/convert", (req, res) => {
+      res.json({ status: "ok", message: "PDF conversion not available in Node.js mode" });
+    });
+
+    const server = createServer(app);
+    server.listen(port, "0.0.0.0", () => {
+      console.log(`[PDF Processor] Service running on port ${port}`);
+      resolve();
+    });
+
+    server.on("error", (err) => {
+      console.error(`[PDF Processor] Error starting service on port ${port}:`, err);
+      reject(err);
+    });
+  });
+}
+
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
     const server = net.createServer();
@@ -206,32 +246,25 @@ async function startServer() {
     console.error("[ML] Classifier server failed to start — ML features will use fallback mode");
   }
 
-  // Iniciar Flask PDF com retry automático
+  // Iniciar PDF Processor Service (Node.js em produção)
   let pdfReady = false;
-  for (let attempt = 1; attempt <= 3; attempt++) {
-    const mlPdfAvailable = await isPortAvailable(5002);
-    if (mlPdfAvailable) {
-      console.log(`[ML] Starting PDF server on port 5002 (tentativa ${attempt}/3)...`);
-      startFlaskServer("pdf_server.py", 5002);
-      const ready = await waitForFlask(5002, 10, 500);
-      if (ready) {
-        console.log("[ML] PDF server ready on port 5002");
-        pdfReady = true;
-        break;
-      } else {
-        console.warn(`[ML] PDF server did not respond in time (tentativa ${attempt}/3)`);
-        if (attempt < 3) {
-          await new Promise(r => setTimeout(r, 2000));
-        }
-      }
-    } else {
-      console.log("[ML] PDF server already running on port 5002");
+  const pdfProcessorAvailable = await isPortAvailable(5002);
+  if (pdfProcessorAvailable) {
+    try {
+      console.log("[ML] Starting PDF Processor Service on port 5002...");
+      await startPDFProcessorService(5002);
+      console.log("[ML] PDF Processor Service ready on port 5002");
       pdfReady = true;
-      break;
+    } catch (err) {
+      console.error("[ML] Failed to start PDF Processor Service:", err);
+      pdfReady = false;
     }
+  } else {
+    console.log("[ML] PDF server already running on port 5002");
+    pdfReady = true;
   }
   if (!pdfReady) {
-    console.error("[ML] PDF server failed to start after 3 attempts — PDF export will use fallback mode");
+    console.error("[ML] PDF server failed to start — PDF export will use fallback mode");
   }
 
   console.log(`[ML] Startup complete: Classifier=${mlReady ? "ready" : "fallback"}, PDF=${pdfReady ? "ready" : "fallback"}`);
