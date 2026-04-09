@@ -665,3 +665,16 @@
 - [x] Validar que Flask ML e PDF estão Online (ambos respondendo)
 - [x] Validar que status geral mostra 'Online' (sistema 100% funcional)
 
+## Sessão 39 — Endpoints ML Completos
+
+- [x] Implementar endpoint /evaluate com confusion_matrix
+- [x] Implementar endpoint /train-stream com Server-Sent Events
+- [x] Implementar endpoint /metrics com dados de treinamento
+- [x] Adicionar probabilities ao endpoint /classify
+- [x] Testar em desenvolvimento (1137 de 1138 testes passando)
+- [x] Fazer commit e push no GitHub (1886880)
+- [ ] Deploy em produção (aguardando click em Publish)
+- [ ] Validar que endpoints retornam JSON válido em produção
+- [ ] Testar página "Avaliar Modelo" sem erros
+- [ ] Testar página "Treinamento em Tempo Real" sem erros
+
