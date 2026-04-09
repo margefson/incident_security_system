@@ -573,17 +573,17 @@
 
 ## Sessão 32 — Startup Hooks + Cache ML + Health Check Fallback
 
-- [ ] Implementar Startup Hooks (webhook notificação Flask iniciado)
-- [ ] Implementar Cache em Memória do Modelo ML (15s → 2-3s)
-- [ ] Implementar Health Check com Fallback (palavras-chave)
-- [ ] Adicionar testes para Startup Hooks
-- [ ] Adicionar testes para Cache ML
-- [ ] Adicionar testes para Health Check Fallback
-- [ ] Atualizar README.md com novas funcionalidades
-- [ ] Atualizar RELATORIO_TECNICO.md com melhorias
-- [ ] Atualizar DEPLOYMENT.md com instruções
-- [ ] Validar que 1121+ testes passam
-- [ ] Fazer commit e push para GitHub
+- [x] Implementar Startup Hooks (webhook notificação Flask iniciado)
+- [x] Implementar Cache em Memória do Modelo ML (15s → 2-3s)
+- [x] Implementar Health Check com Fallback (palavras-chave)
+- [x] Adicionar testes para Startup Hooks (S32-1.1 a S32-1.3)
+- [x] Adicionar testes para Cache ML (S32-2.1 a S32-2.3)
+- [x] Adicionar testes para Health Check Fallback (S32-3.1 a S32-3.5)
+- [x] Atualizar README.md com novas funcionalidades (Tempos de Inicialização)
+- [x] Atualizar RELATORIO_TECNICO.md com melhorias (1138 testes, Sessão 32)
+- [x] Atualizar DEPLOYMENT.md com instruções (Otimizações de Performance)
+- [x] Validar que 1138 testes passam (100%)
+- [x] Fazer commit e push para GitHub (commit: eedfd88)
 
 ## Sessão 32 — Startup Hooks, Cache ML, Health Check Fallback, Testes e Documentação
 
