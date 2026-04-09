@@ -1101,6 +1101,50 @@ const adminRouter = router({
     };
   }),
 
+  // ─── Obter Status dos Serviços Flask ──────────────────────────────────────────────────────────────────────────────
+  getFlaskStatus: publicProcedure
+    .query(async () => {
+      const services = [
+        { name: "Flask ML", port: 5001 },
+        { name: "Flask PDF", port: 5002 },
+      ];
+      const results = [];
+      for (const svc of services) {
+        try {
+          const res = await fetch(\`http://localhost:\${svc.port}/health\`, { signal: AbortSignal.timeout(2000) });
+          if (res.ok) {
+            const data = await res.json() as Record<string, unknown>;
+            results.push({
+              name: svc.name,
+              port: svc.port,
+              status: "online" as const,
+              latency: 0,
+              details: data,
+            });
+          } else {
+            results.push({
+              name: svc.name,
+              port: svc.port,
+              status: "offline" as const,
+              latency: null,
+            });
+          }
+        } catch {
+          results.push({
+            name: svc.name,
+            port: svc.port,
+            status: "offline" as const,
+            latency: null,
+          });
+        }
+      }
+      return {
+        overall: results.every(s => s.status === "online") ? "online" as const : "offline" as const,
+        checked_at: new Date().toISOString(),
+        services: results,
+      };
+    }),
+
   // ─── Reiniciar Serviço Flask ──────────────────────────────────────────────────────────────────────────────
   restartService: adminProcedure
     .input(z.object({

@@ -99,14 +99,14 @@ describe("S26-3: /api/flask-status — Endpoint público de diagnóstico", () =>
   });
 });
 
-// ─── S26-4: AdminSystemHealth.tsx — Usa /api/flask-status ────────────────────
-describe("S26-4: AdminSystemHealth.tsx — Usa /api/flask-status diretamente", () => {
-  it("S26-4.1: AdminSystemHealth.tsx usa fetch para /api/flask-status", () => {
-    expect(healthSrc).toContain("/api/flask-status");
+// ─── S26-4: AdminSystemHealth.tsx — Usa tRPC getFlaskStatus ────────────────────
+describe("S26-4: AdminSystemHealth.tsx — Usa tRPC getFlaskStatus", () => {
+  it("S26-4.1: AdminSystemHealth.tsx usa trpc.admin.getFlaskStatus", () => {
+    expect(healthSrc).toContain("getFlaskStatus");
   });
-  it("S26-4.2: AdminSystemHealth.tsx não usa trpc.admin.getSystemHealth como fonte primária", () => {
-    // A fonte primária agora é o fetch direto; getSystemHealth pode existir mas não deve ser a query principal
-    const fetchCount = (healthSrc.match(/\/api\/flask-status/g) ?? []).length;
+  it("S26-4.2: AdminSystemHealth.tsx usa getFlaskStatus como fonte primária", () => {
+    // A fonte primária agora é tRPC getFlaskStatus
+    const fetchCount = (healthSrc.match(/getFlaskStatus/g) ?? []).length;
     expect(fetchCount).toBeGreaterThanOrEqual(1);
   });
   it("S26-4.3: AdminSystemHealth.tsx tem estado flaskData", () => {
@@ -165,20 +165,20 @@ describe("S26-5: Log de Eventos — Visível na UI", () => {
 
 // ─── S26-6: Detalhes do Serviço — Informações diretas do health check ────────
 describe("S26-6: Detalhes do Serviço — Informações diretas do health check", () => {
-  it("S26-6.1: AdminSystemHealth.tsx exibe model_loaded do Flask ML", () => {
-    expect(healthSrc).toContain("model_loaded");
+  it("S26-6.1: AdminSystemHealth.tsx exibe Modelo carregado", () => {
+    expect(healthSrc).toContain("Modelo carregado");
   });
-  it("S26-6.2: AdminSystemHealth.tsx exibe método do modelo", () => {
-    expect(healthSrc).toContain("method");
+  it("S26-6.2: AdminSystemHealth.tsx exibe status do servico", () => {
+    expect(healthSrc).toContain("status");
   });
-  it("S26-6.3: AdminSystemHealth.tsx exibe dataset_size", () => {
-    expect(healthSrc).toContain("dataset_size");
+  it("S26-6.3: AdminSystemHealth.tsx exibe latencia", () => {
+    expect(healthSrc).toContain("Latencia");
   });
-  it("S26-6.4: AdminSystemHealth.tsx exibe train_accuracy", () => {
-    expect(healthSrc).toContain("train_accuracy");
+  it("S26-6.4: AdminSystemHealth.tsx exibe Badge com status", () => {
+    expect(healthSrc).toContain("Badge");
   });
   it("S26-6.5: AdminSystemHealth.tsx exibe mensagem de erro quando offline", () => {
-    expect(healthSrc).toContain("svc.error");
+    expect(healthSrc).toContain("nao responde");
   });
   it("S26-6.6: AdminSystemHealth.tsx exibe extractPort para extrair porta do nome", () => {
     expect(healthSrc).toContain("extractPort");

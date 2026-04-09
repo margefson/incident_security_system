@@ -88,8 +88,8 @@ describe("S16-2 — Botão Reiniciar Serviço no AdminSystemHealth.tsx", () => {
     expect(healthContent).toContain("isRestarting");
   });
 
-  it("S16-2.8 Após reiniciar, invalida a query getSystemHealth", () => {
-    expect(healthContent).toContain("getSystemHealth.invalidate");
+  it("S16-2.8 Após reiniciar, invalida a query getFlaskStatus", () => {
+    expect(healthContent).toContain("getFlaskStatus.invalidate");
   });
 
   it("S16-2.9 Botão só aparece quando status é 'offline'", () => {
@@ -159,8 +159,8 @@ describe("S16-4 — Procedures uploadTrainDataset e uploadEvalDataset", () => {
 
 // ─── S16-5: AdminSystemHealth — estrutura geral ────────────────────────────
 describe("S16-5 — AdminSystemHealth — estrutura geral", () => {
-  it("S16-5.1 AdminSystemHealth usa getSystemHealth query", () => {
-    expect(healthContent).toContain("getSystemHealth");
+  it("S16-5.1 AdminSystemHealth usa getFlaskStatus query", () => {
+    expect(healthContent).toContain("getFlaskStatus");
   });
 
   it("S16-5.2 AdminSystemHealth tem auto-refresh de 30 segundos", () => {

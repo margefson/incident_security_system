@@ -117,10 +117,9 @@ describe("S25-5: AdminSystemHealth.tsx — Tela dinâmica", () => {
     expect(section).toContain("match");
   });
   it("S25-5.4: AdminSystemHealth usa fonte de dados para status dos serviços", () => {
-    // Aceita tanto trpc.admin.getSystemHealth quanto /api/flask-status como fonte
-    const hasFlaskStatus = healthSrc.includes("/api/flask-status");
-    const hasTrpcHealth = healthSrc.includes("trpc.admin.getSystemHealth");
-    expect(hasFlaskStatus || hasTrpcHealth).toBe(true);
+    // Usa tRPC getFlaskStatus como fonte
+    const hasFlaskStatus = healthSrc.includes("getFlaskStatus");
+    expect(hasFlaskStatus).toBe(true);
   });
   it("S25-5.5: AdminSystemHealth usa trpc.admin.restartService", () => {
     expect(healthSrc).toContain("trpc.admin.restartService");
@@ -155,8 +154,8 @@ describe("S25-5: AdminSystemHealth.tsx — Tela dinâmica", () => {
     expect(healthSrc).toContain("DashboardLayout");
   });
   it("S25-5.15: AdminSystemHealth exibe informações sobre auto-reinício ou fonte de dados", () => {
-    // Aceita 'automaticamente' ou '/api/flask-status' como indicador de monitoramento
-    const hasAuto = healthSrc.includes("automaticamente") || healthSrc.includes("/api/flask-status");
+    // Aceita 'getFlaskStatus' ou 'refetchInterval' como indicador de monitoramento
+    const hasAuto = healthSrc.includes("getFlaskStatus") || healthSrc.includes("refetchInterval");
     expect(hasAuto).toBe(true);
   });
 });
