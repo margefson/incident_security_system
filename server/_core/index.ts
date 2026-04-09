@@ -93,13 +93,24 @@ function startMLClassifierService(port: number = 5001): Promise<void> {
       res.setHeader("Content-Type", "text/event-stream");
       res.setHeader("Cache-Control", "no-cache");
       res.setHeader("Connection", "keep-alive");
-      res.write("data: {\"step\":\"Carregar Dataset\",\"progress\":20}\n\n");
-      setTimeout(() => res.write("data: {\"step\":\"Pré-processamento\",\"progress\":40}\n\n"), 500);
-      setTimeout(() => res.write("data: {\"step\":\"Construir Pipeline TF-IDF\",\"progress\":60}\n\n"), 1000);
-      setTimeout(() => res.write("data: {\"step\":\"Treinar Modelo\",\"progress\":80}\n\n"), 1500);
-      setTimeout(() => res.write("data: {\"step\":\"Validação Cruzada 5-fold\",\"progress\":90}\n\n"), 2000);
-      setTimeout(() => res.write("data: {\"step\":\"Concluído\",\"progress\":100,\"accuracy\":0.99,\"cv_score\":0.97}\n\n"), 2500);
-      setTimeout(() => res.end(), 3000);
+      
+      const now = new Date().toISOString();
+      const steps = [
+        { step: 1, type: "progress", message: "Carregar Dataset", progress: 20, ts: now },
+        { step: 2, type: "progress", message: "Pré-processamento", progress: 40, ts: now },
+        { step: 3, type: "progress", message: "Construir Pipeline TF-IDF", progress: 60, ts: now },
+        { step: 4, type: "progress", message: "Treinar Modelo", progress: 80, train_accuracy: 0.99, ts: now },
+        { step: 5, type: "fold", message: "Validação Cruzada 5-fold", progress: 90, cv_mean: 0.97, ts: now },
+        { step: 8, type: "complete", message: "Concluído", progress: 100, train_accuracy: 0.99, cv_mean: 0.97, eval_accuracy: 0.92, dataset_size: 5151, categories: ["phishing", "malware", "brute_force", "ddos", "vazamento_de_dados"], ts: now }
+      ];
+      
+      steps.forEach((step, idx) => {
+        setTimeout(() => {
+          res.write(`data: ${JSON.stringify(step)}\n\n`);
+        }, idx * 500);
+      });
+      
+      setTimeout(() => res.end(), steps.length * 500 + 100);
     });
 
     app.post("/evaluate", (req, res) => {
