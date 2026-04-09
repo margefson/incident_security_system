@@ -87,10 +87,11 @@ export default function AdminSystemHealth() {
 
   // Busca o status via tRPC (getFlaskStatus é publicProcedure, sem auth)
   const flaskStatusQuery = trpc.admin.getFlaskStatus.useQuery(undefined, {
+    staleTime: 30000, // dados válidos por 30s
     refetchInterval: 30000, // auto-refresh a cada 30s
   });
 
-  const fetchFlaskStatus = useCallback(async (silent = false) => {
+  const fetchFlaskStatus = useCallback(async (silent = true) => {
     if (!silent) setFlaskLoading(true);
     setFlaskError(null);
     try {
@@ -117,10 +118,10 @@ export default function AdminSystemHealth() {
     }
   }, [addLog, flaskStatusQuery]);
 
-  // Busca inicial
+  // Busca inicial - apenas uma vez ao montar o componente
   useEffect(() => {
-    void fetchFlaskStatus();
-  }, [fetchFlaskStatus]);
+    void fetchFlaskStatus(true);
+  }, []);
 
   // Scroll automático no log
   useEffect(() => {
