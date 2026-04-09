@@ -202,17 +202,17 @@ curl http://localhost:5002/health
 2. Instalar dependências manualmente: `cd ml && pip install -r requirements.txt`
 3. Verificar logs: `cat ml/flask_5001.log`
 
-### Erro "Service Unavailable" ao reiniciar (Sessão 33-34)
+### Erro "Service Unavailable" ao reiniciar (Sessão 33-35)
 **Sintoma**: Ao clicar em "Reiniciar Serviço", recebe erro "Unexpected token 'S', 'Service Unavailable' is not valid JSON"
 
 **Causa Raiz**: O Flask retorna HTTP 503 com corpo HTML durante o carregamento do modelo. O código tentava fazer `.json()` sem validar o Content-Type.
 
-**Solução** (Implementada em S33-S34):
-1. A procedure `restartService` agora valida `Content-Type` antes de chamar `.json()`
-2. Implementado retry automático com backoff exponencial (até 3 tentativas)
-3. Aguarda 2 segundos entre tentativas quando recebe HTTP 503
-4. Timeout total aumentado de 15s para até 21s (15s + 3x2s)
-5. Startup do servidor agora tenta 3 vezes inicializar Flask antes de usar fallback
+**Solução** (Implementada em S33-S35):
+1. Validação dupla: Content-Type + try/catch para parse JSON (S35)
+2. Tratamento completo de todos os status HTTP: 2xx (sucesso), 503 (retry), 4xx/5xx (erro com retry)
+3. Tratamento robusto de erros de conexão: timeout, ECONNREFUSED, ENOTFOUND
+4. Retry automático mantido: até 3 tentativas com 2s entre elas
+5. Startup do servidor tenta 3 vezes inicializar Flask antes de usar fallback
 
 **Fallback Automático** (Sessão 34):
 - Se Flask não iniciar em produção, sistema usa classificação por palavras-chave

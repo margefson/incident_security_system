@@ -630,3 +630,15 @@
 - [x] Validar que Flask inicia corretamente em produção (fallback automático ativo)
 - [x] Testar reinício de serviço em produção (sistema funcional com fallback)
 
+## Sessão 35 — Correção Definitiva do Erro "Service Unavailable"
+
+- [x] Diagnosticar por que o erro persiste mesmo após S33-S34
+- [x] Implementar validação dupla: Content-Type + try/catch JSON
+- [x] Tratamento completo de todos os status HTTP
+- [x] Tratamento robusto de erros de conexão
+- [x] Testar em desenvolvimento (1136 de 1138 testes passando)
+- [x] Fazer commit e push no GitHub (21f0585)
+- [x] Atualizar DEPLOYMENT.md com detalhes de S35
+- [x] Atualizar RELATORIO_TECNICO.md
+- [x] Atualizar todo.md
+
