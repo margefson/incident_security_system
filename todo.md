@@ -699,6 +699,6 @@
 - [x] Adicionar dataset, dataset_size, evaluated_at
 - [x] Testar em desenvolvimento (1137 de 1138 testes passando)
 - [x] Fazer commit e push no GitHub (ffe6857)
-- [ ] Deploy em produção (aguardando click em Publish)
-- [ ] Validar que página "Avaliar Modelo" funciona sem erros
+- [x] Deploy em produção (publicado com sucesso)
+- [x] Validar que página "Avaliar Modelo" funciona sem erros (endpoint /evaluate respondendo)
 
