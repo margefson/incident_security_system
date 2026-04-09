@@ -15,6 +15,8 @@ Plataforma de gerenciamento de incidentes de segurança cibernética com classif
 ## Sumário
 
 - [Visão Geral](#visão-geral)
+- [Pré-requisitos](#pré-requisitos)
+- [Tempos de Inicialização](#tempos-de-inicialização)
 - [Arquitetura](#arquitetura)
 - [Stack Tecnológica](#stack-tecnológica)
 - [Funcionalidades](#funcionalidades)
@@ -37,6 +39,46 @@ Plataforma de gerenciamento de incidentes de segurança cibernética com classif
 O **INCIDENT_SYS** é uma aplicação web full-stack que permite que equipes de segurança registrem, classifiquem e analisem incidentes cibernéticos de forma estruturada. Cada incidente é automaticamente classificado em uma das cinco categorias de ameaça por um modelo de ML treinado com um dataset real de 5050 amostras (5000 técnicas + 50 metafóricas), recebendo também um score de risco calculado automaticamente.
 
 O sistema opera com três servidores independentes: um servidor Node.js/Express que expõe a API tRPC e serve o frontend React, um servidor Flask em Python que hospeda o modelo de classificação (porta 5001), e um segundo servidor Flask para geração de relatórios PDF (porta 5002).
+
+---
+
+## Pré-requisitos
+
+### Sistema
+- **Node.js** 22.13.0 ou superior
+- **Python** 3.11 ou superior
+- **MySQL/TiDB** para banco de dados
+- **Linux** (Ubuntu 22.04 LTS recomendado) ou macOS
+
+### Dependências Python (Automáticas)
+As dependências Python são instaladas automaticamente na inicialização do servidor:
+- `flask` - Framework web para serviços ML
+- `joblib` - Serialização de modelos
+- `scikit-learn` - Algoritmos de ML (TF-IDF + Naive Bayes)
+- `pandas` - Processamento de dados
+- `openpyxl` - Leitura de arquivos Excel
+
+Ver `DEPLOYMENT.md` para instruções de instalação manual.
+
+---
+
+## Tempos de Inicialização
+
+### Startup Inicial
+| Componente | Tempo Esperado | Descrição |
+|-----------|----------------|-----------|
+| Node.js Server | 2-3s | Inicialização do Express + tRPC |
+| Python Dependencies | 5-10s | Instalação de pip packages (primeira vez) |
+| Flask ML | 8-12s | Carregamento do modelo TF-IDF + Naive Bayes |
+| Flask PDF | 3-5s | Inicialização do serviço de PDF |
+| **Total** | **20-30s** | Tempo total até sistema estar pronto |
+
+### Restart de Serviço
+Quando você clica em "Reiniciar Serviço" na interface:
+- **Tempo de espera**: 15 segundos (configurável em `server/routers.ts` linha 1193)
+- **Motivo**: O Flask leva ~8-12s para carregar o modelo ML
+
+> **Nota**: Veja `DEPLOYMENT.md` para mais detalhes sobre tempos, troubleshooting e configurações de produção.
 
 ---
 

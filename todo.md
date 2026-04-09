@@ -550,3 +550,13 @@
 - [x] Validar que 1123 testes passam
 - [x] Testar reinício manual dos serviços Flask (1121 testes passam, 2 falhando não relacionados)
 - [x] Atualizar README e comitar no GitHub
+
+
+## Sessão 30 — Pré-aquecimento de Modelos + Health Check Progressivo + Documentação
+
+- [x] Implementar ensureFlaskRunning na inicialização do servidor (já estava implementado em server/_core/index.ts)
+- [x] Criar procedure admin.getFlaskStatusDetailed com status progressivo (loading, ready, error)
+- [x] Criar DEPLOYMENT.md com guia de deployment e dependências
+- [x] Atualizar README.md com seção de pré-requisitos e tempos de inicialização
+- [x] Testar inicialização automática dos serviços Flask
+- [x] Validar que 1121 testes passam (2 não relacionados falhando)

@@ -1145,6 +1145,70 @@ const adminRouter = router({
       };
     }),
 
+  // ─── Health Check Progressivo com Status Detalhado ──────────────────────────────────────────────────────
+  getFlaskStatusDetailed: publicProcedure
+    .query(async () => {
+      const services = [
+        { name: "Flask ML", port: 5001 },
+        { name: "Flask PDF", port: 5002 },
+      ];
+      const results = [];
+      for (const svc of services) {
+        try {
+          const startTime = Date.now();
+          const res = await fetch(`http://localhost:${svc.port}/health`, { signal: AbortSignal.timeout(2000) });
+          const latency = Date.now() - startTime;
+          if (res.ok) {
+            try {
+              const data = await res.json() as Record<string, unknown>;
+              results.push({
+                name: svc.name,
+                port: svc.port,
+                status: "ready" as const,
+                latency,
+                details: data,
+              });
+            } catch {
+              results.push({
+                name: svc.name,
+                port: svc.port,
+                status: "ready" as const,
+                latency,
+              });
+            }
+          } else if (res.status === 503) {
+            // 503 Service Unavailable = Flask está carregando
+            results.push({
+              name: svc.name,
+              port: svc.port,
+              status: "loading" as const,
+              latency,
+            });
+          } else {
+            results.push({
+              name: svc.name,
+              port: svc.port,
+              status: "error" as const,
+              latency,
+            });
+          }
+        } catch (err) {
+          results.push({
+            name: svc.name,
+            port: svc.port,
+            status: "error" as const,
+            latency: null,
+          });
+        }
+      }
+      return {
+        overall: results.every(s => s.status === "ready") ? "ready" as const : 
+                 results.some(s => s.status === "loading") ? "loading" as const : "error" as const,
+        checked_at: new Date().toISOString(),
+        services: results,
+      };
+    }),
+
   // ─── Reiniciar Serviço Flask ──────────────────────────────────────────────────────────────────────────────
   restartService: adminProcedure
     .input(z.object({
