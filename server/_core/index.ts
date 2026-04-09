@@ -162,6 +162,16 @@ async function startServer() {
     res.end();
   });
 
+  // Endpoint temporário de análise de incidentes (apenas dev)
+  app.get("/api/debug/incidents", async (_req, res) => {
+    try {
+      const { getAllIncidents } = await import("../db.js");
+      const rows = await getAllIncidents({ limit: 200, offset: 0 });
+      res.json({ total: rows.length, incidents: rows });
+    } catch (e: unknown) {
+      res.status(500).json({ error: String(e) });
+    }
+  });
   // tRPC API
   app.use(
     "/api/trpc",

@@ -1184,3 +1184,34 @@ Deixe os campos em branco para incluir todos os incidentes no relatório.
 **Solução:** O código foi atualizado para usar `fileURLToPath(import.meta.url)` + `path.dirname()`, que é a forma correta de obter o diretório atual em projetos ESM.
 
 **Como usar:** Acesse Menu Admin → Saúde do Sistema → clique em "Reiniciar Serviço" quando um servidor Flask estiver offline. O serviço será reiniciado automaticamente.
+
+---
+
+## Sessão 21 (v3.3) — Melhoria de Acurácia ML + Exportação de PDF com Filtros
+
+### Exportação de PDF com Filtros (Admin)
+
+Na tela **Todos os Incidentes** (`/admin/incidents`), o administrador agora pode exportar um relatório PDF diretamente da interface:
+
+1. Aplique os filtros desejados (Categoria, Risco)
+2. Clique no botão **"Exportar PDF"** no canto superior direito
+3. O botão exibe dinamicamente os filtros ativos (ex: "Exportar PDF (phishing, Crítico)") ou o total de incidentes quando sem filtros
+4. O PDF é gerado e baixado automaticamente com o nome `relatorio_incidentes_YYYY-MM-DD.pdf`
+
+**Nota:** O PDF inclui resumo estatístico por categoria e nível de risco, além dos detalhes de cada incidente.
+
+### Melhoria de Acurácia do Modelo ML
+
+O modelo foi retreinado com o dataset S21 (5151 amostras) que inclui padrões dos incidentes reais cadastrados no banco:
+
+| Métrica | Valor |
+|---|---|
+| Acurácia de Treino | 99.96% |
+| Validação Cruzada | 99.38% |
+| Acurácia de Avaliação | 92.14% |
+| Macro F1-Score | 91.56% |
+
+Incidentes que antes eram classificados incorretamente agora são reconhecidos:
+- Chamadas telefônicas solicitando código → **Phishing**
+- Manipulação psicológica → **Phishing** (antes: Malware)
+- Estrangulamento de disponibilidade → **DDoS** (antes: Malware)

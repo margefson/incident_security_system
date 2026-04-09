@@ -7,8 +7,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Link } from "wouter";
+import { toast } from "sonner";
 import {
-  List, ChevronLeft, ChevronRight, Search, Filter, ExternalLink,
+  List, ChevronLeft, ChevronRight, Search, Filter, ExternalLink, FileDown, Loader2,
 } from "lucide-react";
 
 const RISK_COLORS: Record<string, string> = {
@@ -30,12 +31,39 @@ export default function AdminIncidents() {
   const [riskLevel, setRiskLevel] = useState<string>("");
   const [search, setSearch] = useState<string>("");
   const [searchInput, setSearchInput] = useState<string>("");
-
+  const [isExporting, setIsExporting] = useState(false);
   const query = trpc.admin.listIncidents.useQuery({
     limit: PAGE_SIZE,
     offset: page * PAGE_SIZE,
     category: category || undefined,
     riskLevel: riskLevel || undefined,
+  });
+
+  const exportPdfMutation = trpc.reports.exportPdf.useMutation({
+    onSuccess: (data) => {
+      // Decodificar base64 e fazer download
+      const byteCharacters = atob(data.base64);
+      const byteNumbers = new Array(byteCharacters.length);
+      for (let i = 0; i < byteCharacters.length; i++) {
+        byteNumbers[i] = byteCharacters.charCodeAt(i);
+      }
+      const byteArray = new Uint8Array(byteNumbers);
+      const blob = new Blob([byteArray], { type: "application/pdf" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = data.filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      toast.success(`PDF exportado com sucesso — ${data.incidentCount} incidente(s) incluídos.`);
+      setIsExporting(false);
+    },
+    onError: (err) => {
+      toast.error(`Erro ao exportar PDF: ${err.message}`);
+      setIsExporting(false);
+    },
   });
 
   const incidents = query.data?.incidents ?? [];
@@ -58,6 +86,21 @@ export default function AdminIncidents() {
     setPage(0);
   };
 
+  const handleExportPdf = () => {
+    setIsExporting(true);
+    exportPdfMutation.mutate({
+      category: category || undefined,
+      riskLevel: riskLevel || undefined,
+      adminMode: true,
+    });
+  };
+
+  // Label dos filtros ativos para o botão de exportar
+  const filterLabel = [
+    category ? category.replace("_", " ") : null,
+    riskLevel ? RISK_LABELS[riskLevel] : null,
+  ].filter(Boolean).join(", ");
+
   return (
     <DashboardLayout>
       <div className="space-y-6">
@@ -71,6 +114,25 @@ export default function AdminIncidents() {
               {total} incidentes no total • Página {page + 1} de {Math.max(1, totalPages)}
             </p>
           </div>
+          {/* Botão Exportar PDF */}
+          <Button
+            size="sm"
+            variant="outline"
+            className="h-8 font-mono text-xs gap-2 border-primary/40 text-primary hover:bg-primary/10"
+            onClick={handleExportPdf}
+            disabled={isExporting || total === 0}
+          >
+            {isExporting ? (
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+            ) : (
+              <FileDown className="w-3.5 h-3.5" />
+            )}
+            {isExporting
+              ? "Gerando PDF..."
+              : filterLabel
+              ? `Exportar PDF (${filterLabel})`
+              : `Exportar PDF (${total} incidentes)`}
+          </Button>
         </div>
 
         {/* Filtros */}

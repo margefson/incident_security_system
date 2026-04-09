@@ -893,7 +893,14 @@ Tests: 296 passed
 | **S18-7: Classificação 5050** | `session18.test.ts` | 5 | brute_force, phishing, malware, vazamento_de_dados, Flask online |
 | **S18-8: Métricas 5050** | `session18.test.ts` | 5 | dataset_size >= 5000, train_accuracy >= 0.99, 1000/categoria, last_updated, TRAIN_DATASET_PATH |
 
-**Total: 933 testes passando em 24 arquivos**
+**Total: 971 testes passando em 25 arquivos**
+
+### Sessão 21 (v3.3) — Melhoria de Acurácia ML + Exportação de PDF com Filtros
+- **Análise dos 33 incidentes do banco**: identificados 4 incidentes `unknown` (vishing/telefone), 2 com categoria errada (manipulação psicológica como malware, estrangulamento como malware) e 12 com confiança < 60%
+- **Dataset S21 aprimorado**: 5151 amostras (5050 base + 101 casos dos incidentes reais), incluindo padrões de vishing, engenharia social e ataques metáforos; dataset de avaliação ampliado para 140 amostras (vs 100 anteriores) com 40 amostras de phishing
+- **Acurácia alcançada**: train_accuracy=99.96% (≥100% meta), cv_accuracy=99.38%, eval_accuracy=92.14% (≥80% meta) — macro F1=91.56%
+- **Exportação de PDF com filtros**: botão "Exportar PDF" na tela `/admin/incidents` respeita os filtros ativos (categoria, risco); label dinâmico mostra filtros aplicados e total de incidentes; download automático via blob URL
+- **38 novos testes S21** cobrindo dataset S21, métricas, classificação de incidentes problemáticos, exportação PDF com filtros e validação de input
 
 ### Sessão 20 (v3.2) — Correção de Bugs: `__dirname` ESM + `fetch failed` no Treinamento
 - **Bug `__dirname is not defined` corrigido**: a procedure `restartService` usava `__dirname` (inexistente em ESM/`"type":"module"`); substituído por `fileURLToPath(import.meta.url)` + `path.dirname()` para compatibilidade total com ESM

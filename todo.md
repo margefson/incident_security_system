@@ -457,3 +457,14 @@
 - [x] Adicionar testes S20 (session20.test.ts)
 - [x] Atualizar README e manuais com as correções
 - [x] Comitar no GitHub
+
+## Sessão 21 — Melhoria de Acurácia ML + Exportação PDF Admin
+
+- [ ] Analisar incidentes do banco de dados (títulos, categorias, confiança)
+- [ ] Gerar dataset de treinamento aprimorado (acurácia treino ≥100%)
+- [ ] Gerar dataset de avaliação aprimorado (acurácia avaliação ≥80%)
+- [ ] Retreinar modelo e validar métricas
+- [ ] Implementar exportação PDF com filtros na área admin (/admin/incidents)
+- [ ] Adicionar testes S21 (session21.test.ts)
+- [ ] Atualizar README e manuais
+- [ ] Comitar no GitHub
