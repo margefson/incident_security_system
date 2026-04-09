@@ -1111,7 +1111,7 @@ const adminRouter = router({
       const results = [];
       for (const svc of services) {
         try {
-          const res = await fetch(\`http://localhost:\${svc.port}/health\`, { signal: AbortSignal.timeout(2000) });
+          const res = await fetch(`http://localhost:${svc.port}/health`, { signal: AbortSignal.timeout(2000) });
           if (res.ok) {
             const data = await res.json() as Record<string, unknown>;
             results.push({

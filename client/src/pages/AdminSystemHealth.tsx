@@ -102,9 +102,7 @@ export default function AdminSystemHealth() {
         for (const svc of data.data.services) {
           if (svc.status === "online") {
             addLog(svc.port, "success", `${svc.name} respondeu em ${svc.latency}ms`);
-          } else if (svc.status === "degraded") {
-            addLog(svc.port, "warn", `${svc.name} respondeu com status degradado`);
-          } else {
+          } else if (svc.status === "offline") {
             addLog(svc.port, "error", `${svc.name} não responde`);
           }
         }

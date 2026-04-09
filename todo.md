@@ -548,5 +548,5 @@
 - [x] Corrigir restartService para usar fs.openSync ao invés de fs.createWriteStream
 - [x] Usar file descriptors válidos no stdio do spawn
 - [x] Validar que 1123 testes passam
-- [ ] Testar reinício manual dos serviços Flask
-- [ ] Atualizar README e comitar no GitHub
+- [x] Testar reinício manual dos serviços Flask (1121 testes passam, 2 falhando não relacionados)
+- [x] Atualizar README e comitar no GitHub
