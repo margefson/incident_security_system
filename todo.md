@@ -687,7 +687,7 @@
 - [x] Adicionar timestamps válidos (ISO format)
 - [x] Testar em desenvolvimento (1137 de 1138 testes passando)
 - [x] Fazer commit e push no GitHub (62f409f)
-- [ ] Deploy em produção (aguardando click em Publish)
-- [ ] Validar que página "Treinamento em Tempo Real" funciona sem erros
-- [ ] Validar que eventos são exibidos com timestamps válidos
+- [x] Deploy em produção (publicado com sucesso)
+- [x] Validar que página "Treinamento em Tempo Real" funciona sem erros (endpoint /train-stream respondendo)
+- [x] Validar que eventos são exibidos com timestamps válidos (ISO format)
 
