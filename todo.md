@@ -490,10 +490,10 @@
 
 ## Sessão 24 — Auto-reinício Flask + Notificações Analista + Dashboard Analista + Histórico Reclassificação
 
-- [ ] Corrigir Flask indisponível: auto-reinício antes de operações ML (evaluate, retrain, classify)
-- [ ] Notificações in-app para analistas em incidentes críticos (schema + procedure + frontend)
-- [ ] Dashboard do analista (/analyst/dashboard) com métricas de atendimento
-- [ ] Histórico de reclassificação automática nos incidentes (schema + procedure + frontend)
-- [ ] Adicionar testes S24 (session24.test.ts)
-- [ ] Atualizar README e manuais
-- [ ] Comitar no GitHub
+- [x] Corrigir Flask indisponível: auto-reinício antes de operações ML (evaluate, retrain, classify)
+- [x] Notificações in-app para analistas em incidentes críticos (schema + procedure + frontend)
+- [x] Dashboard do analista (/analyst/dashboard) com métricas de atendimento
+- [x] Histórico de reclassificação automática nos incidentes (schema + procedure + frontend)
+- [x] Adicionar testes S24 (session24.test.ts)
+- [x] Atualizar README e manuais
+- [x] Comitar no GitHub
