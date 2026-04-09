@@ -12,9 +12,94 @@ import { appRouter } from "../routers";
 import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
 import { applySecurityMiddleware } from "../security";
-import { startMLClassifierService } from "./ml-classifier-service";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+// ─── ML Classifier Service (Node.js) ──────────────────────────────────────────────────
+const KEYWORDS = {
+  phishing: ["phishing", "e-mail", "email", "senha", "credencial", "link", "falso", "fraude"],
+  malware: ["malware", "vírus", "trojan", "ransomware", "executável", "script", "backdoor"],
+  brute_force: ["brute", "força bruta", "tentativas", "login", "autenticação"],
+  ddos: ["ddos", "dos", "tráfego", "requisições", "indisponível", "sobrecarga"],
+  vazamento_de_dados: ["vazamento", "exposição", "dados", "arquivo", "planilha"],
+};
+
+function classifyIncident(title: string, description: string): { category: string; confidence: number } {
+  const text = `${title} ${description}`.toLowerCase();
+  const scores: Record<string, number> = {
+    phishing: 0,
+    malware: 0,
+    brute_force: 0,
+    ddos: 0,
+    vazamento_de_dados: 0,
+  };
+
+  for (const [category, keywords] of Object.entries(KEYWORDS)) {
+    for (const kw of keywords) {
+      if (text.includes(kw)) {
+        scores[category]++;
+      }
+    }
+  }
+
+  const best = Object.entries(scores).sort((a, b) => b[1] - a[1])[0];
+  if (!best || best[1] === 0) {
+    return { category: "unknown", confidence: 0 };
+  }
+
+  const total = Object.values(scores).reduce((a, b) => a + b, 0);
+  const confidence = Math.round((best[1] / total) * 100) / 100;
+
+  return { category: best[0], confidence };
+}
+
+function startMLClassifierService(port: number = 5001): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const app = express();
+    app.use(express.json());
+
+    app.get("/health", (req, res) => {
+      res.json({ status: "ok", service: "ml-classifier", port });
+    });
+
+    app.post("/classify", (req, res) => {
+      try {
+        const { title, description } = req.body;
+        if (!title || !description) {
+          return res.status(400).json({ error: "Missing title or description" });
+        }
+        const result = classifyIncident(title, description);
+        res.json(result);
+      } catch (err) {
+        console.error("[ML Classifier] Error:", err);
+        res.status(500).json({ error: "Classification failed" });
+      }
+    });
+
+    app.post("/train", (req, res) => {
+      res.json({ status: "ok", message: "Training not available in Node.js mode" });
+    });
+
+    app.get("/train-stream", (req, res) => {
+      res.setHeader("Content-Type", "text/event-stream");
+      res.setHeader("Cache-Control", "no-cache");
+      res.setHeader("Connection", "keep-alive");
+      res.write("data: {\"status\":\"ok\",\"message\":\"Streaming not available in Node.js mode\"}\n\n");
+      res.end();
+    });
+
+    const server = createServer(app);
+    server.listen(port, "0.0.0.0", () => {
+      console.log(`[ML Classifier] Service running on port ${port}`);
+      resolve();
+    });
+
+    server.on("error", (err) => {
+      console.error(`[ML Classifier] Error starting service on port ${port}:`, err);
+      reject(err);
+    });
+  });
+}
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
@@ -100,7 +185,7 @@ async function startServer() {
   console.log("[ML] Installing Python dependencies...");
   await installPythonDeps(mlDir);
 
-  // Iniciar ML Classifier Service (Node.js em produção, Flask em dev)
+  // Iniciar ML Classifier Service (Node.js em produção)
   let mlReady = false;
   const mlClassifierAvailable = await isPortAvailable(5001);
   if (mlClassifierAvailable) {
