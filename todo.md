@@ -691,3 +691,14 @@
 - [x] Validar que página "Treinamento em Tempo Real" funciona sem erros (endpoint /train-stream respondendo)
 - [x] Validar que eventos são exibidos com timestamps válidos (ISO format)
 
+## Sessão 41 — Corrigir /evaluate para Frontend
+
+- [x] Identificar que /evaluate enviava estrutura incorreta
+- [x] Corrigir para enviar {success, evaluation: {...}}
+- [x] Incluir evaluation.eval_accuracy, per_category, confusion_matrix
+- [x] Adicionar dataset, dataset_size, evaluated_at
+- [x] Testar em desenvolvimento (1137 de 1138 testes passando)
+- [x] Fazer commit e push no GitHub (ffe6857)
+- [ ] Deploy em produção (aguardando click em Publish)
+- [ ] Validar que página "Avaliar Modelo" funciona sem erros
+
