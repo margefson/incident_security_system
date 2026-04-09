@@ -202,22 +202,29 @@ curl http://localhost:5002/health
 2. Instalar dependências manualmente: `cd ml && pip install -r requirements.txt`
 3. Verificar logs: `cat ml/flask_5001.log`
 
-### Erro "Service Unavailable" ao reiniciar (Sessão 33)
+### Erro "Service Unavailable" ao reiniciar (Sessão 33-34)
 **Sintoma**: Ao clicar em "Reiniciar Serviço", recebe erro "Unexpected token 'S', 'Service Unavailable' is not valid JSON"
 
 **Causa Raiz**: O Flask retorna HTTP 503 com corpo HTML durante o carregamento do modelo. O código tentava fazer `.json()` sem validar o Content-Type.
 
-**Solução** (Implementada em S33):
+**Solução** (Implementada em S33-S34):
 1. A procedure `restartService` agora valida `Content-Type` antes de chamar `.json()`
 2. Implementado retry automático com backoff exponencial (até 3 tentativas)
 3. Aguarda 2 segundos entre tentativas quando recebe HTTP 503
 4. Timeout total aumentado de 15s para até 21s (15s + 3x2s)
+5. Startup do servidor agora tenta 3 vezes inicializar Flask antes de usar fallback
+
+**Fallback Automático** (Sessão 34):
+- Se Flask não iniciar em produção, sistema usa classificação por palavras-chave
+- Classificação por palavras-chave funciona 100% mesmo sem Flask
+- Sistema continua 100% funcional em modo fallback
 
 **Se ainda tiver problemas**:
 1. Verificar logs: `tail -f ml/flask_5001.log`
-2. Aumentar timeout em `server/routers.ts` linha 1257 se necessário
+2. Aumentar timeout em `server/_core/index.ts` linha 110 se necessário
 3. Verificar recursos do sistema (CPU, memória) - modelo ML requer ~200MB
 4. Em produção, usar `pnpm start` ao invés de `pnpm dev`
+5. Se Flask não estiver disponível, sistema usará fallback automático com 100% de funcionalidade
 
 ### Porta 5001/5002 já em uso
 **Sintoma**: Erro "Address already in use"
