@@ -451,9 +451,9 @@
 
 ## Sessão 20 — Correção de Bugs (Flask Restart + Fetch Failed)
 
-- [ ] Corrigir __dirname is not defined ao reiniciar serviço Flask 5001
-- [ ] Corrigir __dirname is not defined ao reiniciar serviço Flask 5002
-- [ ] Corrigir fetch failed no Treinamento em Tempo Real (AdminMLTraining)
-- [ ] Adicionar testes S20 (session20.test.ts)
-- [ ] Atualizar README e manuais com as correções
-- [ ] Comitar no GitHub
+- [x] Corrigir __dirname is not defined ao reiniciar serviço Flask 5001
+- [x] Corrigir __dirname is not defined ao reiniciar serviço Flask 5002
+- [x] Corrigir fetch failed no Treinamento em Tempo Real (AdminMLTraining)
+- [x] Adicionar testes S20 (session20.test.ts)
+- [x] Atualizar README e manuais com as correções
+- [x] Comitar no GitHub
