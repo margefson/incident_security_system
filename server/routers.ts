@@ -1136,11 +1136,12 @@ const adminRouter = router({
 
         // 3. Iniciar novo processo Flask na porta especificada usando spawn (nao execSync)
         // spawn permite que o processo inicie em background sem bloquear
-        const logStream = fs.createWriteStream(LOG_PATH, { flags: "a" });
+        // Usar fs.openSync para obter um file descriptor válido (ao invés de WriteStream)
+        const logFd = fs.openSync(LOG_PATH, "a");
         const proc = spawn("python3", [SCRIPT_PATH, "--port", String(input.port)], {
           cwd: SCRIPT_DIR,
           detached: true,
-          stdio: ["ignore", logStream, logStream],
+          stdio: ["ignore", logFd, logFd],
         });
         proc.unref(); // Permite que o Node.js saia sem aguardar este processo
 

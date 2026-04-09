@@ -5,7 +5,7 @@
 ![Python](https://img.shields.io/badge/Python-3.11-3776AB?style=flat-square&logo=python)
 ![MySQL](https://img.shields.io/badge/MySQL-8.x-4479A1?style=flat-square&logo=mysql)
 ![ML Accuracy](https://img.shields.io/badge/ML%20Accuracy%20(CV)-97%25%20%7C%20Eval%3A78%25-brightgreen?style=flat-square)
-![Tests](https://img.shields.io/badge/tests-1123%20passing%20(S28)-brightgreen)
+![Tests](https://img.shields.io/badge/tests-1123%20passing%20(S29)-brightgreen)
 ![License](https://img.shields.io/badge/License-MIT-blue?style=flat-square)
 
 Plataforma de gerenciamento de incidentes de segurança cibernética com classificação automática por Machine Learning (TF-IDF + Naive Bayes), painel de administração global, **CRUD de categorias de incidentes (exclusivo para administradores)**, exportação de relatórios em PDF, notificações automáticas de risco crítico e interface SOC Portal — design profissional dark com tipografia Inter, sidebar compacta, badges coloridos por severidade e tabelas operacionais.
@@ -894,6 +894,13 @@ Tests: 296 passed
 | **S18-8: Métricas 5050** | `session18.test.ts` | 5 | dataset_size >= 5000, train_accuracy >= 0.99, 1000/categoria, last_updated, TRAIN_DATASET_PATH |
 
 **Total: 1001 testes passando em 26 arquivos**
+
+### Sessão 29 (v4.1) — Correção ERR_INVALID_ARG_VALUE no stdio do spawn
+- **Problema**: Ao clicar em "Reiniciar Serviço", retornava erro `ERR_INVALID_ARG_VALUE: The argument 'stdio' is invalid`
+- **Causa raiz**: O `spawn` recebia um `WriteStream` criado com `fs.createWriteStream()`, mas o stream não estava pronto (fd: null) quando o `spawn` tentava usá-lo
+- **Solução**: Usar `fs.openSync()` para obter um file descriptor válido e passar diretamente ao `stdio` do `spawn`
+- **Resultado**: Reinício manual dos Flask 5001 e 5002 agora funciona corretamente
+- **1123 testes passando** em 30 arquivos
 
 ### Sessão 28 (v4.0) — Correção TypeError: fetch failed + CORS
 - **Problema**: O frontend retornava "TypeError: fetch failed" ao tentar acessar `/api/flask-status`

@@ -540,4 +540,13 @@
 - [x] Adicionar console.error para logging de erro
 - [x] Corrigir testes S26-3.4, S26-3.6 e S26-3.8 (janela aumentada para 2000 chars)
 - [x] Validar que 1123 testes passam
+- [x] Atualizar README e comitar no GitHub
+
+## Sessão 29 — Correção ERR_INVALID_ARG_VALUE no stdio do spawn
+
+- [x] Diagnosticar erro ERR_INVALID_ARG_VALUE no stdio do spawn
+- [x] Corrigir restartService para usar fs.openSync ao invés de fs.createWriteStream
+- [x] Usar file descriptors válidos no stdio do spawn
+- [x] Validar que 1123 testes passam
+- [ ] Testar reinício manual dos serviços Flask
 - [ ] Atualizar README e comitar no GitHub
