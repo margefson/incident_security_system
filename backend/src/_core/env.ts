@@ -1,0 +1,30 @@
+function readEnv(key: string, fallback = ""): string {
+  return process.env[key] ?? fallback;
+}
+
+export const ENV = {
+  get appId() {
+    return readEnv("VITE_APP_ID");
+  },
+  get cookieSecret() {
+    return readEnv("JWT_SECRET");
+  },
+  get databaseUrl() {
+    return readEnv("DATABASE_URL");
+  },
+  get oAuthServerUrl() {
+    return readEnv("OAUTH_SERVER_URL");
+  },
+  get ownerOpenId() {
+    return readEnv("OWNER_OPEN_ID");
+  },
+  get isProduction() {
+    return process.env.NODE_ENV === "production";
+  },
+  get forgeApiUrl() {
+    return readEnv("BUILT_IN_FORGE_API_URL");
+  },
+  get forgeApiKey() {
+    return readEnv("BUILT_IN_FORGE_API_KEY");
+  },
+};

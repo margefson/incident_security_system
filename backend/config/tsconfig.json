@@ -1,0 +1,21 @@
+{
+  "include": ["../src/**/*", "../shared/**/*", "../drizzle/**/*"],
+  "exclude": ["../node_modules", "../dist", "../src/tests/**", "../src/**/*.test.ts", "../src/**/*.spec.ts"],
+  "compilerOptions": {
+    "incremental": true,
+    "tsBuildInfoFile": "../.tsbuildinfo",
+    "noEmit": true,
+    "module": "ESNext",
+    "strict": true,
+    "lib": ["esnext", "dom"],
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "allowImportingTsExtensions": true,
+    "moduleResolution": "bundler",
+    "baseUrl": "..",
+    "types": ["node"],
+    "paths": {
+      "@shared/*": ["./shared/*"]
+    }
+  }
+}

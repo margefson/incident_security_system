@@ -3,7 +3,7 @@
 ![Node.js](https://img.shields.io/badge/Node.js-22.x-339933?style=flat-square&logo=node.js)
 ![React](https://img.shields.io/badge/React-19-61DAFB?style=flat-square&logo=react)
 ![Python](https://img.shields.io/badge/Python-3.11-3776AB?style=flat-square&logo=python)
-![MySQL](https://img.shields.io/badge/MySQL-8.x-4479A1?style=flat-square&logo=mysql)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-4169E1?style=flat-square&logo=postgresql)
 ![ML Accuracy](https://img.shields.io/badge/ML%20Accuracy%20(CV)-97%25%20%7C%20Eval%3A78%25-brightgreen?style=flat-square)
 ![Tests](https://img.shields.io/badge/tests-1137%20passing%20(S42)-brightgreen)
 ![License](https://img.shields.io/badge/License-MIT-blue?style=flat-square)
@@ -47,7 +47,7 @@ O sistema opera com três servidores independentes: um servidor Node.js/Express 
 ### Sistema
 - **Node.js** 22.13.0 ou superior
 - **Python** 3.11 ou superior
-- **MySQL/TiDB** para banco de dados
+- **PostgreSQL** para banco de dados
 - **Linux** (Ubuntu 22.04 LTS recomendado) ou macOS
 
 ### Dependências Python (Automáticas)
@@ -58,7 +58,7 @@ As dependências Python são instaladas automaticamente na inicialização do se
 - `pandas` - Processamento de dados
 - `openpyxl` - Leitura de arquivos Excel
 
-Ver `DEPLOYMENT.md` para instruções de instalação manual.
+Ver [docs/arquitetura-deploy/DEPLOYMENT.md](docs/arquitetura-deploy/DEPLOYMENT.md) para instruções de instalação manual.
 
 ---
 
@@ -103,13 +103,13 @@ Quando você clica em "Reiniciar Serviço" na interface:
 - **Motivo**: O Flask leva ~8-12s para carregar o modelo ML na primeira vez
 - **Com Cache**: Reinicializações subsequentes são mais rápidas
 
-> **Nota**: Veja `DEPLOYMENT.md` para mais detalhes sobre tempos, troubleshooting e configurações de produção.
+> **Nota**: Veja [docs/arquitetura-deploy/DEPLOYMENT.md](docs/arquitetura-deploy/DEPLOYMENT.md) para mais detalhes sobre tempos, troubleshooting e configurações de produção.
 
 ---
 
 ## Arquitetura
 
-> O diagrama abaixo foi gerado automaticamente a partir de `docs/architecture.d2` e representa a comunicação entre todas as camadas do sistema.
+> O diagrama abaixo foi gerado automaticamente a partir de `docs/arquitetura-deploy/architecture.d2` e representa a comunicação entre todas as camadas do sistema.
 
 ![Diagrama de Arquitetura do Sistema](https://d2xsxph8kpxj0f.cloudfront.net/310519663148675640/KjT4emSwzjBHV8i56oSYsp/architecture_7007dcad.png)
 
@@ -119,7 +119,7 @@ Quando você clica em "Reiniciar Serviço" na interface:
 |---|---|---|
 | Frontend | React 19 + Vite + Tailwind CSS 4 | — |
 | Backend (API) | Node.js 22 + Express 4 + tRPC 11 | 3000 |
-| Banco de Dados | TiDB / MySQL 8 via Drizzle ORM | TLS |
+| Banco de Dados | PostgreSQL 16 via Drizzle ORM | TLS (produção) |
 | ML Classifier | Python Flask + TF-IDF + Naive Bayes | 5001 |
 | PDF Generator | Python Flask + ReportLab | 5002 |
 
@@ -151,7 +151,7 @@ Quando você clica em "Reiniciar Serviço" na interface:
            │ Drizzle ORM          │ HTTP POST interno
            ▼                      ├──► localhost:5001 (classificador)
 ┌──────────────────────┐          └──► localhost:5002 (gerador PDF)
-│  MySQL / TiDB        │
+│  PostgreSQL          │
 │  Tabelas:            │  ┌───────────────────────────────────────┐
 │  · users             │  │  SERVIDORES FLASK (Python 3.11)       │
 │  · incidents         │  │                                       │
@@ -178,7 +178,7 @@ Node.js recebe via tRPC incidents.create
         │
         ├─► Mapeia categoria → riskLevel (critical/high/medium/low)
         │
-        ├─► Persiste no MySQL (tabela incidents)
+        ├─► Persiste no PostgreSQL (tabela incidents)
         │
         ├─► Se riskLevel === "critical" → notifyOwner() [alerta ao admin]
         │
@@ -212,7 +212,7 @@ Node.js recebe via tRPC incidents.create
 | Express | 4.x | Servidor HTTP |
 | tRPC | 11.x | API type-safe |
 | Drizzle ORM | 0.44.x | Queries e migrações |
-| MySQL2 | 3.x | Driver do banco de dados |
+| pg | 8.x | Driver PostgreSQL (node-postgres) |
 | bcryptjs | 2.x | Hash de senhas |
 | jose | 6.x | JWT (sessões) |
 | Joi | 17.x | Validação de entrada |
@@ -389,54 +389,17 @@ A interface exibe badges coloridos indicando qual dataset está sendo utilizado 
 
 ```
 incident_security_system/
-├── client/                        # Frontend React
-│   ├── src/
-│   │   ├── _core/hooks/           # useAuth hook
-│   │   ├── components/
-│   │   │   ├── CyberLayout.tsx    # Layout SOC Portal com sidebar compacta
-│   │   │   ├── ExportPdfButton.tsx # Botão de exportação PDF
-│   │   │   └── ui/                # Componentes shadcn/ui
-│   │   ├── pages/
-│   │   │   ├── Home.tsx           # Landing page
-│   │   │   ├── Login.tsx          # Autenticação
-│   │   │   ├── Register.tsx       # Registro de usuário
-│   │   │   ├── Dashboard.tsx      # Painel principal com KPIs
-│   │   │   ├── Incidents.tsx      # Listagem com filtros e exportação PDF
-│   │   │   ├── NewIncident.tsx    # Formulário de registro
-│   │   │   ├── IncidentDetail.tsx # Detalhe e análise de risco
-│   │   │   ├── RiskAnalysis.tsx   # Análise de risco global
-│   │   │   └── Admin.tsx          # Painel de administração
-│   │   ├── App.tsx                # Roteamento principal
-│   │   ├── index.css              # Design System SOC Portal (Inter, dark theme)
-│   │   └── lib/trpc.ts            # Cliente tRPC
-│   └── index.html                 # Importa fontes Inter + JetBrains Mono
-├── drizzle/
-│   └── schema.ts                  # Tabelas: users, incidents
-├── ml/
-│   ├── incidentes_cybersecurity_2000.xlsx  # Dataset de treinamento
-│   ├── train_model.py             # Script de treinamento
-│   ├── classifier_server.py       # Flask API de classificação (porta 5001)
-│   ├── pdf_server.py              # Flask API de geração PDF (porta 5002)
-│   └── model/                     # Modelo treinado (.pkl)
-├── server/
-│   ├── _core/                     # Framework: OAuth, JWT, contexto, env
-│   ├── db.ts                      # Helpers de banco de dados
-│   ├── routers.ts                 # Procedures tRPC (auth, incidents, admin, reports)
-│   ├── validation.ts              # Schemas Joi
-│   ├── incidents.test.ts          # 27 testes de funcionalidades
-│   ├── auth.logout.test.ts        # 1 teste de logout
-│   ├── categories.test.ts         # 30 testes de categorias
-│   ├── ml.test.ts                 # 29 testes de ML
-│   ├── recommendations.test.ts    # 27 testes de recomendações
-│   ├── security.test.ts           # 34 testes de segurança
-│   ├── advanced_features.test.ts  # 33 testes de funcionalidades avançadas
-│   ├── followup.test.ts           # 28 testes de acompanhamento (FU-1 a FU-6)
-│   └── session4.test.ts           # 35 testes de PDF, busca e histórico (S4-1 a S4-8)
-├── shared/
-│   └── const.ts                   # Constantes compartilhadas
-├── todo.md                        # Rastreamento de funcionalidades
-└── README.md                      # Este arquivo
+├── backend/              # API, banco, ML, testes
+├── frontend/             # SPA React (views, components, controllers)
+├── docs/                 # Documentação (ver docs/README.md)
+├── docker-compose.yml    # PostgreSQL local (opcional)
+├── package.json          # Scripts do projeto
+├── .env.example          # Modelo de variáveis (copie para .env)
+├── .env                  # Variáveis de ambiente (não versionado)
+└── README.md
 ```
+
+Detalhes da arquitetura: [docs/arquitetura-deploy/ARQUITETURA.md](docs/arquitetura-deploy/ARQUITETURA.md)
 
 ---
 
@@ -449,7 +412,7 @@ incident_security_system/
 | Node.js | 22.x | `node --version` |
 | pnpm | 10.x | `pnpm --version` |
 | Python | 3.11+ | `python3 --version` |
-| MySQL | 8.x | `mysql --version` |
+| PostgreSQL | 16+ | `psql --version` ou Docker `postgres:16-alpine` |
 | Git | qualquer | `git --version` |
 
 ### Passo 1 — Clonar o repositório
@@ -459,14 +422,17 @@ git clone https://github.com/margefson/incident_security_system.git
 cd incident_security_system
 ```
 
-### Passo 2 — Criar o banco de dados MySQL
+### Passo 2 — Criar o banco de dados PostgreSQL
 
 ```sql
-CREATE DATABASE incident_security CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-CREATE USER 'incident_user'@'localhost' IDENTIFIED BY 'sua_senha_aqui';
-GRANT ALL PRIVILEGES ON incident_security.* TO 'incident_user'@'localhost';
-FLUSH PRIVILEGES;
+CREATE USER incident_user WITH PASSWORD 'sua_senha_aqui';
+CREATE DATABASE incident_security OWNER incident_user;
+GRANT ALL PRIVILEGES ON DATABASE incident_security TO incident_user;
 ```
+
+Ou via Docker: `docker run --name incident-pg -e POSTGRES_USER=incident_user -e POSTGRES_PASSWORD=sua_senha -e POSTGRES_DB=incident_security -p 5432:5432 -d postgres:16-alpine`
+
+Detalhes: [docs/arquitetura-deploy/DATABASE.md](docs/arquitetura-deploy/DATABASE.md)
 
 ### Passo 3 — Configurar variáveis de ambiente
 
@@ -474,7 +440,7 @@ Crie o arquivo `.env` na raiz do projeto:
 
 ```env
 # Banco de dados
-DATABASE_URL=mysql://incident_user:sua_senha_aqui@localhost:3306/incident_security
+DATABASE_URL=postgresql://incident_user:sua_senha_aqui@localhost:5432/incident_security
 
 # Segurança
 JWT_SECRET=sua_chave_jwt_secreta_minimo_32_caracteres
@@ -590,7 +556,7 @@ Abra o navegador em: **http://localhost:3000**
 
 | Variável | Obrigatória | Descrição |
 |---|---|---|
-| `DATABASE_URL` | Sim | String de conexão MySQL |
+| `DATABASE_URL` | Sim | String de conexão PostgreSQL |
 | `JWT_SECRET` | Sim | Chave secreta para assinar tokens JWT (mín. 32 chars) |
 | `VITE_APP_ID` | Sim | ID da aplicação OAuth |
 | `OAUTH_SERVER_URL` | Sim | URL base do servidor OAuth |
@@ -763,7 +729,7 @@ Ambos usam `ipKeyGenerator` para suporte seguro a IPv6 (via `express-rate-limit`
 
 ### 6.6 — CORS
 
-A API aceita requisições apenas das origens configuradas via `FRONTEND_URL` (variável de ambiente). Em ambientes de desenvolvimento/staging, domínios `*.manus.computer` e `*.manus.space` são aceitos automaticamente. Credenciais (cookies) são permitidas via `credentials: true`.
+A API aceita requisições apenas das origens configuradas via `FRONTEND_URL` e, opcionalmente, `ADDITIONAL_ORIGINS` (lista separada por vírgulas). Credenciais (cookies) são permitidas via `credentials: true`.
 
 ### 6.7 — Cabeçalhos de Segurança HTTP (Helmet)
 
@@ -1063,7 +1029,7 @@ Tests: 296 passed
 ### Sessão 16 (v2.8) — Botão Reiniciar Serviço + Apresentação PPTX
 - **Botão Reiniciar Serviço**: no Dashboard de Saúde, quando um servidor Flask estiver Offline, aparece o botão "Reiniciar Serviço" com spinner, estado desabilitado durante a operação e toast de feedback (sonner)
 - **Procedure `restartService`**: `adminProcedure` que mata o processo Flask na porta especificada via `execSync`/`pkill`, aguarda 1s, reinicia com `nohup python3 classifier_server.py --port {N}` e verifica se o `/health` responde em 4s
-- **Apresentação PPTX**: 6 slides com tema cybersecurity dark (Space Grotesk + JetBrains Mono, fundo #0a0f1e, cyan #00e5ff, laranja #ff6b35) cobrindo: Problema/Solução, Time/Stacks, Arquitetura PNG, Funcionalidades, ML/Segurança/Privacidade e Links GitHub/Manus
+- **Apresentação PPTX**: 6 slides com tema cybersecurity dark (Space Grotesk + JetBrains Mono, fundo #0a0f1e, cyan #00e5ff, laranja #ff6b35) cobrindo: Problema/Solução, Time/Stacks, Arquitetura PNG, Funcionalidades, ML/Segurança/Privacidade e Links GitHub
 - **30 novos testes S16** cobrindo restartService, botão de reinicialização, endpoints Flask de upload e AdminSystemHealth
 
 ---
@@ -1074,7 +1040,7 @@ Tests: 296 passed
 |---|---|---|
 | `ECONNREFUSED 5001` | Servidor ML não está rodando | Execute `python ml/classifier_server.py` |
 | `ECONNREFUSED 5002` | Servidor PDF não está rodando | Execute `python ml/pdf_server.py` |
-| `ER_ACCESS_DENIED_ERROR` | Credenciais MySQL incorretas | Verifique `DATABASE_URL` no `.env` |
+| `password authentication failed` | Credenciais PostgreSQL incorretas | Verifique `DATABASE_URL` no `.env` |
 | `JWT_SECRET is required` | Variável de ambiente ausente | Adicione `JWT_SECRET` ao `.env` |
 | `model not found` | Modelo não treinado | Execute `python ml/train_model.py` |
 | Página em branco após login | Cookie bloqueado pelo navegador | Use Chrome/Firefox em modo normal |
